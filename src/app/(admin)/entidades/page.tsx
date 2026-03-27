@@ -72,10 +72,9 @@ export default function PaginaEntidades() {
     setGuardando(true)
     try {
       if (entidadEditando) {
-        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion })
+        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre })
       } else {
-        const datosLimpios = { ...formEntidad }
-        if (!datosLimpios.descripcion) delete datosLimpios.descripcion
+        const { descripcion, ...datosLimpios } = formEntidad
         await entidadesApi.crear(datosLimpios)
       }
       setModalEntidad(false)

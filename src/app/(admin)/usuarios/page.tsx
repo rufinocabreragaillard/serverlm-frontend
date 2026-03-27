@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -209,12 +209,22 @@ export default function PaginaUsuarios() {
     }
   }
 
-  // Roles disponibles para asignar (excluir los ya asignados y el rol principal)
+  // Roles disponibles para asignar (excluir solo los ya asignados en rel_usuario_rol)
   const rolesDisponibles = roles.filter((r) =>
     r.activo &&
-    r.codigo_rol !== form.rol_principal &&
     !rolesUsuario.some((ra) => ra.codigo_rol === r.codigo_rol)
   )
+
+  // Marcar un rol asignado como principal
+  const marcarComoPrincipal = async (codigoRol: string) => {
+    if (!usuarioEditando) return
+    try {
+      await usuariosApi.actualizar(usuarioEditando.codigo_usuario, { rol_principal: codigoRol })
+      setForm({ ...form, rol_principal: codigoRol })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar rol principal')
+    }
+  }
 
   // Entidades disponibles para asignar (excluir las ya asignadas)
   const entidadesDisponibles = entidades.filter((e) =>
@@ -406,10 +416,20 @@ export default function PaginaUsuarios() {
                   className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
                 >
                   <option value="">Sin rol asignado</option>
-                  {roles.filter((r) => r.activo).map((r) => (
-                    <option key={r.codigo_rol} value={r.codigo_rol}>{r.nombre}</option>
-                  ))}
+                  {usuarioEditando
+                    ? rolesUsuario.map((ra) => (
+                        <option key={ra.codigo_rol} value={ra.codigo_rol}>
+                          {ra.roles?.nombre || ra.codigo_rol}
+                        </option>
+                      ))
+                    : roles.filter((r) => r.activo).map((r) => (
+                        <option key={r.codigo_rol} value={r.codigo_rol}>{r.nombre}</option>
+                      ))
+                  }
                 </select>
+                {usuarioEditando && rolesUsuario.length === 0 && (
+                  <p className="text-xs text-texto-muted">Asigne roles en la pestaña &quot;Roles adicionales&quot; primero</p>
+                )}
               </div>
 
               {error && (
@@ -470,26 +490,45 @@ export default function PaginaUsuarios() {
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {rolesUsuario.map((ra) => (
-                    <div
-                      key={ra.codigo_rol}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"
-                    >
-                      <div>
-                        <span className="text-sm font-medium text-texto">
-                          {ra.roles?.nombre || ra.codigo_rol}
-                        </span>
-                        <span className="ml-2 text-xs text-texto-muted">{ra.codigo_rol}</span>
-                      </div>
-                      <button
-                        onClick={() => quitarRol(ra.codigo_rol)}
-                        className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
-                        title="Quitar rol"
+                  {rolesUsuario.map((ra) => {
+                    const esPrincipal = form.rol_principal === ra.codigo_rol
+                    return (
+                      <div
+                        key={ra.codigo_rol}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg border bg-surface ${
+                          esPrincipal ? 'border-primario bg-primario-muy-claro' : 'border-borde'
+                        }`}
                       >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-texto">
+                            {ra.roles?.nombre || ra.codigo_rol}
+                          </span>
+                          <span className="text-xs text-texto-muted">{ra.codigo_rol}</span>
+                          {esPrincipal && (
+                            <span className="text-xs bg-primario text-white px-1.5 py-0.5 rounded">Principal</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {!esPrincipal && (
+                            <button
+                              onClick={() => marcarComoPrincipal(ra.codigo_rol)}
+                              className="p-1 rounded hover:bg-yellow-50 text-texto-muted hover:text-yellow-600 transition-colors"
+                              title="Marcar como rol principal"
+                            >
+                              <Star size={14} />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => quitarRol(ra.codigo_rol)}
+                            className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
+                            title="Quitar rol"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
