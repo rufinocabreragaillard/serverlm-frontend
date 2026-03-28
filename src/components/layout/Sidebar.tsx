@@ -29,10 +29,10 @@ interface NavItem {
 
 const navegacion: NavItem[] = [
   { nombre: 'Dashboard', href: '/dashboard', icono: LayoutDashboard },
-  { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
   { nombre: 'Usuarios', href: '/usuarios', icono: Users },
   { nombre: 'Roles y Funciones', href: '/roles', icono: ShieldCheck },
   { nombre: 'Entidades y Áreas', href: '/entidades', icono: Building2 },
+  { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
   { nombre: 'Parámetros', href: '/parametros', icono: SlidersHorizontal },
   { nombre: 'Auditoría', href: '/auditoria', icono: ClipboardList },
 ]
@@ -103,20 +103,8 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Cerrar sesión */}
-      <div className="px-2 py-4 border-t border-white/10">
-        <button
-          onClick={logout}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg w-full transition-colors text-sm font-medium',
-            'text-sidebar-texto-muted hover:bg-sidebar-hover hover:text-white'
-          )}
-          title={colapsado ? 'Cerrar sesión' : undefined}
-        >
-          <LogOut size={18} className="shrink-0" />
-          {!colapsado && <span>Cerrar sesión</span>}
-        </button>
-      </div>
+      {/* Espacio inferior */}
+      <div className="px-2 py-4 border-t border-white/10" />
     </aside>
   )
 }

@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, Building2, Layers, Check, Bell, Settings } from 'lucide-react'
+import { ChevronDown, Building2, Layers, Check, Bell, Settings, LogOut } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Avatar from '@radix-ui/react-avatar'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 
 export function Header({ titulo }: { titulo?: string }) {
-  const { usuario, cambiarEntidad, cambiarGrupo } = useAuth()
+  const { usuario, cambiarEntidad, cambiarGrupo, logout } = useAuth()
   const [cambiando, setCambiando] = useState(false)
 
   const handleCambiarEntidad = async (codigoEntidad: string) => {
@@ -217,6 +217,14 @@ export function Header({ titulo }: { titulo?: string }) {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-texto hover:bg-fondo cursor-pointer outline-none"
               >
                 Mi cuenta
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="h-px bg-borde my-1" />
+              <DropdownMenu.Item
+                onSelect={() => logout()}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-error hover:bg-red-50 cursor-pointer outline-none"
+              >
+                <LogOut size={14} className="shrink-0" />
+                Cerrar sesion
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
