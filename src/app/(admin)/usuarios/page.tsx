@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -8,12 +8,17 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { usuariosApi, rolesApi, entidadesApi } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import type { Usuario, Rol, Entidad } from '@/lib/tipos'
 
 type RolAsignado = { codigo_rol: string; roles: { nombre: string; activo: boolean } }
 type EntidadAsignada = { codigo_entidad: string; entidades: { nombre: string; activo: boolean } }
 
 export default function PaginaUsuarios() {
+  const { usuario: usuarioActual } = useAuth()
+  const grupoActivo = usuarioActual?.grupo_activo ?? ''
+  const grupoAnteriorRef = useRef(grupoActivo)
+
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [roles, setRoles] = useState<Rol[]>([])
   const [cargando, setCargando] = useState(true)
@@ -63,6 +68,14 @@ export default function PaginaUsuarios() {
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
+
+  // Re-cargar entidades cuando cambie el grupo activo
+  useEffect(() => {
+    if (grupoActivo && grupoActivo !== grupoAnteriorRef.current) {
+      grupoAnteriorRef.current = grupoActivo
+      entidadesApi.listar().then(setEntidades).catch(() => setEntidades([]))
+    }
+  }, [grupoActivo])
 
   const usuariosFiltrados = usuarios.filter((u) =>
     (u.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -179,7 +192,7 @@ export default function PaginaUsuarios() {
     if (!entidadNueva || !usuarioEditando) return
     setAsignandoEntidad(true)
     try {
-      await usuariosApi.asignarEntidad(usuarioEditando.codigo_usuario, entidadNueva)
+      await usuariosApi.asignarEntidad(usuarioEditando.codigo_usuario, entidadNueva, grupoActivo)
       setEntidadNueva('')
       cargarEntidadesUsuario(usuarioEditando.codigo_usuario)
     } catch (e) {

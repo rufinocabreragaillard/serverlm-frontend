@@ -26,7 +26,7 @@ const config: Config = {
           'muy-claro': '#F5ECF3',
         },
         sidebar: {
-          DEFAULT:      '#053870',
+          DEFAULT:      '#074B91',
           activo:       '#1E5A9C',
           hover:        '#0A4A8A',
           texto:        '#FFFFFF',

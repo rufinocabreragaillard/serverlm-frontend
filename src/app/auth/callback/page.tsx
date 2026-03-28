@@ -8,15 +8,36 @@ export default function AuthCallback() {
   const router = useRouter()
 
   useEffect(() => {
-    // Supabase maneja el intercambio de código automáticamente
-    // Solo esperamos a que la sesión esté activa y redirigimos
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        router.push('/dashboard')
-      } else {
-        router.push('/login')
+    // Escucha el evento SIGNED_IN que Supabase emite después de
+    // completar el intercambio del código OAuth (PKCE flow).
+    // Llamar a getSession() de inmediato no funciona porque el
+    // intercambio es asíncrono y aún no ha terminado.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          router.push('/dashboard')
+        } else if (event === 'SIGNED_OUT') {
+          router.push('/login')
+        }
       }
+    )
+
+    // Verificar si ya hay sesión activa (el evento pudo haberse disparado antes del mount)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) router.push('/dashboard')
     })
+
+    // Timeout de seguridad: si en 8s no hay sesión, redirigir al login
+    const timeout = setTimeout(async () => {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) router.push('/login')
+      else router.push('/dashboard')
+    }, 8000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [router])
 
   return (

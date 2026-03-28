@@ -75,8 +75,8 @@ export const usuariosApi = {
     api.get<{ codigo_entidad: string; entidades: { nombre: string; activo: boolean } }[]>(
       `/usuarios/${id}/entidades`
     ).then((r) => r.data),
-  asignarEntidad: (id: string, codigoEntidad: string) =>
-    api.post(`/usuarios/${id}/entidades`, { codigo_entidad: codigoEntidad }),
+  asignarEntidad: (id: string, codigoEntidad: string, codigoGrupo: string) =>
+    api.post(`/usuarios/${id}/entidades`, { codigo_entidad: codigoEntidad, codigo_grupo: codigoGrupo }),
   quitarEntidad: (id: string, codigoEntidad: string) =>
     api.delete(`/usuarios/${id}/entidades/${codigoEntidad}`),
   listarGrupos: (id: string) =>
