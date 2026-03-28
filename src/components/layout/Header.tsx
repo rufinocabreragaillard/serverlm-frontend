@@ -17,7 +17,7 @@ export function Header({ titulo }: { titulo?: string }) {
 
   // Modal Mi Cuenta
   const [modalCuenta, setModalCuenta] = useState(false)
-  const [formCuenta, setFormCuenta] = useState({ nombre: '', telefono: '' })
+  const [formCuenta, setFormCuenta] = useState({ nombre: '', telefono: '', rol_principal: '' })
   const [guardandoCuenta, setGuardandoCuenta] = useState(false)
   const [errorCuenta, setErrorCuenta] = useState('')
   const [exitoCuenta, setExitoCuenta] = useState('')
@@ -29,8 +29,6 @@ export function Header({ titulo }: { titulo?: string }) {
   const [guardandoParametro, setGuardandoParametro] = useState(false)
   const [errorParametros, setErrorParametros] = useState('')
   const [exitoParametros, setExitoParametros] = useState('')
-  // Nuevo parámetro
-  const [nuevoParam, setNuevoParam] = useState({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
 
   const handleCambiarEntidad = async (codigoEntidad: string) => {
     if (codigoEntidad === usuario?.entidad_activa) return
@@ -58,13 +56,14 @@ export function Header({ titulo }: { titulo?: string }) {
     setFormCuenta({
       nombre: usuario?.nombre || '',
       telefono: '',
+      rol_principal: usuario?.rol_principal || '',
     })
     setErrorCuenta('')
     setExitoCuenta('')
     // Cargar datos actuales del usuario
     if (usuario) {
       usuariosApi.obtener(usuario.codigo_usuario).then((u) => {
-        setFormCuenta({ nombre: u.nombre, telefono: u.telefono || '' })
+        setFormCuenta({ nombre: u.nombre, telefono: u.telefono || '', rol_principal: u.rol_principal || '' })
       }).catch(() => {})
     }
     setModalCuenta(true)
@@ -79,6 +78,7 @@ export function Header({ titulo }: { titulo?: string }) {
       await usuariosApi.actualizar(usuario.codigo_usuario, {
         nombre: formCuenta.nombre,
         telefono: formCuenta.telefono || undefined,
+        rol_principal: formCuenta.rol_principal || undefined,
       })
       setExitoCuenta('Datos actualizados correctamente')
     } catch (e) {
@@ -105,7 +105,6 @@ export function Header({ titulo }: { titulo?: string }) {
   const abrirMisParametros = () => {
     setErrorParametros('')
     setExitoParametros('')
-    setNuevoParam({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
     cargarParametros()
     setModalParametros(true)
   }
@@ -123,15 +122,6 @@ export function Header({ titulo }: { titulo?: string }) {
     } finally {
       setGuardandoParametro(false)
     }
-  }
-
-  const agregarParametro = async () => {
-    if (!nuevoParam.categoria_parametro || !nuevoParam.tipo_parametro || !nuevoParam.valor_parametro) {
-      setErrorParametros('Todos los campos son obligatorios')
-      return
-    }
-    await guardarParametro(nuevoParam.categoria_parametro, nuevoParam.tipo_parametro, nuevoParam.valor_parametro)
-    setNuevoParam({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
   }
 
   const entidadActual = usuario?.entidades?.find(
@@ -308,7 +298,20 @@ export function Header({ titulo }: { titulo?: string }) {
           />
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-texto">Rol principal</label>
-            <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.rol_principal || '—'}</p>
+            {usuario && usuario.roles.length > 0 ? (
+              <select
+                value={formCuenta.rol_principal}
+                onChange={(e) => setFormCuenta({ ...formCuenta, rol_principal: e.target.value })}
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+              >
+                <option value="">Sin rol principal</option>
+                {usuario.roles.map((rol) => (
+                  <option key={rol} value={rol}>{rol}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.rol_principal || '—'}</p>
+            )}
           </div>
           {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
           {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
@@ -352,39 +355,6 @@ export function Header({ titulo }: { titulo?: string }) {
               ))}
             </div>
           )}
-
-          {/* Agregar nuevo parámetro */}
-          <div className="border-t border-borde pt-3">
-            <p className="text-xs font-semibold text-texto-muted uppercase tracking-wider mb-2">Agregar parametro</p>
-            <div className="flex flex-col gap-2">
-              <div className="grid grid-cols-3 gap-2">
-                <input
-                  type="text"
-                  placeholder="Categoria"
-                  value={nuevoParam.categoria_parametro}
-                  onChange={(e) => setNuevoParam({ ...nuevoParam, categoria_parametro: e.target.value.toUpperCase() })}
-                  className="rounded-lg border border-borde bg-surface px-2 py-1.5 text-xs text-texto focus:outline-none focus:ring-1 focus:ring-primario"
-                />
-                <input
-                  type="text"
-                  placeholder="Tipo"
-                  value={nuevoParam.tipo_parametro}
-                  onChange={(e) => setNuevoParam({ ...nuevoParam, tipo_parametro: e.target.value.toUpperCase() })}
-                  className="rounded-lg border border-borde bg-surface px-2 py-1.5 text-xs text-texto focus:outline-none focus:ring-1 focus:ring-primario"
-                />
-                <input
-                  type="text"
-                  placeholder="Valor"
-                  value={nuevoParam.valor_parametro}
-                  onChange={(e) => setNuevoParam({ ...nuevoParam, valor_parametro: e.target.value })}
-                  className="rounded-lg border border-borde bg-surface px-2 py-1.5 text-xs text-texto focus:outline-none focus:ring-1 focus:ring-primario"
-                />
-              </div>
-              <Boton variante="contorno" tamano="sm" onClick={agregarParametro} cargando={guardandoParametro}>
-                Agregar
-              </Boton>
-            </div>
-          </div>
 
           {errorParametros && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorParametros}</p></div>}
           {exitoParametros && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoParametros}</p></div>}

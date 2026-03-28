@@ -24,7 +24,7 @@ export default function PaginaRoles() {
   // Modal rol
   const [modalRol, setModalRol] = useState(false)
   const [rolEditando, setRolEditando] = useState<Rol | null>(null)
-  const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', descripcion: '', url_inicio: '' })
+  const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', descripcion: '', url_inicio: '', funcion_por_defecto: '' })
   const [tabModalRol, setTabModalRol] = useState<'datos' | 'funciones'>('datos')
 
   // Funciones del rol en edición
@@ -36,7 +36,7 @@ export default function PaginaRoles() {
   // Modal función
   const [modalFuncion, setModalFuncion] = useState(false)
   const [funcionEditando, setFuncionEditando] = useState<Funcion | null>(null)
-  const [formFuncion, setFormFuncion] = useState({ codigo_funcion: '', nombre: '', descripcion: '', url_default: '' })
+  const [formFuncion, setFormFuncion] = useState({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '' })
 
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -68,7 +68,7 @@ export default function PaginaRoles() {
 
   const abrirNuevoRol = () => {
     setRolEditando(null)
-    setFormRol({ codigo_rol: '', nombre: '', descripcion: '', url_inicio: '' })
+    setFormRol({ codigo_rol: '', nombre: '', descripcion: '', url_inicio: '', funcion_por_defecto: '' })
     setError('')
     setTabModalRol('datos')
     setModalRol(true)
@@ -76,7 +76,7 @@ export default function PaginaRoles() {
 
   const abrirEditarRol = (r: Rol) => {
     setRolEditando(r)
-    setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, descripcion: r.descripcion || '', url_inicio: r.url_inicio || '' })
+    setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '' })
     setError('')
     setTabModalRol('datos')
     setFuncionNueva('')
@@ -89,7 +89,7 @@ export default function PaginaRoles() {
     setGuardando(true)
     try {
       if (rolEditando) {
-        await rolesApi.actualizar(rolEditando.codigo_rol, { nombre: formRol.nombre, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio })
+        await rolesApi.actualizar(rolEditando.codigo_rol, { nombre: formRol.nombre, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined })
       } else {
         await rolesApi.crear({ ...formRol, codigo_grupo: grupoActivo || 'ADMIN' })
       }
@@ -140,14 +140,14 @@ export default function PaginaRoles() {
 
   const abrirNuevaFuncion = () => {
     setFuncionEditando(null)
-    setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_default: '' })
+    setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '' })
     setError('')
     setModalFuncion(true)
   }
 
   const abrirEditarFuncion = (f: Funcion) => {
     setFuncionEditando(f)
-    setFormFuncion({ codigo_funcion: f.codigo_funcion, nombre: f.nombre, descripcion: f.descripcion || '', url_default: f.url_default || '' })
+    setFormFuncion({ codigo_funcion: f.codigo_funcion, nombre: f.nombre, descripcion: f.descripcion || '', url_funcion: f.url_funcion || '' })
     setError('')
     setModalFuncion(true)
   }
@@ -157,7 +157,7 @@ export default function PaginaRoles() {
     setGuardando(true)
     try {
       if (funcionEditando) {
-        await funcionesApi.actualizar(funcionEditando.codigo_funcion, { nombre: formFuncion.nombre, descripcion: formFuncion.descripcion, url_default: formFuncion.url_default })
+        await funcionesApi.actualizar(funcionEditando.codigo_funcion, { nombre: formFuncion.nombre, descripcion: formFuncion.descripcion, url_funcion: formFuncion.url_funcion })
       } else {
         await funcionesApi.crear({ ...formFuncion, codigo_grupo: grupoActivo || 'ADMIN' })
       }
@@ -212,18 +212,20 @@ export default function PaginaRoles() {
                 <TablaTh>Código</TablaTh>
                 <TablaTh>Nombre</TablaTh>
                 <TablaTh>URL inicio</TablaTh>
+                <TablaTh>Fn. por defecto</TablaTh>
                 <TablaTh>Estado</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando...</TablaTd></TablaFila>
               ) : roles.map((r) => (
                 <TablaFila key={r.codigo_rol}>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{r.codigo_rol}</code></TablaTd>
                   <TablaTd className="font-medium">{r.nombre}</TablaTd>
                   <TablaTd className="text-texto-muted text-xs">{r.url_inicio || '—'}</TablaTd>
+                  <TablaTd className="text-texto-muted text-xs">{r.funcion_por_defecto || '—'}</TablaTd>
                   <TablaTd><Insignia variante={r.activo ? 'exito' : 'error'}>{r.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
@@ -248,7 +250,7 @@ export default function PaginaRoles() {
               <tr>
                 <TablaTh>Código</TablaTh>
                 <TablaTh>Nombre</TablaTh>
-                <TablaTh>URL por defecto</TablaTh>
+                <TablaTh>URL función</TablaTh>
                 <TablaTh>Estado</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr>
@@ -260,7 +262,7 @@ export default function PaginaRoles() {
                 <TablaFila key={f.codigo_funcion}>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{f.codigo_funcion}</code></TablaTd>
                   <TablaTd className="font-medium">{f.nombre}</TablaTd>
-                  <TablaTd className="text-texto-muted text-xs">{f.url_default || '—'}</TablaTd>
+                  <TablaTd className="text-texto-muted text-xs">{f.url_funcion || '—'}</TablaTd>
                   <TablaTd><Insignia variante={f.activo ? 'exito' : 'error'}>{f.activo ? 'Activa' : 'Inactiva'}</Insignia></TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
@@ -311,6 +313,24 @@ export default function PaginaRoles() {
               <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
               <Input etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} placeholder="Descripción del rol..." />
               <Input etiqueta="URL de inicio" value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder="/admin/dashboard" />
+              {rolEditando && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-texto">Función por defecto</label>
+                  <select
+                    value={formRol.funcion_por_defecto}
+                    onChange={(e) => setFormRol({ ...formRol, funcion_por_defecto: e.target.value })}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                  >
+                    <option value="">Sin función por defecto</option>
+                    {funcionesRol.map((fa) => (
+                      <option key={fa.codigo_funcion} value={fa.codigo_funcion}>
+                        {fa.funciones?.nombre_funcion || fa.codigo_funcion}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-texto-muted">Selecciona la función que se mostrará por defecto para este rol</p>
+                </div>
+              )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalRol(false)}>Cancelar</Boton>
@@ -405,7 +425,7 @@ export default function PaginaRoles() {
           <Input etiqueta="Código *" value={formFuncion.codigo_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_funcion: e.target.value.toUpperCase() })} disabled={!!funcionEditando} placeholder="GEST_USUARIOS" />
           <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
           <Input etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
-          <Input etiqueta="URL por defecto" value={formFuncion.url_default} onChange={(e) => setFormFuncion({ ...formFuncion, url_default: e.target.value })} placeholder="/usuarios" />
+          <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton>

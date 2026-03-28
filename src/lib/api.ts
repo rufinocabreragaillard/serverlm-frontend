@@ -131,6 +131,10 @@ export const entidadesApi = {
     api.get<Area[]>(`/entidades/${idEntidad}/areas`).then((r) => r.data),
   crearArea: (idEntidad: string, datos: Partial<Area>) =>
     api.post<Area>(`/entidades/${idEntidad}/areas`, datos).then((r) => r.data),
+  listarParametros: (idEntidad: string) =>
+    api.get(`/entidades/${idEntidad}/parametros`).then((r) => r.data),
+  upsertParametro: (idEntidad: string, datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>
+    api.put(`/entidades/${idEntidad}/parametros`, datos),
 }
 
 // ─── Grupos de Entidades ──────────────────────────────────────────────────────
@@ -160,6 +164,8 @@ export const parametrosApi = {
     api.get<ParametroGeneral[]>('/parametros/generales').then((r) => r.data),
   actualizarGeneral: (codigo: string, valor: string) =>
     api.put(`/parametros/generales/${codigo}`, { valor }),
+  upsertGenerales: (datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>
+    api.put('/parametros/generales', datos),
   listarGrupo: () =>
     api.get('/parametros/grupo').then((r) => r.data),
   upsertGrupo: (datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>

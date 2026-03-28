@@ -98,6 +98,7 @@ export interface Rol {
   codigo_grupo?: string
   descripcion?: string
   url_inicio?: string
+  funcion_por_defecto?: string
   activo: boolean
 }
 
@@ -106,7 +107,7 @@ export interface Funcion {
   nombre: string
   codigo_grupo?: string
   descripcion?: string
-  url_default?: string
+  url_funcion?: string
   activo: boolean
 }
 
