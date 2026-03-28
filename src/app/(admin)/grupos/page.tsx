@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Layers, Users, Building2, X } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { Plus, Pencil, Layers, Users, Building2, X, Search } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -33,7 +33,10 @@ export default function PaginaGrupos() {
 
   // Asignación de usuarios al grupo
   const [usuarioNuevo, setUsuarioNuevo] = useState('')
+  const [busquedaUsuario, setBusquedaUsuario] = useState('')
+  const [dropdownAbierto, setDropdownAbierto] = useState(false)
   const [asignandoUsuario, setAsignandoUsuario] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -129,6 +132,24 @@ export default function PaginaGrupos() {
   const usuariosDisponibles = todosUsuarios.filter((u) =>
     u.activo && !usuariosGrupo.some((ug) => ug.codigo_usuario === u.codigo_usuario)
   )
+
+  // Filtro de búsqueda para el selector de usuarios
+  const usuariosFiltrados = usuariosDisponibles.filter((u) =>
+    busquedaUsuario.length === 0 ||
+    u.nombre.toLowerCase().includes(busquedaUsuario.toLowerCase()) ||
+    u.codigo_usuario.toLowerCase().includes(busquedaUsuario.toLowerCase())
+  )
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   if (!esSuperAdmin()) {
     return (
@@ -247,25 +268,44 @@ export default function PaginaGrupos() {
                 {/* Tab Usuarios — con asignación/desasignación */}
                 {tabActivo === 'usuarios' && (
                   <div className="flex flex-col gap-4 p-4">
-                    {/* Asignar usuario al grupo */}
+                    {/* Asignar usuario al grupo — con búsqueda */}
                     <div className="flex gap-2">
-                      <div className="flex-1">
-                        <select
-                          value={usuarioNuevo}
-                          onChange={(e) => setUsuarioNuevo(e.target.value)}
-                          className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
-                        >
-                          <option value="">Seleccionar usuario...</option>
-                          {usuariosDisponibles.map((u) => (
-                            <option key={u.codigo_usuario} value={u.codigo_usuario}>
-                              {u.nombre} ({u.codigo_usuario})
-                            </option>
-                          ))}
-                        </select>
+                      <div className="flex-1 relative" ref={dropdownRef}>
+                        <div className="relative">
+                          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
+                          <input
+                            type="text"
+                            placeholder="Buscar usuario por nombre o correo..."
+                            value={busquedaUsuario}
+                            onChange={(e) => { setBusquedaUsuario(e.target.value); setDropdownAbierto(true); setUsuarioNuevo('') }}
+                            onFocus={() => setDropdownAbierto(true)}
+                            className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                          />
+                        </div>
+                        {dropdownAbierto && busquedaUsuario.length > 0 && (
+                          <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                            {usuariosFiltrados.length === 0 ? (
+                              <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron usuarios</div>
+                            ) : usuariosFiltrados.slice(0, 20).map((u) => (
+                              <button
+                                key={u.codigo_usuario}
+                                onClick={() => {
+                                  setUsuarioNuevo(u.codigo_usuario)
+                                  setBusquedaUsuario(`${u.nombre} (${u.codigo_usuario})`)
+                                  setDropdownAbierto(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors"
+                              >
+                                <span className="font-medium">{u.nombre}</span>
+                                <span className="ml-2 text-texto-muted text-xs">{u.codigo_usuario}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Boton
                         variante="primario"
-                        onClick={asignarUsuarioAlGrupo}
+                        onClick={() => { asignarUsuarioAlGrupo(); setBusquedaUsuario('') }}
                         cargando={asignandoUsuario}
                         disabled={!usuarioNuevo}
                       >
