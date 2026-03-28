@@ -66,9 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (isMounted && ctx && event === 'SIGNED_IN') {
             router.push(ctx.url_inicio || '/dashboard')
           }
+          // Si la sesión existe pero no pudimos cargar contexto, redirigir a login
+          if (isMounted && !ctx) {
+            router.push('/login')
+          }
         } else {
           setUsuario(null)
-          if (event === 'SIGNED_OUT') {
+          // Redirigir a login si no hay sesión (cubre SIGNED_OUT y TOKEN_REFRESHED fallido)
+          if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
             router.push('/login')
           }
         }
@@ -77,16 +82,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
 
     // Carga inicial - solo si el listener no la manejó ya
+    // Timeout de seguridad: si después de 10s sigue cargando, forzar fin de carga
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && !initialLoadDone) {
+        setCargando(false)
+        router.push('/login')
+      }
+    }, 10000)
+
     supabase.auth.getSession().then(async ({ data }) => {
       if (!isMounted || initialLoadDone) return
       if (data.session) {
         await cargarContexto()
+      } else {
+        // No hay sesión activa — redirigir a login
+        setUsuario(null)
+        if (isMounted) {
+          const isLoginPage = window.location.pathname === '/login' || window.location.pathname === '/auth/callback'
+          if (!isLoginPage) {
+            router.push('/login')
+          }
+        }
       }
       if (isMounted) setCargando(false)
+    }).catch(() => {
+      // Error al obtener sesión — terminar carga y redirigir
+      if (isMounted) {
+        setCargando(false)
+        router.push('/login')
+      }
     })
 
     return () => {
       isMounted = false
+      clearTimeout(safetyTimeout)
       listener.subscription.unsubscribe()
     }
   }, [cargarContexto, router])
