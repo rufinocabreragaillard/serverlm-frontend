@@ -1,15 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, Building2, Layers, Check, Bell, Settings, LogOut } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ChevronDown, Building2, Layers, Check, Bell, Settings, LogOut, User, Save } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Avatar from '@radix-ui/react-avatar'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
+import { Modal } from '@/components/ui/modal'
+import { Input } from '@/components/ui/input'
+import { Boton } from '@/components/ui/boton'
+import { usuariosApi, parametrosApi } from '@/lib/api'
 
 export function Header({ titulo }: { titulo?: string }) {
   const { usuario, cambiarEntidad, cambiarGrupo, logout } = useAuth()
   const [cambiando, setCambiando] = useState(false)
+
+  // Modal Mi Cuenta
+  const [modalCuenta, setModalCuenta] = useState(false)
+  const [formCuenta, setFormCuenta] = useState({ nombre: '', telefono: '' })
+  const [guardandoCuenta, setGuardandoCuenta] = useState(false)
+  const [errorCuenta, setErrorCuenta] = useState('')
+  const [exitoCuenta, setExitoCuenta] = useState('')
+
+  // Modal Mis Parámetros
+  const [modalParametros, setModalParametros] = useState(false)
+  const [parametros, setParametros] = useState<{ categoria_parametro: string; tipo_parametro: string; valor_parametro: string }[]>([])
+  const [cargandoParametros, setCargandoParametros] = useState(false)
+  const [guardandoParametro, setGuardandoParametro] = useState(false)
+  const [errorParametros, setErrorParametros] = useState('')
+  const [exitoParametros, setExitoParametros] = useState('')
+  // Nuevo parámetro
+  const [nuevoParam, setNuevoParam] = useState({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
 
   const handleCambiarEntidad = async (codigoEntidad: string) => {
     if (codigoEntidad === usuario?.entidad_activa) return
@@ -26,11 +47,91 @@ export function Header({ titulo }: { titulo?: string }) {
     setCambiando(true)
     try {
       await cambiarGrupo(codigoGrupo)
-      // Recargar la página para que todos los datos se refresquen con el nuevo grupo
       window.location.reload()
     } catch {
       setCambiando(false)
     }
+  }
+
+  // Mi Cuenta
+  const abrirMiCuenta = () => {
+    setFormCuenta({
+      nombre: usuario?.nombre || '',
+      telefono: '',
+    })
+    setErrorCuenta('')
+    setExitoCuenta('')
+    // Cargar datos actuales del usuario
+    if (usuario) {
+      usuariosApi.obtener(usuario.codigo_usuario).then((u) => {
+        setFormCuenta({ nombre: u.nombre, telefono: u.telefono || '' })
+      }).catch(() => {})
+    }
+    setModalCuenta(true)
+  }
+
+  const guardarMiCuenta = async () => {
+    if (!usuario || !formCuenta.nombre) { setErrorCuenta('El nombre es obligatorio'); return }
+    setGuardandoCuenta(true)
+    setErrorCuenta('')
+    setExitoCuenta('')
+    try {
+      await usuariosApi.actualizar(usuario.codigo_usuario, {
+        nombre: formCuenta.nombre,
+        telefono: formCuenta.telefono || undefined,
+      })
+      setExitoCuenta('Datos actualizados correctamente')
+    } catch (e) {
+      setErrorCuenta(e instanceof Error ? e.message : 'Error al guardar')
+    } finally {
+      setGuardandoCuenta(false)
+    }
+  }
+
+  // Mis Parámetros
+  const cargarParametros = useCallback(async () => {
+    setCargandoParametros(true)
+    setErrorParametros('')
+    try {
+      const data = await parametrosApi.listarUsuario()
+      setParametros(data)
+    } catch {
+      setParametros([])
+    } finally {
+      setCargandoParametros(false)
+    }
+  }, [])
+
+  const abrirMisParametros = () => {
+    setErrorParametros('')
+    setExitoParametros('')
+    setNuevoParam({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
+    cargarParametros()
+    setModalParametros(true)
+  }
+
+  const guardarParametro = async (cat: string, tipo: string, valor: string) => {
+    setGuardandoParametro(true)
+    setErrorParametros('')
+    setExitoParametros('')
+    try {
+      await parametrosApi.upsertUsuario({ categoria_parametro: cat, tipo_parametro: tipo, valor_parametro: valor })
+      setExitoParametros('Parametro guardado')
+      cargarParametros()
+    } catch (e) {
+      setErrorParametros(e instanceof Error ? e.message : 'Error al guardar')
+    } finally {
+      setGuardandoParametro(false)
+    }
+  }
+
+  const agregarParametro = async () => {
+    if (!nuevoParam.categoria_parametro || !nuevoParam.tipo_parametro || !nuevoParam.valor_parametro) {
+      setErrorParametros('Todos los campos son obligatorios')
+      return
+    }
+    await guardarParametro(nuevoParam.categoria_parametro, nuevoParam.tipo_parametro, nuevoParam.valor_parametro)
+    setNuevoParam({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
   }
 
   const entidadActual = usuario?.entidades?.find(
@@ -45,191 +146,253 @@ export function Header({ titulo }: { titulo?: string }) {
     ? usuario.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
     : '?'
 
-  // Solo mostrar selector de grupo si el usuario pertenece a más de un grupo
-  // Los usuarios normales y admins de grupo solo ven su grupo, no pueden cambiar
   const tieneMultiplesGrupos = (usuario?.grupos?.length ?? 0) > 1
 
   return (
-    <header className="h-16 bg-surface border-b border-borde flex items-center justify-between px-6 shrink-0">
-      {/* Titulo de seccion */}
-      <h1 className="text-base font-semibold text-texto">{titulo}</h1>
+    <>
+      <header className="h-16 bg-surface border-b border-borde flex items-center justify-between px-6 shrink-0">
+        <h1 className="text-base font-semibold text-texto">{titulo}</h1>
 
-      <div className="flex items-center gap-3">
-        {/* Selector de grupo (solo si tiene multiples grupos) */}
-        {usuario && tieneMultiplesGrupos && (
+        <div className="flex items-center gap-3">
+          {/* Selector de grupo */}
+          {usuario && tieneMultiplesGrupos && (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-1.5 rounded-lg border border-borde bg-fondo',
+                    'text-sm font-medium text-texto hover:bg-primario-muy-claro hover:border-primario/30',
+                    'transition-colors focus:outline-none',
+                    cambiando && 'opacity-50 cursor-wait'
+                  )}
+                  disabled={cambiando}
+                >
+                  <Layers size={15} className="text-secundario shrink-0" />
+                  <span className="max-w-[140px] truncate">
+                    {grupoActual?.nombre_grupo ?? usuario.grupo_activo}
+                  </span>
+                  <ChevronDown size={14} className="text-texto-muted shrink-0" />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content align="end" sideOffset={8} className="z-50 min-w-[200px] bg-surface rounded-xl border border-borde shadow-lg p-1">
+                  <p className="px-3 py-2 text-xs font-semibold text-texto-muted uppercase tracking-wider">Mis grupos</p>
+                  {usuario.grupos.map((grupo) => (
+                    <DropdownMenu.Item
+                      key={grupo.codigo_grupo}
+                      onSelect={() => handleCambiarGrupo(grupo.codigo_grupo)}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer',
+                        'hover:bg-primario-muy-claro hover:text-primario outline-none transition-colors',
+                        grupo.codigo_grupo === usuario.grupo_activo ? 'text-primario font-medium bg-primario-muy-claro' : 'text-texto'
+                      )}
+                    >
+                      <Check size={14} className={cn('shrink-0', grupo.codigo_grupo === usuario.grupo_activo ? 'opacity-100' : 'opacity-0')} />
+                      <span className="truncate">{grupo.nombre_grupo}</span>
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+
+          {/* Selector de entidad */}
+          {usuario && usuario.entidades && usuario.entidades.length > 0 && (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-1.5 rounded-lg border border-borde bg-fondo',
+                    'text-sm font-medium text-texto hover:bg-primario-muy-claro hover:border-primario/30',
+                    'transition-colors focus:outline-none',
+                    cambiando && 'opacity-50 cursor-wait'
+                  )}
+                  disabled={cambiando}
+                >
+                  <Building2 size={15} className="text-primario shrink-0" />
+                  <span className="max-w-[160px] truncate">{entidadActual?.nombre ?? usuario.entidad_activa}</span>
+                  <ChevronDown size={14} className="text-texto-muted shrink-0" />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content align="end" sideOffset={8} className="z-50 min-w-[200px] bg-surface rounded-xl border border-borde shadow-lg p-1">
+                  <p className="px-3 py-2 text-xs font-semibold text-texto-muted uppercase tracking-wider">Mis entidades</p>
+                  {usuario.entidades.map((entidad) => (
+                    <DropdownMenu.Item
+                      key={entidad.codigo_entidad}
+                      onSelect={() => handleCambiarEntidad(entidad.codigo_entidad)}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer',
+                        'hover:bg-primario-muy-claro hover:text-primario outline-none transition-colors',
+                        entidad.codigo_entidad === usuario.entidad_activa ? 'text-primario font-medium bg-primario-muy-claro' : 'text-texto'
+                      )}
+                    >
+                      <Check size={14} className={cn('shrink-0', entidad.codigo_entidad === usuario.entidad_activa ? 'opacity-100' : 'opacity-0')} />
+                      <span className="truncate">{entidad.nombre}</span>
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+
+          {/* Notificaciones */}
+          <button className="p-2 rounded-lg hover:bg-fondo text-texto-muted hover:text-texto transition-colors relative">
+            <Bell size={18} />
+          </button>
+
+          {/* Avatar y menú de usuario */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <button
-                className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-lg border border-borde bg-fondo',
-                  'text-sm font-medium text-texto hover:bg-primario-muy-claro hover:border-primario/30',
-                  'transition-colors focus:outline-none',
-                  cambiando && 'opacity-50 cursor-wait'
-                )}
-                disabled={cambiando}
-              >
-                <Layers size={15} className="text-secundario shrink-0" />
-                <span className="max-w-[140px] truncate">
-                  {grupoActual?.nombre_grupo ?? usuario.grupo_activo}
-                </span>
-                <ChevronDown size={14} className="text-texto-muted shrink-0" />
+              <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-fondo transition-colors focus:outline-none">
+                <Avatar.Root className="h-8 w-8 rounded-full bg-secundario flex items-center justify-center shrink-0">
+                  <Avatar.Fallback className="text-white text-xs font-semibold">{iniciales}</Avatar.Fallback>
+                </Avatar.Root>
+                <div className="text-left hidden sm:block">
+                  <p className="text-xs font-medium text-texto leading-none truncate max-w-[120px]">{usuario?.nombre}</p>
+                  <p className="text-[11px] text-texto-muted truncate max-w-[120px]">{usuario?.rol_principal}</p>
+                </div>
               </button>
             </DropdownMenu.Trigger>
-
             <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                align="end"
-                sideOffset={8}
-                className="z-50 min-w-[200px] bg-surface rounded-xl border border-borde shadow-lg p-1"
-              >
-                <p className="px-3 py-2 text-xs font-semibold text-texto-muted uppercase tracking-wider">
-                  Mis grupos
-                </p>
-                {usuario.grupos.map((grupo) => (
-                  <DropdownMenu.Item
-                    key={grupo.codigo_grupo}
-                    onSelect={() => handleCambiarGrupo(grupo.codigo_grupo)}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer',
-                      'hover:bg-primario-muy-claro hover:text-primario outline-none transition-colors',
-                      grupo.codigo_grupo === usuario.grupo_activo
-                        ? 'text-primario font-medium bg-primario-muy-claro'
-                        : 'text-texto'
-                    )}
-                  >
-                    <Check
-                      size={14}
-                      className={cn(
-                        'shrink-0',
-                        grupo.codigo_grupo === usuario.grupo_activo
-                          ? 'opacity-100'
-                          : 'opacity-0'
-                      )}
-                    />
-                    <span className="truncate">{grupo.nombre_grupo}</span>
-                  </DropdownMenu.Item>
-                ))}
+              <DropdownMenu.Content align="end" sideOffset={8} className="z-50 min-w-[180px] bg-surface rounded-xl border border-borde shadow-lg p-1">
+                <div className="px-3 py-2 border-b border-borde mb-1">
+                  <p className="text-sm font-medium text-texto truncate">{usuario?.nombre}</p>
+                  <p className="text-xs text-texto-muted truncate">{usuario?.codigo_usuario}</p>
+                </div>
+                <DropdownMenu.Item
+                  onSelect={abrirMiCuenta}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-texto hover:bg-fondo cursor-pointer outline-none"
+                >
+                  <User size={14} className="shrink-0" />
+                  Mi cuenta
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onSelect={abrirMisParametros}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-texto hover:bg-fondo cursor-pointer outline-none"
+                >
+                  <Settings size={14} className="shrink-0" />
+                  Mis parametros
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="h-px bg-borde my-1" />
+                <DropdownMenu.Item
+                  onSelect={() => logout()}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-error hover:bg-red-50 cursor-pointer outline-none"
+                >
+                  <LogOut size={14} className="shrink-0" />
+                  Cerrar sesion
+                </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
-        )}
+        </div>
+      </header>
 
-        {/* Selector de entidad */}
-        {usuario && usuario.entidades && usuario.entidades.length > 0 && (
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button
-                className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-lg border border-borde bg-fondo',
-                  'text-sm font-medium text-texto hover:bg-primario-muy-claro hover:border-primario/30',
-                  'transition-colors focus:outline-none',
-                  cambiando && 'opacity-50 cursor-wait'
-                )}
-                disabled={cambiando}
-              >
-                <Building2 size={15} className="text-primario shrink-0" />
-                <span className="max-w-[160px] truncate">
-                  {entidadActual?.nombre ?? usuario.entidad_activa}
-                </span>
-                <ChevronDown size={14} className="text-texto-muted shrink-0" />
-              </button>
-            </DropdownMenu.Trigger>
+      {/* Modal Mi Cuenta */}
+      <Modal abierto={modalCuenta} alCerrar={() => setModalCuenta(false)} titulo="Mi cuenta">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">Correo electronico</label>
+            <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.codigo_usuario}</p>
+          </div>
+          <Input
+            etiqueta="Nombre completo"
+            value={formCuenta.nombre}
+            onChange={(e) => setFormCuenta({ ...formCuenta, nombre: e.target.value })}
+          />
+          <Input
+            etiqueta="Telefono"
+            value={formCuenta.telefono}
+            onChange={(e) => setFormCuenta({ ...formCuenta, telefono: e.target.value })}
+            placeholder="+56 9 1234 5678"
+          />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">Rol principal</label>
+            <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.rol_principal || '—'}</p>
+          </div>
+          {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
+          {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
+          <div className="flex gap-3 justify-end pt-2">
+            <Boton variante="contorno" onClick={() => setModalCuenta(false)}>Cerrar</Boton>
+            <Boton variante="primario" onClick={guardarMiCuenta} cargando={guardandoCuenta}>
+              <Save size={14} /> Guardar
+            </Boton>
+          </div>
+        </div>
+      </Modal>
 
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                align="end"
-                sideOffset={8}
-                className="z-50 min-w-[200px] bg-surface rounded-xl border border-borde shadow-lg p-1"
-              >
-                <p className="px-3 py-2 text-xs font-semibold text-texto-muted uppercase tracking-wider">
-                  Mis entidades
-                </p>
-                {usuario.entidades.map((entidad) => (
-                  <DropdownMenu.Item
-                    key={entidad.codigo_entidad}
-                    onSelect={() => handleCambiarEntidad(entidad.codigo_entidad)}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer',
-                      'hover:bg-primario-muy-claro hover:text-primario outline-none transition-colors',
-                      entidad.codigo_entidad === usuario.entidad_activa
-                        ? 'text-primario font-medium bg-primario-muy-claro'
-                        : 'text-texto'
-                    )}
-                  >
-                    <Check
-                      size={14}
-                      className={cn(
-                        'shrink-0',
-                        entidad.codigo_entidad === usuario.entidad_activa
-                          ? 'opacity-100'
-                          : 'opacity-0'
-                      )}
+      {/* Modal Mis Parámetros */}
+      <Modal abierto={modalParametros} alCerrar={() => setModalParametros(false)} titulo="Mis parametros">
+        <div className="flex flex-col gap-4">
+          {/* Lista de parámetros existentes */}
+          {cargandoParametros ? (
+            <div className="flex flex-col gap-2">
+              {[1, 2].map((i) => <div key={i} className="h-10 bg-fondo rounded-lg animate-pulse" />)}
+            </div>
+          ) : parametros.length === 0 ? (
+            <p className="text-sm text-texto-muted text-center py-4">No tienes parametros configurados</p>
+          ) : (
+            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+              {parametros.map((p) => (
+                <div key={`${p.categoria_parametro}/${p.tipo_parametro}`} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-borde bg-surface">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-texto truncate">{p.categoria_parametro} / {p.tipo_parametro}</p>
+                    <input
+                      type="text"
+                      defaultValue={p.valor_parametro}
+                      onBlur={(e) => {
+                        if (e.target.value !== p.valor_parametro) {
+                          guardarParametro(p.categoria_parametro, p.tipo_parametro, e.target.value)
+                        }
+                      }}
+                      className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5"
                     />
-                    <span className="truncate">{entidad.nombre}</span>
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Notificaciones (placeholder) */}
-        <button className="p-2 rounded-lg hover:bg-fondo text-texto-muted hover:text-texto transition-colors relative">
-          <Bell size={18} />
-        </button>
+          {/* Agregar nuevo parámetro */}
+          <div className="border-t border-borde pt-3">
+            <p className="text-xs font-semibold text-texto-muted uppercase tracking-wider mb-2">Agregar parametro</p>
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <input
+                  type="text"
+                  placeholder="Categoria"
+                  value={nuevoParam.categoria_parametro}
+                  onChange={(e) => setNuevoParam({ ...nuevoParam, categoria_parametro: e.target.value.toUpperCase() })}
+                  className="rounded-lg border border-borde bg-surface px-2 py-1.5 text-xs text-texto focus:outline-none focus:ring-1 focus:ring-primario"
+                />
+                <input
+                  type="text"
+                  placeholder="Tipo"
+                  value={nuevoParam.tipo_parametro}
+                  onChange={(e) => setNuevoParam({ ...nuevoParam, tipo_parametro: e.target.value.toUpperCase() })}
+                  className="rounded-lg border border-borde bg-surface px-2 py-1.5 text-xs text-texto focus:outline-none focus:ring-1 focus:ring-primario"
+                />
+                <input
+                  type="text"
+                  placeholder="Valor"
+                  value={nuevoParam.valor_parametro}
+                  onChange={(e) => setNuevoParam({ ...nuevoParam, valor_parametro: e.target.value })}
+                  className="rounded-lg border border-borde bg-surface px-2 py-1.5 text-xs text-texto focus:outline-none focus:ring-1 focus:ring-primario"
+                />
+              </div>
+              <Boton variante="contorno" tamano="sm" onClick={agregarParametro} cargando={guardandoParametro}>
+                Agregar
+              </Boton>
+            </div>
+          </div>
 
-        {/* Avatar del usuario */}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-fondo transition-colors focus:outline-none">
-              <Avatar.Root className="h-8 w-8 rounded-full bg-secundario flex items-center justify-center shrink-0">
-                <Avatar.Fallback className="text-white text-xs font-semibold">{iniciales}</Avatar.Fallback>
-              </Avatar.Root>
-              <div className="text-left hidden sm:block">
-                <p className="text-xs font-medium text-texto leading-none truncate max-w-[120px]">
-                  {usuario?.nombre}
-                </p>
-                <p className="text-[11px] text-texto-muted truncate max-w-[120px]">
-                  {usuario?.rol_principal}
-                </p>
-              </div>
-            </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              align="end"
-              sideOffset={8}
-              className="z-50 min-w-[180px] bg-surface rounded-xl border border-borde shadow-lg p-1"
-            >
-              <div className="px-3 py-2 border-b border-borde mb-1">
-                <p className="text-sm font-medium text-texto truncate">{usuario?.nombre}</p>
-                <p className="text-xs text-texto-muted truncate">{usuario?.codigo_usuario}</p>
-              </div>
-              <DropdownMenu.Item
-                onSelect={() => window.location.href = '/parametros#mis-parametros'}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-texto hover:bg-fondo cursor-pointer outline-none"
-              >
-                <Settings size={14} className="shrink-0" />
-                Mis Parametros
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onSelect={() => window.location.href = '/parametros#mi-cuenta'}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-texto hover:bg-fondo cursor-pointer outline-none"
-              >
-                Mi cuenta
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator className="h-px bg-borde my-1" />
-              <DropdownMenu.Item
-                onSelect={() => logout()}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-error hover:bg-red-50 cursor-pointer outline-none"
-              >
-                <LogOut size={14} className="shrink-0" />
-                Cerrar sesion
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-      </div>
-    </header>
+          {errorParametros && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorParametros}</p></div>}
+          {exitoParametros && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoParametros}</p></div>}
+          <div className="flex justify-end pt-2">
+            <Boton variante="contorno" onClick={() => setModalParametros(false)}>Cerrar</Boton>
+          </div>
+        </div>
+      </Modal>
+    </>
   )
 }
