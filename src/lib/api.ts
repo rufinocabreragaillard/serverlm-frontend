@@ -74,11 +74,15 @@ export const usuariosApi = {
   quitarRol: (id: string, codigoRol: string) =>
     api.delete(`/usuarios/${id}/roles/${codigoRol}`),
   listarEntidades: (id: string) =>
-    api.get<{ codigo_entidad: string; entidades: { nombre: string; activo: boolean } }[]>(
+    api.get<{ codigo_entidad: string; codigo_grupo: string; codigo_area?: string; entidades: { nombre: string; activo: boolean } }[]>(
       `/usuarios/${id}/entidades`
     ).then((r) => r.data),
-  asignarEntidad: (id: string, codigoEntidad: string, codigoGrupo: string) =>
-    api.post(`/usuarios/${id}/entidades`, { codigo_entidad: codigoEntidad, codigo_grupo: codigoGrupo }),
+  asignarEntidad: (id: string, codigoEntidad: string, codigoGrupo: string, codigoArea?: string) =>
+    api.post(`/usuarios/${id}/entidades`, {
+      codigo_entidad: codigoEntidad,
+      codigo_grupo: codigoGrupo,
+      ...(codigoArea ? { codigo_area: codigoArea } : {}),
+    }),
   quitarEntidad: (id: string, codigoEntidad: string) =>
     api.delete(`/usuarios/${id}/entidades/${codigoEntidad}`),
   listarGrupos: (id: string) =>
@@ -137,6 +141,8 @@ export const entidadesApi = {
     api.get(`/entidades/${idEntidad}/parametros`).then((r) => r.data),
   upsertParametro: (idEntidad: string, datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>
     api.put(`/entidades/${idEntidad}/parametros`, datos),
+  eliminarParametro: (idEntidad: string, categoria: string, tipo: string) =>
+    api.delete(`/entidades/${idEntidad}/parametros/${categoria}/${tipo}`),
 }
 
 // ─── Grupos de Entidades ──────────────────────────────────────────────────────
@@ -168,16 +174,22 @@ export const parametrosApi = {
     api.put(`/parametros/generales/${codigo}`, { valor }),
   upsertGenerales: (datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>
     api.put('/parametros/generales', datos),
+  eliminarGeneral: (categoria: string, tipo: string) =>
+    api.delete(`/parametros/generales/${categoria}/${tipo}`),
   listarGrupo: () =>
     api.get('/parametros/grupo').then((r) => r.data),
   upsertGrupo: (datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>
     api.put('/parametros/grupo', datos),
+  eliminarGrupo: (categoria: string, tipo: string) =>
+    api.delete(`/parametros/grupo/${categoria}/${tipo}`),
   listarUsuario: () =>
     api.get<ParametroUsuario[]>('/parametros/usuario').then((r) => r.data),
   actualizarUsuario: (codigo: string, valor: string) =>
     api.put(`/parametros/usuario/${codigo}`, { valor }),
   upsertUsuario: (datos: { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }) =>
     api.put('/parametros/usuario', datos),
+  eliminarUsuario: (categoria: string, tipo: string) =>
+    api.delete(`/parametros/usuario/${categoria}/${tipo}`),
 }
 
 // ─── Auditoría ────────────────────────────────────────────────────────────────

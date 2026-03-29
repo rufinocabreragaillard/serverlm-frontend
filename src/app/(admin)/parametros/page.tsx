@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Save, SlidersHorizontal, Layers, Building2, User } from 'lucide-react'
+import { Save, SlidersHorizontal, Layers, Building2, User, Trash2 } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
-import { Input } from '@/components/ui/input'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaDescripcion, TarjetaContenido } from '@/components/ui/tarjeta'
 import { useAuth } from '@/context/AuthContext'
-import { parametrosApi, entidadesApi } from '@/lib/api'
+import { parametrosApi, entidadesApi, datosBasicosApi } from '@/lib/api'
+import type { CategoriaParametro, TipoParametro } from '@/lib/tipos'
 
 type TabId = 'generales' | 'grupo' | 'entidad' | 'usuario'
 
@@ -37,8 +37,16 @@ export default function PaginaParametros() {
   const [paramsUsuario, setParamsUsuario] = useState<ParametroRow[]>([])
   const [cargandoUsuario, setCargandoUsuario] = useState(false)
 
+  // Categorías y tipos (para dropdowns al agregar)
+  const [categorias, setCategorias] = useState<CategoriaParametro[]>([])
+  const [tiposPorCat, setTiposPorCat] = useState<TipoParametro[]>([])
+
   // Nuevo parámetro (para grupo, entidad, usuario)
-  const [nuevoParam, setNuevoParam] = useState({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
+  const [nuevoParam, setNuevoParam] = useState({
+    categoria_parametro: '',
+    tipo_parametro: '',
+    valor_parametro: '',
+  })
 
   const [guardando, setGuardando] = useState<string | null>(null)
   const [mensajeExito, setMensajeExito] = useState('')
@@ -50,12 +58,24 @@ export default function PaginaParametros() {
     setTimeout(() => setMensajeExito(''), 3000)
   }
 
+  // ── Cargar categorías y tipos para los dropdowns ───────────────────────────
+  useEffect(() => {
+    datosBasicosApi.listarCategorias().then(setCategorias).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!nuevoParam.categoria_parametro) {
+      setTiposPorCat([])
+      return
+    }
+    datosBasicosApi.listarTipos(nuevoParam.categoria_parametro).then(setTiposPorCat).catch(() => {})
+  }, [nuevoParam.categoria_parametro])
+
   // ── Cargar Generales ──────────────────────────────────────────────────────
   const cargarGenerales = useCallback(async () => {
     setCargandoGenerales(true)
     try {
       const data = await parametrosApi.listarGenerales()
-      // El backend devuelve formato diferente, mapeamos
       setParamsGenerales(data.map((p: Record<string, string>) => ({
         categoria_parametro: p.categoria_parametro,
         tipo_parametro: p.tipo_parametro,
@@ -101,6 +121,13 @@ export default function PaginaParametros() {
     finally { setCargandoUsuario(false) }
   }, [])
 
+  const recargar = useCallback(() => {
+    if (tabActiva === 'generales') cargarGenerales()
+    else if (tabActiva === 'grupo') cargarGrupo()
+    else if (tabActiva === 'entidad') cargarEntidad()
+    else cargarUsuario()
+  }, [tabActiva, cargarGenerales, cargarGrupo, cargarEntidad, cargarUsuario])
+
   useEffect(() => {
     if (tabActiva === 'generales') cargarGenerales()
     else if (tabActiva === 'grupo') cargarGrupo()
@@ -132,6 +159,27 @@ export default function PaginaParametros() {
     }
   }
 
+  // ── Eliminar parámetro ────────────────────────────────────────────────────
+  const eliminarParam = async (cat: string, tipo: string) => {
+    if (!confirm(`¿Eliminar el parámetro ${cat} / ${tipo}?\nEsta acción no se puede deshacer.`)) return
+    setError('')
+    try {
+      if (tabActiva === 'generales') {
+        await parametrosApi.eliminarGeneral(cat, tipo)
+      } else if (tabActiva === 'grupo') {
+        await parametrosApi.eliminarGrupo(cat, tipo)
+      } else if (tabActiva === 'entidad' && usuario?.entidad_activa) {
+        await entidadesApi.eliminarParametro(usuario.entidad_activa, cat, tipo)
+      } else if (tabActiva === 'usuario') {
+        await parametrosApi.eliminarUsuario(cat, tipo)
+      }
+      mostrarExito('Parámetro eliminado')
+      recargar()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al eliminar')
+    }
+  }
+
   // ── Agregar nuevo parámetro ───────────────────────────────────────────────
   const agregarNuevo = async () => {
     if (!nuevoParam.categoria_parametro || !nuevoParam.tipo_parametro || !nuevoParam.valor_parametro) {
@@ -140,11 +188,7 @@ export default function PaginaParametros() {
     }
     await guardarInline(tabActiva, nuevoParam.categoria_parametro, nuevoParam.tipo_parametro, nuevoParam.valor_parametro)
     setNuevoParam({ categoria_parametro: '', tipo_parametro: '', valor_parametro: '' })
-    // Recargar
-    if (tabActiva === 'generales') cargarGenerales()
-    else if (tabActiva === 'grupo') cargarGrupo()
-    else if (tabActiva === 'entidad') cargarEntidad()
-    else if (tabActiva === 'usuario') cargarUsuario()
+    recargar()
   }
 
   // ── Tabs config ───────────────────────────────────────────────────────────
@@ -187,6 +231,15 @@ export default function PaginaParametros() {
   }
 
   const puedeAgregar = tabActiva !== 'generales' || esAdmin()
+
+  // Tipos filtrados por categoría seleccionada y los ya asignados
+  const tiposDisponibles = tiposPorCat.filter(
+    (t) => !getParams().some(
+      (p) => p.categoria_parametro === t.categoria_parametro && p.tipo_parametro === t.tipo_parametro
+    )
+  )
+
+  const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50'
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
@@ -251,8 +304,10 @@ export default function PaginaParametros() {
                 return (
                   <div key={key} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-borde bg-surface">
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-texto-muted mb-1">
-                        {p.categoria_parametro} / {p.tipo_parametro}
+                      <p className="text-xs font-semibold text-texto-muted mb-1">
+                        {p.categoria_parametro}
+                        <span className="mx-1 text-texto-light">/</span>
+                        {p.tipo_parametro}
                       </p>
                       <input
                         type="text"
@@ -265,6 +320,7 @@ export default function PaginaParametros() {
                         className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5"
                       />
                     </div>
+                    {/* Guardar */}
                     <button
                       onClick={(e) => {
                         const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement)
@@ -276,6 +332,14 @@ export default function PaginaParametros() {
                     >
                       <Save size={14} />
                     </button>
+                    {/* Eliminar */}
+                    <button
+                      onClick={() => eliminarParam(p.categoria_parametro, p.tipo_parametro)}
+                      className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
+                      title="Eliminar parámetro"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 )
               })}
@@ -285,34 +349,59 @@ export default function PaginaParametros() {
           {/* Agregar nuevo parámetro */}
           {puedeAgregar && (
             <div className="border-t border-borde mt-4 pt-4">
-              <p className="text-xs font-semibold text-texto-muted uppercase tracking-wider mb-2">Agregar parámetro</p>
+              <p className="text-xs font-semibold text-texto-muted uppercase tracking-wider mb-3">
+                Agregar parámetro
+              </p>
               <div className="flex flex-col gap-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <input
-                    type="text"
-                    placeholder="Categoría"
+                {/* Fila 1: Categoría y Tipo (dropdowns) */}
+                <div className="grid grid-cols-2 gap-2">
+                  <select
                     value={nuevoParam.categoria_parametro}
-                    onChange={(e) => setNuevoParam({ ...nuevoParam, categoria_parametro: e.target.value.toUpperCase() })}
-                    className="rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Tipo"
+                    onChange={(e) =>
+                      setNuevoParam({ categoria_parametro: e.target.value, tipo_parametro: '', valor_parametro: nuevoParam.valor_parametro })
+                    }
+                    className={selectClass}
+                  >
+                    <option value="">Categoría...</option>
+                    {categorias.filter((c) => c.activo).map((c) => (
+                      <option key={c.categoria_parametro} value={c.categoria_parametro}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <select
                     value={nuevoParam.tipo_parametro}
-                    onChange={(e) => setNuevoParam({ ...nuevoParam, tipo_parametro: e.target.value.toUpperCase() })}
-                    className="rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario"
-                  />
+                    onChange={(e) => setNuevoParam({ ...nuevoParam, tipo_parametro: e.target.value })}
+                    disabled={!nuevoParam.categoria_parametro}
+                    className={selectClass}
+                  >
+                    <option value="">Tipo...</option>
+                    {tiposDisponibles.map((t) => (
+                      <option key={t.tipo_parametro} value={t.tipo_parametro}>
+                        {t.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {/* Fila 2: Valor y botón */}
+                <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Valor"
+                    placeholder="Valor del parámetro"
                     value={nuevoParam.valor_parametro}
                     onChange={(e) => setNuevoParam({ ...nuevoParam, valor_parametro: e.target.value })}
-                    className="rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario"
+                    className="flex-1 rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario"
                   />
+                  <Boton
+                    variante="contorno"
+                    tamano="sm"
+                    onClick={agregarNuevo}
+                    cargando={guardando === 'nuevo'}
+                    disabled={!nuevoParam.categoria_parametro || !nuevoParam.tipo_parametro || !nuevoParam.valor_parametro}
+                  >
+                    Agregar
+                  </Boton>
                 </div>
-                <Boton variante="contorno" tamano="sm" onClick={agregarNuevo} cargando={guardando === 'nuevo'}>
-                  Agregar
-                </Boton>
               </div>
             </div>
           )}

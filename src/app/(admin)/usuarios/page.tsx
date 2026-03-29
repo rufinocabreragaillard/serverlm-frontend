@@ -9,10 +9,15 @@ import { Modal } from '@/components/ui/modal'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { usuariosApi, rolesApi, entidadesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
-import type { Usuario, Rol, Entidad } from '@/lib/tipos'
+import type { Usuario, Rol, Entidad, Area } from '@/lib/tipos'
 
 type RolAsignado = { codigo_rol: string; roles: { nombre: string; activo: boolean } }
-type EntidadAsignada = { codigo_entidad: string; entidades: { nombre: string; activo: boolean } }
+type EntidadAsignada = {
+  codigo_entidad: string
+  codigo_grupo: string
+  codigo_area?: string
+  entidades: { nombre: string; activo: boolean }
+}
 
 export default function PaginaUsuarios() {
   const { usuario: usuarioActual } = useAuth()
@@ -42,6 +47,11 @@ export default function PaginaUsuarios() {
   const [cargandoEntidades, setCargandoEntidades] = useState(false)
   const [entidadNueva, setEntidadNueva] = useState('')
   const [asignandoEntidad, setAsignandoEntidad] = useState(false)
+
+  // Áreas de la entidad seleccionada para asignar
+  const [areasParaEntidad, setAreasParaEntidad] = useState<Area[]>([])
+  const [areaNueva, setAreaNueva] = useState('')
+  const [cargandoAreas, setCargandoAreas] = useState(false)
 
   // Formulario
   const [form, setForm] = useState({
@@ -73,6 +83,21 @@ export default function PaginaUsuarios() {
     (u.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
     (u.codigo_usuario || '').toLowerCase().includes(busqueda.toLowerCase())
   )
+
+  // Cargar áreas cuando cambia la entidad seleccionada
+  useEffect(() => {
+    if (!entidadNueva) {
+      setAreasParaEntidad([])
+      setAreaNueva('')
+      return
+    }
+    setCargandoAreas(true)
+    entidadesApi.listarAreas(entidadNueva)
+      .then(setAreasParaEntidad)
+      .catch(() => setAreasParaEntidad([]))
+      .finally(() => setCargandoAreas(false))
+    setAreaNueva('')
+  }, [entidadNueva])
 
   const abrirNuevo = () => {
     setUsuarioEditando(null)
@@ -130,6 +155,8 @@ export default function PaginaUsuarios() {
     setTabActiva('datos')
     setRolNuevo('')
     setEntidadNueva('')
+    setAreaNueva('')
+    setAreasParaEntidad([])
     cargarRolesUsuario(u.codigo_usuario)
     cargarEntidadesUsuario(u.codigo_usuario)
     setModalAbierto(true)
@@ -195,8 +222,15 @@ export default function PaginaUsuarios() {
     if (!entidadNueva || !usuarioEditando) return
     setAsignandoEntidad(true)
     try {
-      await usuariosApi.asignarEntidad(usuarioEditando.codigo_usuario, entidadNueva, grupoActivo)
+      await usuariosApi.asignarEntidad(
+        usuarioEditando.codigo_usuario,
+        entidadNueva,
+        grupoActivo,
+        areaNueva || undefined,
+      )
       setEntidadNueva('')
+      setAreaNueva('')
+      setAreasParaEntidad([])
       cargarEntidadesUsuario(usuarioEditando.codigo_usuario)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al asignar entidad')
@@ -566,28 +600,44 @@ export default function PaginaUsuarios() {
           {tabActiva === 'entidades' && usuarioEditando && (
             <div className="flex flex-col gap-4">
               {/* Asignar nueva entidad */}
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <select
-                    value={entidadNueva}
-                    onChange={(e) => setEntidadNueva(e.target.value)}
-                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <select
+                      value={entidadNueva}
+                      onChange={(e) => setEntidadNueva(e.target.value)}
+                      className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                    >
+                      <option value="">Seleccionar entidad...</option>
+                      {entidadesDisponibles.map((e) => (
+                        <option key={e.codigo_entidad} value={e.codigo_entidad}>{e.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <Boton
+                    variante="primario"
+                    onClick={asignarEntidad}
+                    cargando={asignandoEntidad}
+                    disabled={!entidadNueva}
                   >
-                    <option value="">Seleccionar entidad...</option>
-                    {entidadesDisponibles.map((e) => (
-                      <option key={e.codigo_entidad} value={e.codigo_entidad}>{e.nombre}</option>
+                    <Plus size={14} />
+                    Asignar
+                  </Boton>
+                </div>
+                {/* Selector de área (opcional) */}
+                {entidadNueva && (
+                  <select
+                    value={areaNueva}
+                    onChange={(e) => setAreaNueva(e.target.value)}
+                    disabled={cargandoAreas}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
+                  >
+                    <option value="">Área (opcional)...</option>
+                    {areasParaEntidad.map((a) => (
+                      <option key={a.codigo_area} value={a.codigo_area}>{a.nombre}</option>
                     ))}
                   </select>
-                </div>
-                <Boton
-                  variante="primario"
-                  onClick={asignarEntidad}
-                  cargando={asignandoEntidad}
-                  disabled={!entidadNueva}
-                >
-                  <Plus size={14} />
-                  Asignar
-                </Boton>
+                )}
               </div>
 
               {/* Lista de entidades asignadas */}
@@ -608,15 +658,20 @@ export default function PaginaUsuarios() {
                       key={ea.codigo_entidad}
                       className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"
                     >
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-sm font-medium text-texto">
                           {ea.entidades?.nombre || ea.codigo_entidad}
                         </span>
                         <span className="ml-2 text-xs text-texto-muted">{ea.codigo_entidad}</span>
+                        {ea.codigo_area && (
+                          <span className="ml-2 text-xs bg-secundario/10 text-secundario px-1.5 py-0.5 rounded">
+                            {ea.codigo_area}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => quitarEntidad(ea.codigo_entidad)}
-                        className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
+                        className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
                         title="Quitar entidad"
                       >
                         <X size={14} />
