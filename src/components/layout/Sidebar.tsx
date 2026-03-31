@@ -28,15 +28,35 @@ interface NavItem {
   requiereSuperAdmin?: boolean
 }
 
-const navegacion: NavItem[] = [
-  { nombre: 'Dashboard', href: '/dashboard', icono: LayoutDashboard },
-  { nombre: 'Usuarios', href: '/usuarios', icono: Users },
-  { nombre: 'Roles y Funciones', href: '/roles', icono: ShieldCheck },
-  { nombre: 'Entidades y Áreas', href: '/entidades', icono: Building2 },
-  { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
-  { nombre: 'Datos Básicos', href: '/datos-basicos', icono: Database, requiereSuperAdmin: true },
-  { nombre: 'Parámetros', href: '/parametros', icono: SlidersHorizontal },
-  { nombre: 'Auditoría', href: '/auditoria', icono: ClipboardList },
+interface NavGrupo {
+  titulo: string
+  items: NavItem[]
+}
+
+const navegacion: NavGrupo[] = [
+  {
+    titulo: 'Operación',
+    items: [
+      { nombre: 'Dashboard', href: '/dashboard', icono: LayoutDashboard },
+      { nombre: 'Usuarios', href: '/usuarios', icono: Users },
+    ],
+  },
+  {
+    titulo: 'Configuración',
+    items: [
+      { nombre: 'Roles y Funciones', href: '/roles', icono: ShieldCheck },
+      { nombre: 'Entidades y Áreas', href: '/entidades', icono: Building2 },
+      { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
+    ],
+  },
+  {
+    titulo: 'Básicos',
+    items: [
+      { nombre: 'Datos Básicos', href: '/datos-basicos', icono: Database, requiereSuperAdmin: true },
+      { nombre: 'Parámetros', href: '/parametros', icono: SlidersHorizontal },
+      { nombre: 'Auditoría', href: '/auditoria', icono: ClipboardList },
+    ],
+  },
 ]
 
 export function Sidebar() {
@@ -82,25 +102,40 @@ export function Sidebar() {
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 py-4 px-2 flex flex-col gap-1 overflow-y-auto">
-        {navegacion.filter((item) => !item.requiereSuperAdmin || esSuperAdmin()).map((item) => {
-          const activo = pathname === item.href || pathname.startsWith(item.href + '/')
-          const Icono = item.icono
+      <nav className="flex-1 py-4 px-2 flex flex-col gap-4 overflow-y-auto">
+        {navegacion.map((grupo) => {
+          const itemsVisibles = grupo.items.filter((item) => !item.requiereSuperAdmin || esSuperAdmin())
+          if (itemsVisibles.length === 0) return null
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium',
-                activo
-                  ? 'bg-sidebar-activo text-white'
-                  : 'text-sidebar-texto-muted hover:bg-sidebar-hover hover:text-white'
+            <div key={grupo.titulo}>
+              {!colapsado && (
+                <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-texto-muted">
+                  {grupo.titulo}
+                </span>
               )}
-              title={colapsado ? item.nombre : undefined}
-            >
-              <Icono size={18} className="shrink-0" />
-              {!colapsado && <span>{item.nombre}</span>}
-            </Link>
+              <div className="flex flex-col gap-1 mt-1">
+                {itemsVisibles.map((item) => {
+                  const activo = pathname === item.href || pathname.startsWith(item.href + '/')
+                  const Icono = item.icono
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium',
+                        activo
+                          ? 'bg-sidebar-activo text-white'
+                          : 'text-sidebar-texto-muted hover:bg-sidebar-hover hover:text-white'
+                      )}
+                      title={colapsado ? item.nombre : undefined}
+                    >
+                      <Icono size={18} className="shrink-0" />
+                      {!colapsado && <span>{item.nombre}</span>}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
           )
         })}
       </nav>
