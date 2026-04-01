@@ -115,14 +115,13 @@ export default function PaginaEntidades() {
     }
   }
 
-  // Áreas filtradas y ordenadas por nombre
+  // Áreas filtradas (mantiene orden jerárquico de la función SQL)
   const areasFiltradas = areas
     .filter((a) =>
       a.nombre.toLowerCase().includes(busquedaAreas.toLowerCase()) ||
       a.codigo_area.toLowerCase().includes(busquedaAreas.toLowerCase()) ||
       (a.usuario_responsable || '').toLowerCase().includes(busquedaAreas.toLowerCase())
     )
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
@@ -215,6 +214,7 @@ export default function PaginaEntidades() {
                       { titulo: 'Código área', campo: 'codigo_area' },
                       { titulo: 'Nombre', campo: 'nombre' },
                       { titulo: 'Área superior', campo: 'codigo_area_superior' },
+                      { titulo: 'Nivel', campo: 'nivel' },
                       { titulo: 'Descripción', campo: 'descripcion' },
                       { titulo: 'Responsable', campo: 'usuario_responsable' },
                       { titulo: 'Estado', campo: 'activo', formato: (v) => v === false ? 'Inactivo' : 'Activo' },
@@ -270,7 +270,12 @@ export default function PaginaEntidades() {
                     ) : areasFiltradas.map((a) => (
                       <TablaFila key={a.codigo_area}>
                         <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{a.codigo_area}</code></TablaTd>
-                        <TablaTd className="font-medium">{a.nombre}</TablaTd>
+                        <TablaTd>
+                          <span className="font-medium" style={{ paddingLeft: `${(a.nivel || 0) * 1.25}rem` }}>
+                            {(a.nivel || 0) > 0 && <span className="text-texto-muted mr-1">└</span>}
+                            {a.nombre}
+                          </span>
+                        </TablaTd>
                         <TablaTd className="text-texto-muted text-xs">{a.codigo_area_superior || '—'}</TablaTd>
                         <TablaTd className="text-texto-muted text-xs">{a.usuario_responsable || '—'}</TablaTd>
                       </TablaFila>
@@ -315,9 +320,9 @@ export default function PaginaEntidades() {
               className={selectClass}
             >
               <option value="">Sin área superior</option>
-              {areas.map((a) => (
+              {areas.filter((a) => a.codigo_area !== formArea.codigo_area).map((a) => (
                 <option key={a.codigo_area} value={a.codigo_area}>
-                  {a.nombre} ({a.codigo_area})
+                  {'—'.repeat(a.nivel || 0)} {a.nombre} ({a.codigo_area})
                 </option>
               ))}
             </select>

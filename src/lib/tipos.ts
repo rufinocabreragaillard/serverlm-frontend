@@ -65,6 +65,7 @@ export interface Area {
   usuario_responsable?: string
   codigo_area_superior?: string
   activo: boolean
+  nivel?: number
 }
 
 // ─── Usuarios ────────────────────────────────────────────────────────────────
