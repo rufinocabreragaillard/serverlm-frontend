@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star, Phone, PhoneOff } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star, Phone, PhoneOff, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -11,6 +11,7 @@ import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '
 import { usuariosApi, rolesApi, entidadesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Usuario, Rol, Entidad, Area } from '@/lib/tipos'
+import { exportarExcel } from '@/lib/exportar-excel'
 
 type RolAsignado = { codigo_grupo: string; codigo_rol: string; roles: { nombre: string; activo: boolean } }
 type GrupoAsignado = { codigo_grupo: string; grupos_entidades: { nombre: string; activo: boolean } }
@@ -373,14 +374,35 @@ export default function PaginaUsuarios() {
         </Boton>
       </div>
 
-      {/* Búsqueda */}
-      <div className="max-w-sm">
-        <Input
-          placeholder="Buscar por nombre o correo..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          icono={<Search size={15} />}
-        />
+      {/* Búsqueda + Exportar */}
+      <div className="flex items-center gap-3">
+        <div className="max-w-sm flex-1">
+          <Input
+            placeholder="Buscar por nombre o correo..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            icono={<Search size={15} />}
+          />
+        </div>
+        <Boton
+          variante="contorno"
+          tamano="sm"
+          onClick={() => exportarExcel(usuariosFiltrados as Record<string, unknown>[], [
+            { titulo: 'Correo', campo: 'codigo_usuario' },
+            { titulo: 'Nombre', campo: 'nombre' },
+            { titulo: 'Teléfono', campo: 'telefono' },
+            { titulo: 'Rol principal', campo: 'rol_principal' },
+            { titulo: 'Grupo por defecto', campo: 'grupo_por_defecto' },
+            { titulo: 'Entidad por defecto', campo: 'entidad_por_defecto' },
+            { titulo: 'Área por defecto', campo: 'codigo_area_por_defecto' },
+            { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+            { titulo: 'Último acceso', campo: 'ultimo_acceso', formato: (v) => v ? new Date(v as string).toLocaleString('es-CL') : '' },
+          ], `usuarios_${grupoActivo || 'todos'}`)}
+          disabled={usuariosFiltrados.length === 0}
+        >
+          <Download size={15} />
+          Excel
+        </Boton>
       </div>
 
       {errorCarga && (

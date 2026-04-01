@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, X, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -12,6 +12,7 @@ import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/com
 import { rolesApi, funcionesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Rol, Funcion } from '@/lib/tipos'
+import { exportarExcel } from '@/lib/exportar-excel'
 
 type FuncionAsignada = { codigo_funcion: string; funciones: { nombre_funcion: string; activo: boolean } }
 
@@ -219,7 +220,24 @@ export default function PaginaRoles() {
       {/* Contenido */}
       {tabActiva === 'roles' && (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Boton
+              variante="contorno"
+              tamano="sm"
+              onClick={() => exportarExcel(roles as Record<string, unknown>[], [
+                { titulo: 'Grupo', campo: 'codigo_grupo' },
+                { titulo: 'Código', campo: 'codigo_rol' },
+                { titulo: 'Nombre', campo: 'nombre' },
+                { titulo: 'Descripción', campo: 'descripcion' },
+                { titulo: 'URL inicio', campo: 'url_inicio' },
+                { titulo: 'Fn. por defecto', campo: 'funcion_por_defecto' },
+                { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+              ], `roles_${grupoActivo || 'todos'}`)}
+              disabled={roles.length === 0}
+            >
+              <Download size={15} />
+              Excel
+            </Boton>
             <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />Nuevo rol</Boton>
           </div>
           <Tabla>
@@ -258,7 +276,25 @@ export default function PaginaRoles() {
 
       {tabActiva === 'funciones' && (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Boton
+              variante="contorno"
+              tamano="sm"
+              onClick={() => exportarExcel(funciones as Record<string, unknown>[], [
+                { titulo: 'Código', campo: 'codigo_funcion' },
+                { titulo: 'Alias', campo: 'alias_de_funcion' },
+                { titulo: 'Nombre', campo: 'nombre' },
+                { titulo: 'Descripción', campo: 'descripcion' },
+                { titulo: 'Icono', campo: 'icono_de_funcion' },
+                { titulo: 'URL función', campo: 'url_funcion' },
+                { titulo: 'Grupo', campo: 'codigo_grupo' },
+                { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activa' : 'Inactiva' },
+              ], `funciones_${grupoActivo || 'todos'}`)}
+              disabled={funciones.length === 0}
+            >
+              <Download size={15} />
+              Excel
+            </Boton>
             <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />Nueva función</Boton>
           </div>
           <Tabla>

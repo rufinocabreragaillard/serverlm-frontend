@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Check, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -10,6 +10,7 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { datosBasicosApi } from '@/lib/api'
 import type { CategoriaParametro, TipoParametro } from '@/lib/tipos'
+import { exportarExcel } from '@/lib/exportar-excel'
 
 type TabId = 'categorias' | 'tipos'
 
@@ -235,10 +236,26 @@ export default function PaginaDatosBasicos() {
             <p className="text-sm text-texto-muted">
               Define las categorías que agrupan los parámetros (ej: MENSAJERIA_EMAIL, SEGURIDAD, etc.)
             </p>
-            <Boton variante="primario" onClick={abrirNuevaCat}>
-              <Plus size={16} />
-              Nueva categoría
-            </Boton>
+            <div className="flex gap-2">
+              <Boton
+                variante="contorno"
+                tamano="sm"
+                onClick={() => exportarExcel(categorias as Record<string, unknown>[], [
+                  { titulo: 'Código', campo: 'categoria_parametro' },
+                  { titulo: 'Nombre', campo: 'nombre' },
+                  { titulo: 'Descripción', campo: 'descripcion' },
+                  { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+                ], 'categorias_parametros')}
+                disabled={categorias.length === 0}
+              >
+                <Download size={15} />
+                Excel
+              </Boton>
+              <Boton variante="primario" onClick={abrirNuevaCat}>
+                <Plus size={16} />
+                Nueva categoría
+              </Boton>
+            </div>
           </div>
 
           {cargandoCat ? (
@@ -330,10 +347,27 @@ export default function PaginaDatosBasicos() {
                 ))}
               </select>
             </div>
-            <Boton variante="primario" onClick={abrirNuevoTipo}>
-              <Plus size={16} />
-              Nuevo tipo
-            </Boton>
+            <div className="flex gap-2">
+              <Boton
+                variante="contorno"
+                tamano="sm"
+                onClick={() => exportarExcel(tiposFiltrados as Record<string, unknown>[], [
+                  { titulo: 'Categoría', campo: 'categoria_parametro' },
+                  { titulo: 'Código tipo', campo: 'tipo_parametro' },
+                  { titulo: 'Nombre', campo: 'nombre' },
+                  { titulo: 'Descripción', campo: 'descripcion' },
+                  { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+                ], `tipos_parametros${filtroCat ? '_' + filtroCat : ''}`)}
+                disabled={tiposFiltrados.length === 0}
+              >
+                <Download size={15} />
+                Excel
+              </Boton>
+              <Boton variante="primario" onClick={abrirNuevoTipo}>
+                <Plus size={16} />
+                Nuevo tipo
+              </Boton>
+            </div>
           </div>
 
           {cargandoTipo ? (

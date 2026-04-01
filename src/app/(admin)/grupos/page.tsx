@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Plus, Pencil, Layers, Users, Building2, X, Search } from 'lucide-react'
+import { Plus, Pencil, Layers, Users, Building2, X, Search, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -11,6 +11,7 @@ import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '
 import { gruposApi, usuariosApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Grupo, Entidad, Usuario } from '@/lib/tipos'
+import { exportarExcel } from '@/lib/exportar-excel'
 
 type UsuarioGrupo = { codigo_usuario: string; fecha_alta?: string; usuarios?: { nombre: string; activo: boolean } }
 
@@ -220,8 +221,40 @@ export default function PaginaGrupos() {
           {grupoSeleccionado ? (
             <Tarjeta>
               <div className="px-6 py-4 border-b border-borde">
-                <h3 className="text-sm font-semibold text-texto">{grupoSeleccionado.nombre}</h3>
-                <p className="text-xs text-texto-muted mt-0.5">Codigo: {grupoSeleccionado.codigo_grupo}</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-texto">{grupoSeleccionado.nombre}</h3>
+                    <p className="text-xs text-texto-muted mt-0.5">Codigo: {grupoSeleccionado.codigo_grupo}</p>
+                  </div>
+                  <Boton
+                    variante="contorno"
+                    tamano="sm"
+                    onClick={() => {
+                      if (tabActivo === 'entidades') {
+                        exportarExcel(entidadesGrupo as Record<string, unknown>[], [
+                          { titulo: 'Grupo', campo: 'codigo_grupo' },
+                          { titulo: 'Código entidad', campo: 'codigo_entidad' },
+                          { titulo: 'Nombre', campo: 'nombre' },
+                          { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+                        ], `entidades_grupo_${grupoSeleccionado.codigo_grupo}`)
+                      } else {
+                        exportarExcel(usuariosGrupo.map((u) => ({
+                          codigo_usuario: u.codigo_usuario,
+                          nombre: u.usuarios?.nombre ?? u.codigo_usuario,
+                          activo: u.usuarios?.activo,
+                        })), [
+                          { titulo: 'Correo', campo: 'codigo_usuario' },
+                          { titulo: 'Nombre', campo: 'nombre' },
+                          { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+                        ], `usuarios_grupo_${grupoSeleccionado.codigo_grupo}`)
+                      }
+                    }}
+                    disabled={tabActivo === 'entidades' ? entidadesGrupo.length === 0 : usuariosGrupo.length === 0}
+                  >
+                    <Download size={14} />
+                    Excel
+                  </Boton>
+                </div>
                 {/* Tabs */}
                 <div className="flex gap-4 mt-3">
                   <button

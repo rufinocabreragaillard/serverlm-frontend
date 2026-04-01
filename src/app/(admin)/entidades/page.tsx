@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Building2, MapPin } from 'lucide-react'
+import { Plus, Pencil, Building2, MapPin, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -11,6 +11,7 @@ import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '
 import { entidadesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Entidad, Area } from '@/lib/tipos'
+import { exportarExcel } from '@/lib/exportar-excel'
 
 export default function PaginaEntidades() {
   const { grupoActivo } = useAuth()
@@ -109,7 +110,25 @@ export default function PaginaEntidades() {
           <h2 className="text-2xl font-bold text-texto">Entidades y Áreas</h2>
           <p className="text-sm text-texto-muted mt-1">Gestión de organizaciones y sus áreas</p>
         </div>
-        <Boton variante="primario" onClick={abrirNuevaEntidad}><Plus size={16} />Nueva entidad</Boton>
+        <div className="flex gap-2">
+          <Boton
+            variante="contorno"
+            tamano="sm"
+            onClick={() => exportarExcel(entidades as Record<string, unknown>[], [
+              { titulo: 'Grupo', campo: 'codigo_grupo' },
+              { titulo: 'Código', campo: 'codigo_entidad' },
+              { titulo: 'Nombre', campo: 'nombre' },
+              { titulo: 'Descripción', campo: 'descripcion' },
+              { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
+              { titulo: 'Fecha creación', campo: 'fecha_creacion', formato: (v) => v ? new Date(v as string).toLocaleString('es-CL') : '' },
+            ], `entidades_${grupoActivo || 'todos'}`)}
+            disabled={entidades.length === 0}
+          >
+            <Download size={15} />
+            Excel
+          </Boton>
+          <Boton variante="primario" onClick={abrirNuevaEntidad}><Plus size={16} />Nueva entidad</Boton>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -166,14 +185,32 @@ export default function PaginaEntidades() {
                     {areas.length} área{areas.length !== 1 ? 's' : ''} configurada{areas.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <Boton
-                  variante="contorno"
-                  tamano="sm"
-                  onClick={() => { setFormArea({ codigo_area: '', nombre: '', descripcion: '' }); setError(''); setModalArea(true) }}
-                >
-                  <Plus size={14} />
-                  Nueva área
-                </Boton>
+                <div className="flex gap-2">
+                  <Boton
+                    variante="contorno"
+                    tamano="sm"
+                    onClick={() => exportarExcel(areas as Record<string, unknown>[], [
+                      { titulo: 'Entidad', campo: 'codigo_entidad' },
+                      { titulo: 'Código área', campo: 'codigo_area' },
+                      { titulo: 'Nombre', campo: 'nombre' },
+                      { titulo: 'Descripción', campo: 'descripcion' },
+                      { titulo: 'Responsable', campo: 'usuario_responsable' },
+                      { titulo: 'Estado', campo: 'activo', formato: (v) => v === false ? 'Inactivo' : 'Activo' },
+                    ], `areas_${entidadSeleccionada?.codigo_entidad || 'sin_entidad'}`)}
+                    disabled={areas.length === 0}
+                  >
+                    <Download size={14} />
+                    Excel
+                  </Boton>
+                  <Boton
+                    variante="contorno"
+                    tamano="sm"
+                    onClick={() => { setFormArea({ codigo_area: '', nombre: '', descripcion: '' }); setError(''); setModalArea(true) }}
+                  >
+                    <Plus size={14} />
+                    Nueva área
+                  </Boton>
+                </div>
               </div>
               <TarjetaContenido className="p-0">
                 <Tabla>

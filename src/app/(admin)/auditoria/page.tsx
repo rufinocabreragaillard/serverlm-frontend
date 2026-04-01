@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, RefreshCw } from 'lucide-react'
+import { Search, RefreshCw, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { auditoriaApi } from '@/lib/api'
 import type { RegistroAuditoria } from '@/lib/tipos'
+import { exportarExcel } from '@/lib/exportar-excel'
 
 export default function PaginaAuditoria() {
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([])
@@ -46,10 +47,29 @@ export default function PaginaAuditoria() {
           <h2 className="text-2xl font-bold text-texto">Auditoría</h2>
           <p className="text-sm text-texto-muted mt-1">{registros.length} registros totales</p>
         </div>
-        <Boton variante="contorno" onClick={cargar} cargando={cargando}>
-          <RefreshCw size={15} />
-          Actualizar
-        </Boton>
+        <div className="flex gap-2">
+          <Boton
+            variante="contorno"
+            tamano="sm"
+            onClick={() => exportarExcel(filtrados as Record<string, unknown>[], [
+              { titulo: 'Fecha y hora', campo: 'fecha_hora', formato: (v) => v ? new Date(v as string).toLocaleString('es-CL') : '' },
+              { titulo: 'Usuario', campo: 'codigo_usuario' },
+              { titulo: 'Tabla', campo: 'tabla_afectada' },
+              { titulo: 'Operación', campo: 'operacion' },
+              { titulo: 'Registro ID', campo: 'codigo_registro' },
+              { titulo: 'Grupo', campo: 'codigo_grupo' },
+              { titulo: 'Entidad', campo: 'codigo_entidad' },
+            ], 'auditoria')}
+            disabled={filtrados.length === 0}
+          >
+            <Download size={15} />
+            Excel
+          </Boton>
+          <Boton variante="contorno" onClick={cargar} cargando={cargando}>
+            <RefreshCw size={15} />
+            Actualizar
+          </Boton>
+        </div>
       </div>
 
       <div className="max-w-sm">
