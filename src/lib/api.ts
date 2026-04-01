@@ -14,6 +14,7 @@ import type {
   RegistroAuditoria,
   CategoriaParametro,
   TipoParametro,
+  Aplicacion,
 } from './tipos'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -95,6 +96,14 @@ export const usuariosApi = {
     api.post(`/usuarios/${id}/grupos`, { codigo_grupo: codigoGrupo }),
   quitarGrupo: (id: string, codigoGrupo: string) =>
     api.delete(`/usuarios/${id}/grupos/${codigoGrupo}`),
+  listarAplicaciones: (id: string) =>
+    api.get<{ codigo_aplicacion: string; aplicaciones: { nombre: string; activo: boolean } }[]>(
+      `/usuarios/${id}/aplicaciones`
+    ).then((r) => r.data),
+  asignarAplicacion: (id: string, codigoApp: string) =>
+    api.post(`/usuarios/${id}/aplicaciones`, { codigo_aplicacion: codigoApp }),
+  quitarAplicacion: (id: string, codigoApp: string) =>
+    api.delete(`/usuarios/${id}/aplicaciones/${codigoApp}`),
 }
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
@@ -127,6 +136,40 @@ export const funcionesApi = {
   actualizar: (id: string, datos: Partial<Funcion>) =>
     api.put<Funcion>(`/funciones/${id}`, datos).then((r) => r.data),
   eliminar: (id: string) => api.delete(`/funciones/${id}`),
+  listarAplicaciones: (id: string) =>
+    api.get<{ codigo_aplicacion: string; aplicaciones: { nombre_aplicacion: string; activo: boolean } }[]>(
+      `/funciones/${id}/aplicaciones`
+    ).then((r) => r.data),
+  asignarAplicacion: (id: string, codigoApp: string) =>
+    api.post(`/funciones/${id}/aplicaciones`, { codigo_aplicacion: codigoApp }),
+  quitarAplicacion: (id: string, codigoApp: string) =>
+    api.delete(`/funciones/${id}/aplicaciones/${codigoApp}`),
+}
+
+// ─── Aplicaciones ─────────────────────────────────────────────────────────────
+
+export const aplicacionesApi = {
+  listar: () => api.get<Aplicacion[]>('/aplicaciones').then((r) => r.data),
+  crear: (datos: Partial<Aplicacion>) => api.post<Aplicacion>('/aplicaciones', datos).then((r) => r.data),
+  actualizar: (id: string, datos: Partial<Aplicacion>) =>
+    api.put<Aplicacion>(`/aplicaciones/${id}`, datos).then((r) => r.data),
+  desactivar: (id: string) => api.delete(`/aplicaciones/${id}`),
+  listarFunciones: (id: string) =>
+    api.get<{ codigo_funcion: string; funciones: { nombre_funcion: string; activo: boolean } }[]>(
+      `/aplicaciones/${id}/funciones`
+    ).then((r) => r.data),
+  asignarFuncion: (id: string, codigoFuncion: string) =>
+    api.post(`/aplicaciones/${id}/funciones`, { codigo_funcion: codigoFuncion }),
+  quitarFuncion: (id: string, codigoFuncion: string) =>
+    api.delete(`/aplicaciones/${id}/funciones/${codigoFuncion}`),
+  listarUsuarios: (id: string) =>
+    api.get<{ codigo_usuario: string; usuarios: { nombre: string; activo: boolean } }[]>(
+      `/aplicaciones/${id}/usuarios`
+    ).then((r) => r.data),
+  asignarUsuario: (id: string, codigoUsuario: string) =>
+    api.post(`/aplicaciones/${id}/usuarios`, { codigo_usuario: codigoUsuario }),
+  quitarUsuario: (id: string, codigoUsuario: string) =>
+    api.delete(`/aplicaciones/${id}/usuarios/${codigoUsuario}`),
 }
 
 // ─── Entidades ────────────────────────────────────────────────────────────────

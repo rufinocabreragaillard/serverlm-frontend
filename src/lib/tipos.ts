@@ -120,6 +120,15 @@ export interface Funcion {
   activo: boolean
 }
 
+// ─── Aplicaciones ────────────────────────────────────────────────────────────
+
+export interface Aplicacion {
+  codigo_aplicacion: string
+  nombre: string
+  descripcion?: string
+  activo: boolean
+}
+
 // ─── Parámetros ──────────────────────────────────────────────────────────────
 
 export interface ParametroGeneral {

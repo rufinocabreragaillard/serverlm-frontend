@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   ClipboardList,
   Database,
+  AppWindow,
   LogOut,
   Menu,
   X,
@@ -45,6 +46,7 @@ const navegacion: NavGrupo[] = [
     titulo: 'Configuración',
     items: [
       { nombre: 'Roles y Funciones', href: '/roles', icono: ShieldCheck },
+      { nombre: 'Aplicaciones', href: '/aplicaciones', icono: AppWindow },
       { nombre: 'Entidades y Áreas', href: '/entidades', icono: Building2 },
       { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
     ],

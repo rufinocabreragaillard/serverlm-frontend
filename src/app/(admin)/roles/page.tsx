@@ -9,9 +9,9 @@ import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/components/ui/tarjeta'
-import { rolesApi, funcionesApi } from '@/lib/api'
+import { rolesApi, funcionesApi, aplicacionesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
-import type { Rol, Funcion } from '@/lib/tipos'
+import type { Rol, Funcion, Aplicacion } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
 type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string; activo: boolean } }
@@ -41,6 +41,14 @@ export default function PaginaRoles() {
   const [modalFuncion, setModalFuncion] = useState(false)
   const [funcionEditando, setFuncionEditando] = useState<Funcion | null>(null)
   const [formFuncion, setFormFuncion] = useState({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '' })
+  const [tabModalFuncion, setTabModalFuncion] = useState<'datos' | 'aplicaciones'>('datos')
+
+  // Aplicaciones de la función en edición
+  const [todasApps, setTodasApps] = useState<Aplicacion[]>([])
+  const [appsFuncion, setAppsFuncion] = useState<{ codigo_aplicacion: string }[]>([])
+  const [cargandoApps, setCargandoApps] = useState(false)
+  const [appNueva, setAppNueva] = useState('')
+  const [asignandoApp, setAsignandoApp] = useState(false)
 
   // Modal confirmar eliminación
   const [confirmacion, setConfirmacion] = useState<{ tipo: 'rol' | 'funcion'; item: Rol | Funcion } | null>(null)
@@ -52,9 +60,10 @@ export default function PaginaRoles() {
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      const [r, f] = await Promise.all([rolesApi.listar(), funcionesApi.listar()])
+      const [r, f, a] = await Promise.all([rolesApi.listar(), funcionesApi.listar(), aplicacionesApi.listar()])
       setRoles(r)
       setFunciones(f)
+      setTodasApps(a)
     } finally {
       setCargando(false)
     }
@@ -194,10 +203,47 @@ export default function PaginaRoles() {
     !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion)
   )
 
+  const cargarAppsFuncion = useCallback(async (codigo: string) => {
+    setCargandoApps(true)
+    try {
+      setAppsFuncion(await funcionesApi.listarAplicaciones(codigo))
+    } catch { setAppsFuncion([]) }
+    finally { setCargandoApps(false) }
+  }, [])
+
+  const asignarAppAFuncion = async () => {
+    if (!appNueva || !funcionEditando) return
+    setAsignandoApp(true)
+    try {
+      await funcionesApi.asignarAplicacion(funcionEditando.codigo_funcion, appNueva)
+      setAppNueva('')
+      cargarAppsFuncion(funcionEditando.codigo_funcion)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al asignar aplicación')
+    } finally {
+      setAsignandoApp(false)
+    }
+  }
+
+  const quitarAppDeFuncion = async (codigoApp: string) => {
+    if (!funcionEditando) return
+    try {
+      await funcionesApi.quitarAplicacion(funcionEditando.codigo_funcion, codigoApp)
+      cargarAppsFuncion(funcionEditando.codigo_funcion)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al quitar aplicación')
+    }
+  }
+
+  const appsDisponiblesFuncion = todasApps.filter((a) =>
+    a.activo && !appsFuncion.some((af) => af.codigo_aplicacion === a.codigo_aplicacion)
+  )
+
   const abrirNuevaFuncion = () => {
     setFuncionEditando(null)
     setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '' })
     setError('')
+    setTabModalFuncion('datos')
     setModalFuncion(true)
   }
 
@@ -205,6 +251,8 @@ export default function PaginaRoles() {
     setFuncionEditando(f)
     setFormFuncion({ codigo_funcion: f.codigo_funcion, nombre: f.nombre, descripcion: f.descripcion || '', url_funcion: f.url_funcion || '', alias_de_funcion: f.alias_de_funcion || '', icono_de_funcion: f.icono_de_funcion || '' })
     setError('')
+    setTabModalFuncion('datos')
+    cargarAppsFuncion(f.codigo_funcion)
     setModalFuncion(true)
   }
 
@@ -558,19 +606,68 @@ export default function PaginaRoles() {
       </Modal>
 
       {/* Modal Función */}
-      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? 'Editar función' : 'Nueva función'}>
+      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? `Editar función: ${funcionEditando.codigo_funcion}` : 'Nueva función'}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Código *" value={formFuncion.codigo_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_funcion: e.target.value.toUpperCase() })} disabled={!!funcionEditando} placeholder="GEST_USUARIOS" />
-          <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
-          <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
-          <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
-          <Input etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
-          <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
-          {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarFuncion} cargando={guardando}>{funcionEditando ? 'Guardar' : 'Crear función'}</Boton>
-          </div>
+          {/* Tabs (solo en edición) */}
+          {funcionEditando && (
+            <div className="flex border-b border-borde -mx-1">
+              <button onClick={() => setTabModalFuncion('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Datos</button>
+              <button onClick={() => setTabModalFuncion('aplicaciones')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'aplicaciones' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Aplicaciones ({appsFuncion.length})</button>
+            </div>
+          )}
+
+          {/* Tab Datos */}
+          {tabModalFuncion === 'datos' && (
+            <>
+              <Input etiqueta="Código *" value={formFuncion.codigo_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_funcion: e.target.value.toUpperCase() })} disabled={!!funcionEditando} placeholder="GEST_USUARIOS" />
+              <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
+              <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
+              <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
+              <Input etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
+              <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
+              {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
+              <div className="flex gap-3 justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton>
+                <Boton variante="primario" onClick={guardarFuncion} cargando={guardando}>{funcionEditando ? 'Guardar' : 'Crear función'}</Boton>
+              </div>
+            </>
+          )}
+
+          {/* Tab Aplicaciones */}
+          {tabModalFuncion === 'aplicaciones' && funcionEditando && (
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <select value={appNueva} onChange={(e) => setAppNueva(e.target.value)} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
+                    <option value="">Seleccionar aplicación...</option>
+                    {appsDisponiblesFuncion.map((a) => (
+                      <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
+                    ))}
+                  </select>
+                </div>
+                <Boton variante="primario" onClick={asignarAppAFuncion} cargando={asignandoApp} disabled={!appNueva}><Plus size={14} />Asignar</Boton>
+              </div>
+              {cargandoApps ? (
+                <div className="flex flex-col gap-2">{[1, 2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+              ) : appsFuncion.length === 0 ? (
+                <p className="text-sm text-texto-muted text-center py-4">No tiene aplicaciones asignadas</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {appsFuncion.map((af) => (
+                    <div key={af.codigo_aplicacion} className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface">
+                      <div>
+                        <span className="text-sm font-medium text-texto">{(af as Record<string, unknown>).aplicaciones ? ((af as Record<string, unknown>).aplicaciones as Record<string, string>).nombre_aplicacion : af.codigo_aplicacion}</span>
+                        <span className="ml-2 text-xs text-texto-muted">{af.codigo_aplicacion}</span>
+                      </div>
+                      <button onClick={() => quitarAppDeFuncion(af.codigo_aplicacion)} className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Quitar"><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cerrar</Boton></div>
+            </div>
+          )}
         </div>
       </Modal>
 
