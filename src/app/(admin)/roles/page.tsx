@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, Download } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, Download, Search } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -22,6 +22,8 @@ export default function PaginaRoles() {
   const [funciones, setFunciones] = useState<Funcion[]>([])
   const [cargando, setCargando] = useState(true)
   const [tabActiva, setTabActiva] = useState<'roles' | 'funciones'>('roles')
+  const [busquedaRoles, setBusquedaRoles] = useState('')
+  const [busquedaFunciones, setBusquedaFunciones] = useState('')
 
   // Modal rol
   const [modalRol, setModalRol] = useState(false)
@@ -177,6 +179,15 @@ export default function PaginaRoles() {
     }
   }
 
+  // Listas filtradas y ordenadas por nombre
+  const rolesFiltrados = roles
+    .filter((r) => r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase()))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+
+  const funcionesFiltradas = funciones
+    .filter((f) => f.nombre.toLowerCase().includes(busquedaFunciones.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaFunciones.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busquedaFunciones.toLowerCase()))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+
   // Funciones disponibles para asignar (excluir las ya asignadas)
   const funcionesDisponibles = funciones.filter((f) =>
     f.activo &&
@@ -244,11 +255,20 @@ export default function PaginaRoles() {
       {/* Contenido */}
       {tabActiva === 'roles' && (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center gap-3">
+            <div className="max-w-sm flex-1">
+              <Input
+                placeholder="Buscar por nombre, código o alias..."
+                value={busquedaRoles}
+                onChange={(e) => setBusquedaRoles(e.target.value)}
+                icono={<Search size={15} />}
+              />
+            </div>
+            <div className="flex gap-2 ml-auto">
             <Boton
               variante="contorno"
               tamano="sm"
-              onClick={() => exportarExcel(roles as Record<string, unknown>[], [
+              onClick={() => exportarExcel(rolesFiltrados as Record<string, unknown>[], [
                 { titulo: 'Grupo', campo: 'codigo_grupo' },
                 { titulo: 'Código', campo: 'codigo_rol' },
                 { titulo: 'Alias', campo: 'alias_de_rol' },
@@ -258,12 +278,13 @@ export default function PaginaRoles() {
                 { titulo: 'Fn. por defecto', campo: 'funcion_por_defecto' },
                 { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
               ], `roles_${grupoActivo || 'todos'}`)}
-              disabled={roles.length === 0}
+              disabled={rolesFiltrados.length === 0}
             >
               <Download size={15} />
               Excel
             </Boton>
             <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />Nuevo rol</Boton>
+            </div>
           </div>
           <Tabla>
             <TablaCabecera>
@@ -280,7 +301,9 @@ export default function PaginaRoles() {
             <TablaCuerpo>
               {cargando ? (
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
-              ) : roles.map((r) => (
+              ) : rolesFiltrados.length === 0 ? (
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron roles</TablaTd></TablaFila>
+              ) : rolesFiltrados.map((r) => (
                 <TablaFila key={r.codigo_rol}>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{r.codigo_rol}</code></TablaTd>
                   <TablaTd className="text-sm">{r.alias_de_rol || '—'}</TablaTd>
@@ -303,11 +326,20 @@ export default function PaginaRoles() {
 
       {tabActiva === 'funciones' && (
         <div className="flex flex-col gap-4">
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center gap-3">
+            <div className="max-w-sm flex-1">
+              <Input
+                placeholder="Buscar por nombre, código o alias..."
+                value={busquedaFunciones}
+                onChange={(e) => setBusquedaFunciones(e.target.value)}
+                icono={<Search size={15} />}
+              />
+            </div>
+            <div className="flex gap-2 ml-auto">
             <Boton
               variante="contorno"
               tamano="sm"
-              onClick={() => exportarExcel(funciones as Record<string, unknown>[], [
+              onClick={() => exportarExcel(funcionesFiltradas as Record<string, unknown>[], [
                 { titulo: 'Código', campo: 'codigo_funcion' },
                 { titulo: 'Alias', campo: 'alias_de_funcion' },
                 { titulo: 'Nombre', campo: 'nombre' },
@@ -317,12 +349,13 @@ export default function PaginaRoles() {
                 { titulo: 'Grupo', campo: 'codigo_grupo' },
                 { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activa' : 'Inactiva' },
               ], `funciones_${grupoActivo || 'todos'}`)}
-              disabled={funciones.length === 0}
+              disabled={funcionesFiltradas.length === 0}
             >
               <Download size={15} />
               Excel
             </Boton>
             <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />Nueva función</Boton>
+            </div>
           </div>
           <Tabla>
             <TablaCabecera>
@@ -339,7 +372,9 @@ export default function PaginaRoles() {
             <TablaCuerpo>
               {cargando ? (
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
-              ) : funciones.map((f) => (
+              ) : funcionesFiltradas.length === 0 ? (
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron funciones</TablaTd></TablaFila>
+              ) : funcionesFiltradas.map((f) => (
                 <TablaFila key={f.codigo_funcion}>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{f.codigo_funcion}</code></TablaTd>
                   <TablaTd className="text-sm">{f.alias_de_funcion || '—'}</TablaTd>

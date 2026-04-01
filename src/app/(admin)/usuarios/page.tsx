@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star, Phone, PhoneOff, Download } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star, Phone, PhoneOff, Download, ChevronUp, ChevronDown } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Usuario, Rol, Entidad, Area } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
-type RolAsignado = { codigo_grupo: string; codigo_rol: string; roles: { nombre: string; activo: boolean } }
+type RolAsignado = { codigo_grupo: string; codigo_rol: string; orden: number; roles: { nombre: string; activo: boolean } }
 type GrupoAsignado = { codigo_grupo: string; grupos_entidades: { nombre: string; activo: boolean } }
 type EntidadAsignada = {
   codigo_entidad: string
@@ -258,6 +258,29 @@ export default function PaginaUsuarios() {
       await usuariosApi.quitarRol(usuarioEditando.codigo_usuario, codigoRol)
       await cargarRolesUsuario(usuarioEditando.codigo_usuario)
     } catch (e) { setError(e instanceof Error ? e.message : 'Error al quitar rol') }
+  }
+
+  const moverRol = async (index: number, direccion: 'arriba' | 'abajo') => {
+    if (!usuarioEditando) return
+    const lista = [...rolesUsuario]
+    const swapIndex = direccion === 'arriba' ? index - 1 : index + 1
+    if (swapIndex < 0 || swapIndex >= lista.length) return
+    const ordenA = lista[index].orden
+    const ordenB = lista[swapIndex].orden
+    lista[index].orden = ordenB
+    lista[swapIndex].orden = ordenA
+    ;[lista[index], lista[swapIndex]] = [lista[swapIndex], lista[index]]
+    setRolesUsuario(lista)
+    try {
+      await usuariosApi.reordenarRoles(usuarioEditando.codigo_usuario, lista.map((r) => ({
+        codigo_grupo: r.codigo_grupo,
+        codigo_rol: r.codigo_rol,
+        orden: r.orden,
+      })))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al reordenar')
+      cargarRolesUsuario(usuarioEditando.codigo_usuario)
+    }
   }
 
   const marcarComoPrincipal = async (codigoRol: string) => {
@@ -702,16 +725,34 @@ export default function PaginaUsuarios() {
                 <p className="text-sm text-texto-muted text-center py-4">No tiene roles adicionales asignados</p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {rolesUsuario.map((ra) => {
+                  {rolesUsuario.map((ra, idx) => {
                     const esPrincipal = form.rol_principal === ra.codigo_rol
                     return (
                       <div
-                        key={ra.codigo_rol}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg border bg-surface ${
+                        key={`${ra.codigo_grupo}_${ra.codigo_rol}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border bg-surface ${
                           esPrincipal ? 'border-primario bg-primario-muy-claro' : 'border-borde'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col">
+                          <button
+                            onClick={() => moverRol(idx, 'arriba')}
+                            disabled={idx === 0}
+                            className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Subir"
+                          >
+                            <ChevronUp size={14} />
+                          </button>
+                          <button
+                            onClick={() => moverRol(idx, 'abajo')}
+                            disabled={idx === rolesUsuario.length - 1}
+                            className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Bajar"
+                          >
+                            <ChevronDown size={14} />
+                          </button>
+                        </div>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
                           <span className="text-sm font-medium text-texto">{ra.roles?.nombre || ra.codigo_rol}</span>
                           <span className="text-xs text-texto-muted">{ra.codigo_rol}</span>
                           {esPrincipal && (
