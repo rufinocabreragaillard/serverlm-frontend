@@ -40,11 +40,13 @@ const navegacion: NavGrupo[] = [
     items: [
       { nombre: 'Dashboard', href: '/dashboard', icono: LayoutDashboard },
       { nombre: 'Usuarios', href: '/usuarios', icono: Users },
+      { nombre: 'Auditoría', href: '/auditoria', icono: ClipboardList },
     ],
   },
   {
     titulo: 'Organización',
     items: [
+      { nombre: 'Parámetros por Nivel', href: '/parametros', icono: SlidersHorizontal },
       { nombre: 'Entidades, Áreas y Roles', href: '/entidades', icono: Building2 },
       { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
     ],
@@ -54,8 +56,7 @@ const navegacion: NavGrupo[] = [
     items: [
       { nombre: 'Aplicaciones y Funciones', href: '/aplicaciones', icono: AppWindow },
       { nombre: 'Datos Básicos', href: '/datos-basicos', icono: Database, requiereSuperAdmin: true },
-      { nombre: 'Parámetros', href: '/parametros', icono: SlidersHorizontal },
-      { nombre: 'Auditoría', href: '/auditoria', icono: ClipboardList },
+      { nombre: 'Parámetros Generales', href: '/parametros-generales', icono: SlidersHorizontal },
     ],
   },
 ]

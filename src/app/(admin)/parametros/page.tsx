@@ -20,7 +20,7 @@ interface ParametroRow {
 
 export default function PaginaParametros() {
   const { esAdmin, esSuperAdmin, usuario } = useAuth()
-  const [tabActiva, setTabActiva] = useState<TabId>('generales')
+  const [tabActiva, setTabActiva] = useState<TabId>('grupo')
 
   // Generales
   const [paramsGenerales, setParamsGenerales] = useState<ParametroRow[]>([])
@@ -196,7 +196,6 @@ export default function PaginaParametros() {
 
   // ── Tabs config ───────────────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; icon: typeof SlidersHorizontal; visible: boolean }[] = [
-    { id: 'generales', label: 'Generales', icon: SlidersHorizontal, visible: esAdmin() },
     { id: 'grupo', label: 'Por Grupo', icon: Layers, visible: true },
     { id: 'entidad', label: 'Por Entidad', icon: Building2, visible: true },
     { id: 'usuario', label: 'Por Usuario', icon: User, visible: true },
@@ -247,8 +246,8 @@ export default function PaginaParametros() {
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Parámetros</h2>
-        <p className="text-sm text-texto-muted mt-1">Configuración del sistema en múltiples niveles</p>
+        <h2 className="text-2xl font-bold text-texto">Parámetros por Nivel</h2>
+        <p className="text-sm text-texto-muted mt-1">Configuración por grupo, entidad y usuario</p>
       </div>
 
       {mensajeExito && (
