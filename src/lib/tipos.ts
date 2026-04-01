@@ -63,6 +63,7 @@ export interface Area {
   nombre: string
   descripcion?: string
   usuario_responsable?: string
+  codigo_area_superior?: string
   activo: boolean
 }
 

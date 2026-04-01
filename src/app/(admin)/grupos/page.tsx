@@ -25,6 +25,8 @@ export default function PaginaGrupos() {
   const [cargando, setCargando] = useState(true)
   const [cargandoDetalle, setCargandoDetalle] = useState(false)
   const [tabActivo, setTabActivo] = useState<'entidades' | 'usuarios'>('entidades')
+  const [busquedaEntidades, setBusquedaEntidades] = useState('')
+  const [busquedaUsuariosLista, setBusquedaUsuariosLista] = useState('')
 
   const [modalGrupo, setModalGrupo] = useState(false)
   const [grupoEditando, setGrupoEditando] = useState<Grupo | null>(null)
@@ -152,6 +154,17 @@ export default function PaginaGrupos() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Listas filtradas por búsqueda
+  const entidadesFiltradas = entidadesGrupo
+    .filter((e) => e.nombre.toLowerCase().includes(busquedaEntidades.toLowerCase()) || e.codigo_entidad.toLowerCase().includes(busquedaEntidades.toLowerCase()))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+
+  const usuariosListaFiltrados = usuariosGrupo
+    .filter((u) => {
+      const nombre = u.usuarios?.nombre ?? u.codigo_usuario
+      return nombre.toLowerCase().includes(busquedaUsuariosLista.toLowerCase()) || u.codigo_usuario.toLowerCase().includes(busquedaUsuariosLista.toLowerCase())
+    })
+
   if (!esSuperAdmin()) {
     return (
       <div className="flex items-center justify-center h-48 text-texto-muted text-sm">
@@ -231,14 +244,14 @@ export default function PaginaGrupos() {
                     tamano="sm"
                     onClick={() => {
                       if (tabActivo === 'entidades') {
-                        exportarExcel(entidadesGrupo as Record<string, unknown>[], [
+                        exportarExcel(entidadesFiltradas as Record<string, unknown>[], [
                           { titulo: 'Grupo', campo: 'codigo_grupo' },
                           { titulo: 'Código entidad', campo: 'codigo_entidad' },
                           { titulo: 'Nombre', campo: 'nombre' },
                           { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
                         ], `entidades_grupo_${grupoSeleccionado.codigo_grupo}`)
                       } else {
-                        exportarExcel(usuariosGrupo.map((u) => ({
+                        exportarExcel(usuariosListaFiltrados.map((u) => ({
                           codigo_usuario: u.codigo_usuario,
                           nombre: u.usuarios?.nombre ?? u.codigo_usuario,
                           activo: u.usuarios?.activo,
@@ -249,7 +262,7 @@ export default function PaginaGrupos() {
                         ], `usuarios_grupo_${grupoSeleccionado.codigo_grupo}`)
                       }
                     }}
-                    disabled={tabActivo === 'entidades' ? entidadesGrupo.length === 0 : usuariosGrupo.length === 0}
+                    disabled={tabActivo === 'entidades' ? entidadesFiltradas.length === 0 : usuariosListaFiltrados.length === 0}
                   >
                     <Download size={14} />
                     Excel
@@ -278,6 +291,17 @@ export default function PaginaGrupos() {
               <TarjetaContenido className="p-0">
                 {/* Tab Entidades */}
                 {tabActivo === 'entidades' && (
+                  <div>
+                    <div className="px-4 py-3 border-b border-borde">
+                      <div className="max-w-sm">
+                        <Input
+                          placeholder="Buscar por nombre o código..."
+                          value={busquedaEntidades}
+                          onChange={(e) => setBusquedaEntidades(e.target.value)}
+                          icono={<Search size={15} />}
+                        />
+                      </div>
+                    </div>
                   <Tabla>
                     <TablaCabecera>
                       <tr><TablaTh>Codigo</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Estado</TablaTh></tr>
@@ -285,9 +309,9 @@ export default function PaginaGrupos() {
                     <TablaCuerpo>
                       {cargandoDetalle ? (
                         <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={3 as never}>Cargando...</TablaTd></TablaFila>
-                      ) : entidadesGrupo.length === 0 ? (
-                        <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={3 as never}>No hay entidades en este grupo</TablaTd></TablaFila>
-                      ) : entidadesGrupo.map((e) => (
+                      ) : entidadesFiltradas.length === 0 ? (
+                        <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={3 as never}>{busquedaEntidades ? 'No se encontraron entidades' : 'No hay entidades en este grupo'}</TablaTd></TablaFila>
+                      ) : entidadesFiltradas.map((e) => (
                         <TablaFila key={e.codigo_entidad}>
                           <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{e.codigo_entidad}</code></TablaTd>
                           <TablaTd className="font-medium">{e.nombre}</TablaTd>
@@ -296,6 +320,7 @@ export default function PaginaGrupos() {
                       ))}
                     </TablaCuerpo>
                   </Tabla>
+                  </div>
                 )}
 
                 {/* Tab Usuarios — con asignación/desasignación */}
@@ -353,6 +378,18 @@ export default function PaginaGrupos() {
                       </div>
                     )}
 
+                    {/* Filtro de usuarios del grupo */}
+                    {usuariosGrupo.length > 0 && (
+                      <div className="max-w-sm">
+                        <Input
+                          placeholder="Filtrar usuarios del grupo..."
+                          value={busquedaUsuariosLista}
+                          onChange={(e) => setBusquedaUsuariosLista(e.target.value)}
+                          icono={<Search size={15} />}
+                        />
+                      </div>
+                    )}
+
                     {/* Lista de usuarios del grupo */}
                     {cargandoDetalle ? (
                       <div className="flex flex-col gap-2">
@@ -362,9 +399,11 @@ export default function PaginaGrupos() {
                       </div>
                     ) : usuariosGrupo.length === 0 ? (
                       <p className="text-sm text-texto-muted text-center py-4">No hay usuarios en este grupo</p>
+                    ) : usuariosListaFiltrados.length === 0 ? (
+                      <p className="text-sm text-texto-muted text-center py-4">No se encontraron usuarios</p>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        {usuariosGrupo.map((u) => (
+                        {usuariosListaFiltrados.map((u) => (
                           <div
                             key={u.codigo_usuario}
                             className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"
