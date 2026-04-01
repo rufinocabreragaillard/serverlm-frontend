@@ -46,14 +46,14 @@ const navegacion: NavGrupo[] = [
     items: [
       { nombre: 'Parámetros por Nivel', href: '/parametros', icono: SlidersHorizontal },
       { nombre: 'Entidades, Áreas y Roles', href: '/entidades', icono: Building2 },
-      { nombre: 'Grupos', href: '/grupos', icono: Layers, requiereSuperAdmin: true },
+      { nombre: 'Grupos', href: '/grupos', icono: Layers },
     ],
   },
   {
     titulo: 'Básicos',
     items: [
       { nombre: 'Aplicaciones y Funciones', href: '/aplicaciones', icono: AppWindow },
-      { nombre: 'Datos Básicos', href: '/datos-basicos', icono: Database, requiereSuperAdmin: true },
+      { nombre: 'Datos Básicos', href: '/datos-basicos', icono: Database },
       { nombre: 'Parámetros Generales', href: '/parametros-generales', icono: SlidersHorizontal },
     ],
   },
