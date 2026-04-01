@@ -45,7 +45,7 @@ export default function PaginaLogin() {
       {/* Panel izquierdo — branding */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden"
-        style={{ backgroundColor: tema.colores.sidebar }}
+        style={{ backgroundColor: '#074B91' }}
       >
         {/* Círculos decorativos */}
         <div

@@ -22,7 +22,7 @@ export const tema = {
     primarioLight: '#1E5A9C',
     secundario: '#7C669F',
     acento: '#BF85B1',
-    sidebar: '#053870',
+    sidebar: '#074B91',
     sidebarActivo: '#1E5A9C',
   },
 }
