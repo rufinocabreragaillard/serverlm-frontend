@@ -50,6 +50,7 @@ export interface UsuarioContexto {
   sesion_duracion_minutos?: number
   menu?: RolMenu[]
   tema?: Record<string, unknown> | null
+  aplicaciones_url?: Record<string, string>
 }
 
 export interface LoginRequest {
