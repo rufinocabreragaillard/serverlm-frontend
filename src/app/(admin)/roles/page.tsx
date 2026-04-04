@@ -70,7 +70,8 @@ export default function PaginaRoles() {
     } finally {
       setCargando(false)
     }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grupoActivo])
 
   useEffect(() => { cargar() }, [cargar])
 

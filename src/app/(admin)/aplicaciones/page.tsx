@@ -378,7 +378,7 @@ export default function PaginaAplicacionesFunciones() {
                       className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
                     />
                   </div>
-                  {dropdownFuncionAppAbierto && busquedaFuncionApp.length > 0 && (
+                  {dropdownFuncionAppAbierto && (
                     <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {funcionesAppFiltradas.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron funciones</div>

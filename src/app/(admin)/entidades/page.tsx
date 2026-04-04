@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Pencil, Building2, MapPin, Download, Search, Trash2, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -53,6 +53,9 @@ export default function PaginaEntidades() {
   const [funcionesRol, setFuncionesRol] = useState<FuncionAsignada[]>([])
   const [cargandoFuncionesRol, setCargandoFuncionesRol] = useState(false)
   const [funcionNueva, setFuncionNueva] = useState('')
+  const [busquedaFuncionEnt, setBusquedaFuncionEnt] = useState('')
+  const [dropdownFuncionEntAbierto, setDropdownFuncionEntAbierto] = useState(false)
+  const dropdownFuncionEntRef = useRef<HTMLDivElement>(null)
   const [asignandoFuncion, setAsignandoFuncion] = useState(false)
 
   // Confirmación eliminación rol
@@ -83,6 +86,17 @@ export default function PaginaEntidades() {
   }, [])
 
   useEffect(() => { cargar() }, []) // eslint-disable-line
+
+  // Cerrar dropdown de función al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownFuncionEntRef.current && !dropdownFuncionEntRef.current.contains(e.target as Node)) {
+        setDropdownFuncionEntAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (entidadSeleccionada) {
@@ -178,7 +192,7 @@ export default function PaginaEntidades() {
 
   const asignarFuncionRol = async () => {
     if (!funcionNueva || !rolEditando) return; setAsignandoFuncion(true)
-    try { await rolesApi.asignarFuncion(rolEditando.codigo_rol, funcionNueva); setFuncionNueva(''); cargarFuncionesRol(rolEditando.codigo_rol) }
+    try { await rolesApi.asignarFuncion(rolEditando.codigo_rol, funcionNueva); setFuncionNueva(''); setBusquedaFuncionEnt(''); cargarFuncionesRol(rolEditando.codigo_rol) }
     catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error') } finally { setAsignandoFuncion(false) }
   }
   const quitarFuncionRol = async (c: string) => {
@@ -199,6 +213,11 @@ export default function PaginaEntidades() {
   }
 
   const funcionesDisponiblesRol = allFunciones.filter((f) => f.activo && !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion))
+  const funcionesEntFiltradas = funcionesDisponiblesRol.filter((f) =>
+    busquedaFuncionEnt.length === 0 ||
+    f.nombre.toLowerCase().includes(busquedaFuncionEnt.toLowerCase()) ||
+    f.codigo_funcion.toLowerCase().includes(busquedaFuncionEnt.toLowerCase())
+  )
   const rolesFiltrados = roles.filter((r) => r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase())).sort((a, b) => a.nombre.localeCompare(b.nombre))
 
   // Áreas filtradas (mantiene orden jerárquico de la función SQL)
@@ -502,7 +521,42 @@ export default function PaginaEntidades() {
           </>)}
           {tabModalRol === 'funciones' && rolEditando && (
             <div className="flex flex-col gap-4">
-              <div className="flex gap-2"><div className="flex-1"><select value={funcionNueva} onChange={(e) => setFuncionNueva(e.target.value)} className={selectClass}><option value="">Seleccionar función...</option>{funcionesDisponiblesRol.map((f) => (<option key={f.codigo_funcion} value={f.codigo_funcion}>{f.nombre}</option>))}</select></div><Boton variante="primario" onClick={asignarFuncionRol} cargando={asignandoFuncion} disabled={!funcionNueva}><Plus size={14} />Asignar</Boton></div>
+              <div className="flex gap-2">
+                <div className="flex-1 relative" ref={dropdownFuncionEntRef}>
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
+                    <input
+                      type="text"
+                      placeholder="Buscar función por nombre o código..."
+                      value={busquedaFuncionEnt}
+                      onChange={(e) => { setBusquedaFuncionEnt(e.target.value); setDropdownFuncionEntAbierto(true); setFuncionNueva('') }}
+                      onFocus={() => setDropdownFuncionEntAbierto(true)}
+                      className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                    />
+                  </div>
+                  {dropdownFuncionEntAbierto && (
+                    <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {funcionesEntFiltradas.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron funciones</div>
+                      ) : funcionesEntFiltradas.slice(0, 20).map((f) => (
+                        <button
+                          key={f.codigo_funcion}
+                          onClick={() => {
+                            setFuncionNueva(f.codigo_funcion)
+                            setBusquedaFuncionEnt(`${f.nombre} (${f.codigo_funcion})`)
+                            setDropdownFuncionEntAbierto(false)
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors"
+                        >
+                          <span className="font-medium">{f.nombre}</span>
+                          <span className="ml-2 text-texto-muted text-xs">{f.codigo_funcion}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Boton variante="primario" onClick={asignarFuncionRol} cargando={asignandoFuncion} disabled={!funcionNueva}><Plus size={14} />Asignar</Boton>
+              </div>
               {cargandoFuncionesRol ? <div className="flex flex-col gap-2">{[1,2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
               : funcionesRol.length === 0 ? <p className="text-sm text-texto-muted text-center py-4">No tiene funciones asignadas</p>
               : <div className="flex flex-col gap-2">{funcionesRol.map((fa, idx) => (
