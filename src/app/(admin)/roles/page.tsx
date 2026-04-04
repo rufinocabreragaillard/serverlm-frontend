@@ -63,7 +63,7 @@ export default function PaginaRoles() {
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      const [r, f, a] = await Promise.all([rolesApi.listar(), funcionesApi.listar(), aplicacionesApi.listar()])
+      const [r, f, a] = await Promise.all([rolesApi.listar(), funcionesApi.listar(grupoActivo || undefined), aplicacionesApi.listar()])
       setRoles(r)
       setFunciones(f)
       setTodasApps(a)

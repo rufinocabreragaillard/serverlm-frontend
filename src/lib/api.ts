@@ -135,7 +135,8 @@ export const rolesApi = {
 // ─── Funciones ────────────────────────────────────────────────────────────────
 
 export const funcionesApi = {
-  listar: () => api.get<Funcion[]>('/funciones').then((r) => r.data),
+  listar: (grupo?: string) =>
+    api.get<Funcion[]>('/funciones', { params: grupo ? { grupo } : {} }).then((r) => r.data),
   crear: (datos: Partial<Funcion>) =>
     api.post<Funcion>('/funciones', datos).then((r) => r.data),
   actualizar: (id: string, datos: Partial<Funcion>) =>
