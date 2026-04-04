@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, Download, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, X, Download, Search, Copy } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -9,9 +9,9 @@ import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/components/ui/tarjeta'
-import { rolesApi, funcionesApi, aplicacionesApi } from '@/lib/api'
+import { rolesApi, funcionesApi, aplicacionesApi, gruposApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
-import type { Rol, Funcion, Aplicacion } from '@/lib/tipos'
+import type { Rol, Funcion, Aplicacion, Grupo } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
 type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string; activo: boolean } }
@@ -56,6 +56,17 @@ export default function PaginaRoles() {
   // Modal confirmar eliminación
   const [confirmacion, setConfirmacion] = useState<{ tipo: 'rol' | 'funcion'; item: Rol | Funcion } | null>(null)
   const [eliminando, setEliminando] = useState(false)
+
+  // Modal copiar rol
+  const [modalCopiar, setModalCopiar] = useState(false)
+  const [grupos, setGrupos] = useState<Grupo[]>([])
+  const [grupoOrigen, setGrupoOrigen] = useState('')
+  const [rolesOrigen, setRolesOrigen] = useState<Rol[]>([])
+  const [rolCopiar, setRolCopiar] = useState('')
+  const [grupoDestino, setGrupoDestino] = useState('')
+  const [cargandoRolesOrigen, setCargandoRolesOrigen] = useState(false)
+  const [copiando, setCopiando] = useState(false)
+  const [mensajeCopia, setMensajeCopia] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null)
 
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -299,6 +310,57 @@ export default function PaginaRoles() {
 
   const confirmarEliminarFuncion = (f: Funcion) => setConfirmacion({ tipo: 'funcion', item: f })
 
+  const abrirModalCopiar = async () => {
+    setGrupoOrigen('')
+    setRolesOrigen([])
+    setRolCopiar('')
+    setGrupoDestino('')
+    setMensajeCopia(null)
+    try {
+      const g = await gruposApi.listar()
+      setGrupos(g)
+    } catch {
+      setGrupos([])
+    }
+    setModalCopiar(true)
+  }
+
+  const cargarRolesOrigen = async (codigoGrupo: string) => {
+    setGrupoOrigen(codigoGrupo)
+    setRolCopiar('')
+    setRolesOrigen([])
+    setMensajeCopia(null)
+    if (!codigoGrupo) return
+    setCargandoRolesOrigen(true)
+    try {
+      const r = await rolesApi.listarPorGrupo(codigoGrupo)
+      setRolesOrigen(r)
+    } catch {
+      setRolesOrigen([])
+    } finally {
+      setCargandoRolesOrigen(false)
+    }
+  }
+
+  const ejecutarCopia = async () => {
+    if (!grupoOrigen || !rolCopiar || !grupoDestino) return
+    setCopiando(true)
+    setMensajeCopia(null)
+    try {
+      await rolesApi.copiar({
+        codigo_grupo_origen: grupoOrigen,
+        codigo_rol: rolCopiar,
+        codigo_grupo_destino: grupoDestino,
+      })
+      setMensajeCopia({ tipo: 'exito', texto: `Rol "${rolCopiar}" copiado exitosamente al grupo "${grupoDestino}".` })
+      cargar()
+    } catch (e) {
+      setMensajeCopia({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al copiar rol' })
+    } finally {
+      setCopiando(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
@@ -354,6 +416,7 @@ export default function PaginaRoles() {
               <Download size={15} />
               Excel
             </Boton>
+            <Boton variante="contorno" tamano="sm" onClick={abrirModalCopiar}><Copy size={15} />Copiar rol</Boton>
             <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />Nuevo rol</Boton>
             </div>
           </div>
@@ -711,6 +774,74 @@ export default function PaginaRoles() {
               <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cerrar</Boton></div>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Modal Copiar Rol */}
+      <Modal abierto={modalCopiar} alCerrar={() => setModalCopiar(false)} titulo="Copiar rol a otro grupo">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">Grupo de origen *</label>
+            <select
+              value={grupoOrigen}
+              onChange={(e) => cargarRolesOrigen(e.target.value)}
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+            >
+              <option value="">Seleccionar grupo...</option>
+              {grupos.map((g) => (
+                <option key={g.codigo_grupo} value={g.codigo_grupo}>{g.nombre} ({g.codigo_grupo})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">Rol a copiar *</label>
+            <select
+              value={rolCopiar}
+              onChange={(e) => { setRolCopiar(e.target.value); setMensajeCopia(null) }}
+              disabled={!grupoOrigen || cargandoRolesOrigen}
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
+            >
+              <option value="">{cargandoRolesOrigen ? 'Cargando...' : 'Seleccionar rol...'}</option>
+              {rolesOrigen.map((r) => (
+                <option key={r.codigo_rol} value={r.codigo_rol}>{r.nombre} ({r.codigo_rol})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">Grupo de destino *</label>
+            <select
+              value={grupoDestino}
+              onChange={(e) => { setGrupoDestino(e.target.value); setMensajeCopia(null) }}
+              disabled={!grupoOrigen}
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
+            >
+              <option value="">Seleccionar grupo...</option>
+              {grupos.filter((g) => g.codigo_grupo !== grupoOrigen).map((g) => (
+                <option key={g.codigo_grupo} value={g.codigo_grupo}>{g.nombre} ({g.codigo_grupo})</option>
+              ))}
+            </select>
+          </div>
+
+          {mensajeCopia && (
+            <div className={`border rounded-lg px-4 py-3 ${mensajeCopia.tipo === 'exito' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <p className={`text-sm ${mensajeCopia.tipo === 'exito' ? 'text-green-700' : 'text-error'}`}>{mensajeCopia.texto}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-end pt-2">
+            <Boton variante="contorno" onClick={() => setModalCopiar(false)}>Cancelar</Boton>
+            <Boton
+              variante="primario"
+              onClick={ejecutarCopia}
+              cargando={copiando}
+              disabled={!grupoOrigen || !rolCopiar || !grupoDestino}
+            >
+              <Copy size={14} />
+              Copiar rol
+            </Boton>
+          </div>
         </div>
       </Modal>
 
