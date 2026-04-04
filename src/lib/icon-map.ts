@@ -59,6 +59,8 @@ import {
   Music,
   Download,
   Upload,
+  Files,
+  Copy,
 } from 'lucide-react'
 
 const iconMap: Record<string, LucideIcon> = {
@@ -114,6 +116,10 @@ const iconMap: Record<string, LucideIcon> = {
   DollarSign,
   CreditCard,
   Truck,
+
+  // Copiar y archivos
+  Files,
+  Copy,
 
   // Varios
   Calendar,

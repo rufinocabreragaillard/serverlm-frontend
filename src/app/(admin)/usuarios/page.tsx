@@ -374,7 +374,7 @@ export default function PaginaUsuarios() {
 
   // ── Handlers de cascada en Datos ──────────────────────────────────────────
   const handleGrupoDefaultChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setForm({ ...form, grupo_por_defecto: e.target.value, entidad_por_defecto: '', codigo_area_por_defecto: '' })
+    setForm({ ...form, grupo_por_defecto: e.target.value, rol_principal: '', entidad_por_defecto: '', codigo_area_por_defecto: '' })
     setAreasParaDefault([])
   }
 
@@ -584,31 +584,6 @@ export default function PaginaUsuarios() {
                 )}
               </div>
 
-              {/* Rol principal — solo roles ya asignados al usuario */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">Rol principal</label>
-                <select
-                  value={form.rol_principal}
-                  onChange={(e) => setForm({ ...form, rol_principal: e.target.value })}
-                  className={selectClass}
-                >
-                  <option value="">Sin rol asignado</option>
-                  {usuarioEditando
-                    ? rolesUsuario.map((ra) => (
-                        <option key={ra.codigo_rol} value={ra.codigo_rol}>
-                          {ra.roles?.nombre || ra.codigo_rol}
-                        </option>
-                      ))
-                    : roles.filter((r) => r.activo).map((r) => (
-                        <option key={r.codigo_rol} value={r.codigo_rol}>{r.nombre}</option>
-                      ))
-                  }
-                </select>
-                {usuarioEditando && rolesUsuario.length === 0 && (
-                  <p className="text-xs text-texto-muted">Asigne roles en la pestaña &quot;Roles del usuario&quot; primero</p>
-                )}
-              </div>
-
               {/* ── Defaults de preferencia (solo edición) ─────────────────── */}
               {usuarioEditando && (
                 <>
@@ -634,6 +609,30 @@ export default function PaginaUsuarios() {
                       </select>
                       {gruposDeEntidades.length === 0 && (
                         <p className="text-xs text-texto-muted">Asigne entidades en la pestaña &quot;Entidades&quot; primero</p>
+                      )}
+                    </div>
+
+                    {/* Rol principal — filtrado por grupo por defecto seleccionado */}
+                    <div className="flex flex-col gap-1.5 mt-3">
+                      <label className="text-sm font-medium text-texto">Rol principal</label>
+                      <select
+                        value={form.rol_principal}
+                        onChange={(e) => setForm({ ...form, rol_principal: e.target.value })}
+                        disabled={!form.grupo_por_defecto}
+                        className={selectClass}
+                      >
+                        <option value="">Sin rol asignado</option>
+                        {rolesUsuario
+                          .filter((ra) => ra.codigo_grupo === form.grupo_por_defecto)
+                          .map((ra) => (
+                            <option key={ra.codigo_rol} value={ra.codigo_rol}>
+                              {ra.roles?.nombre || ra.codigo_rol}
+                            </option>
+                          ))
+                        }
+                      </select>
+                      {form.grupo_por_defecto && rolesUsuario.filter((ra) => ra.codigo_grupo === form.grupo_por_defecto).length === 0 && (
+                        <p className="text-xs text-texto-muted">No hay roles asignados en este grupo</p>
                       )}
                     </div>
 
