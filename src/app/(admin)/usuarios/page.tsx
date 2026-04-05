@@ -76,6 +76,7 @@ export default function PaginaUsuarios() {
   const [form, setForm] = useState({
     codigo_usuario: '',
     nombre: '',
+    alias: '',
     telefono: '',
     descripcion: '',
     rol_principal: '',
@@ -188,7 +189,7 @@ export default function PaginaUsuarios() {
   // ── Abrir modal ────────────────────────────────────────────────────────────
   const abrirNuevo = () => {
     setUsuarioEditando(null)
-    setForm({ codigo_usuario: '', nombre: '', telefono: '', descripcion: '', rol_principal: '',
+    setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '', rol_principal: '',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area_por_defecto: '', aplicacion_por_defecto: '', invitar: true })
     setError('')
     setGuardando(false)
@@ -205,6 +206,7 @@ export default function PaginaUsuarios() {
     setForm({
       codigo_usuario: u.codigo_usuario,
       nombre: u.nombre,
+      alias: u.alias || '',
       telefono: u.telefono || '',
       descripcion: u.descripcion || '',
       rol_principal: u.rol_principal || '',
@@ -243,6 +245,7 @@ export default function PaginaUsuarios() {
       if (usuarioEditando) {
         await usuariosApi.actualizar(usuarioEditando.codigo_usuario, {
           nombre: form.nombre,
+          alias: form.alias || undefined,
           telefono: form.telefono || undefined,
           descripcion: form.descripcion || undefined,
           rol_principal: form.rol_principal || undefined,
@@ -255,6 +258,7 @@ export default function PaginaUsuarios() {
         await usuariosApi.crear({
           codigo_usuario: form.codigo_usuario,
           nombre: form.nombre,
+          alias: form.alias || undefined,
           telefono: form.telefono || undefined,
           descripcion: form.descripcion || undefined,
           rol_principal: form.rol_principal || undefined,
@@ -573,7 +577,7 @@ export default function PaginaUsuarios() {
           {/* Pestañas (solo en edición) */}
           {usuarioEditando && (
             <div className="flex border-b border-borde -mx-1">
-              {(['datos', 'roles', 'entidades'] as const).map((tab) => (
+              {(['datos', 'entidades', 'roles'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setTabActiva(tab)}
@@ -583,7 +587,7 @@ export default function PaginaUsuarios() {
                       : 'text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {tab === 'datos' ? 'Datos' : tab === 'roles' ? 'Roles' : 'Entidades'}
+                  {tab === 'datos' ? 'Datos' : tab === 'entidades' ? 'Entidades' : 'Roles'}
                 </button>
               ))}
             </div>
@@ -605,6 +609,12 @@ export default function PaginaUsuarios() {
                 value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                 placeholder="Nombre Apellido"
+              />
+              <Input
+                etiqueta="Alias"
+                value={form.alias}
+                onChange={(e) => setForm({ ...form, alias: e.target.value })}
+                placeholder="Alias del usuario"
               />
 
               {/* Teléfono + indicador de verificación */}
@@ -771,9 +781,129 @@ export default function PaginaUsuarios() {
             </>
           )}
 
+          {/* ── Tab Entidades ─────────────────────────────────────────────── */}
+          {tabActiva === 'entidades' && usuarioEditando && (
+            <div className="flex flex-col gap-4">
+              {/* Asignar nueva entidad */}
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative" ref={dropdownEntidadRef}>
+                    <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
+                      <input
+                        type="text"
+                        placeholder="Buscar entidad por nombre o código..."
+                        value={busquedaEntidad}
+                        onChange={(e) => { setBusquedaEntidad(e.target.value); setDropdownEntidadAbierto(true); setEntidadNueva('') }}
+                        onFocus={() => setDropdownEntidadAbierto(true)}
+                        className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                      />
+                    </div>
+                    {dropdownEntidadAbierto && (
+                      <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {entidadesDisponiblesFiltradas.length === 0 ? (
+                          <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron entidades</div>
+                        ) : entidadesDisponiblesFiltradas.slice(0, 20).map((e) => (
+                          <button
+                            key={e.codigo_entidad}
+                            onClick={() => {
+                              setEntidadNueva(e.codigo_entidad)
+                              setBusquedaEntidad(`${e.nombre} (${e.codigo_entidad})`)
+                              setDropdownEntidadAbierto(false)
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors"
+                          >
+                            <span className="font-medium">{e.nombre}</span>
+                            <span className="ml-2 text-texto-muted text-xs">{e.codigo_entidad}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Boton
+                    variante="primario"
+                    onClick={asignarEntidad}
+                    cargando={asignandoEntidad}
+                    disabled={!entidadNueva}
+                  >
+                    <Plus size={14} /> Asignar
+                  </Boton>
+                </div>
+                {/* Selector de área (opcional) */}
+                {entidadNueva && (
+                  <select
+                    value={areaNueva}
+                    onChange={(e) => setAreaNueva(e.target.value)}
+                    disabled={cargandoAreas}
+                    className={selectClass}
+                  >
+                    <option value="">Área (opcional)...</option>
+                    {areasParaEntidad.map((a) => (
+                      <option key={a.codigo_area} value={a.codigo_area}>{a.nombre}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Lista de entidades asignadas */}
+              {cargandoEntidades ? (
+                <div className="flex flex-col gap-2">
+                  {[1, 2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}
+                </div>
+              ) : entidadesUsuario.length === 0 ? (
+                <p className="text-sm text-texto-muted text-center py-4">No tiene entidades asignadas</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {entidadesUsuario.map((ea) => (
+                    <div
+                      key={ea.codigo_entidad}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"
+                    >
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium text-texto">
+                          {ea.entidades?.nombre || ea.codigo_entidad}
+                        </span>
+                        <span className="ml-2 text-xs text-texto-muted">{ea.codigo_entidad}</span>
+                        {ea.codigo_area && (
+                          <span className="ml-2 text-xs bg-secundario/10 text-secundario px-1.5 py-0.5 rounded">
+                            {ea.codigo_area}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => quitarEntidad(ea.codigo_entidad)}
+                        className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
+                        title="Quitar entidad"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                  <p className="text-sm text-error">{error}</p>
+                </div>
+              )}
+              <div className="flex justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cerrar</Boton>
+              </div>
+            </div>
+          )}
+
           {/* ── Tab Roles del usuario ─────────────────────────────────────── */}
           {tabActiva === 'roles' && usuarioEditando && (
             <div className="flex flex-col gap-4">
+              {entidadesUsuario.filter((ea) => ea.codigo_grupo === grupoActivo).length === 0 ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3">
+                  <p className="text-sm text-yellow-700">
+                    Debe asignar al menos una entidad de este grupo antes de asignar roles. Vaya a la pestaña &quot;Entidades&quot;.
+                  </p>
+                </div>
+              ) : (
+                <>
               {/* Asignar nuevo rol */}
               <div className="flex gap-2">
                 <div className="flex-1 relative" ref={dropdownRolRef}>
@@ -880,117 +1010,7 @@ export default function PaginaUsuarios() {
                   })}
                 </div>
               )}
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                  <p className="text-sm text-error">{error}</p>
-                </div>
-              )}
-              <div className="flex justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cerrar</Boton>
-              </div>
-            </div>
-          )}
-
-          {/* ── Tab Entidades ─────────────────────────────────────────────── */}
-          {tabActiva === 'entidades' && usuarioEditando && (
-            <div className="flex flex-col gap-4">
-              {/* Asignar nueva entidad */}
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <div className="flex-1 relative" ref={dropdownEntidadRef}>
-                    <div className="relative">
-                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
-                      <input
-                        type="text"
-                        placeholder="Buscar entidad por nombre o código..."
-                        value={busquedaEntidad}
-                        onChange={(e) => { setBusquedaEntidad(e.target.value); setDropdownEntidadAbierto(true); setEntidadNueva('') }}
-                        onFocus={() => setDropdownEntidadAbierto(true)}
-                        className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
-                      />
-                    </div>
-                    {dropdownEntidadAbierto && (
-                      <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {entidadesDisponiblesFiltradas.length === 0 ? (
-                          <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron entidades</div>
-                        ) : entidadesDisponiblesFiltradas.slice(0, 20).map((e) => (
-                          <button
-                            key={e.codigo_entidad}
-                            onClick={() => {
-                              setEntidadNueva(e.codigo_entidad)
-                              setBusquedaEntidad(`${e.nombre} (${e.codigo_entidad})`)
-                              setDropdownEntidadAbierto(false)
-                            }}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors"
-                          >
-                            <span className="font-medium">{e.nombre}</span>
-                            <span className="ml-2 text-texto-muted text-xs">{e.codigo_entidad}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <Boton
-                    variante="primario"
-                    onClick={asignarEntidad}
-                    cargando={asignandoEntidad}
-                    disabled={!entidadNueva}
-                  >
-                    <Plus size={14} /> Asignar
-                  </Boton>
-                </div>
-                {/* Selector de área (opcional) */}
-                {entidadNueva && (
-                  <select
-                    value={areaNueva}
-                    onChange={(e) => setAreaNueva(e.target.value)}
-                    disabled={cargandoAreas}
-                    className={selectClass}
-                  >
-                    <option value="">Área (opcional)...</option>
-                    {areasParaEntidad.map((a) => (
-                      <option key={a.codigo_area} value={a.codigo_area}>{a.nombre}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {/* Lista de entidades asignadas */}
-              {cargandoEntidades ? (
-                <div className="flex flex-col gap-2">
-                  {[1, 2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}
-                </div>
-              ) : entidadesUsuario.length === 0 ? (
-                <p className="text-sm text-texto-muted text-center py-4">No tiene entidades asignadas</p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {entidadesUsuario.map((ea) => (
-                    <div
-                      key={ea.codigo_entidad}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"
-                    >
-                      <div className="min-w-0">
-                        <span className="text-sm font-medium text-texto">
-                          {ea.entidades?.nombre || ea.codigo_entidad}
-                        </span>
-                        <span className="ml-2 text-xs text-texto-muted">{ea.codigo_entidad}</span>
-                        {ea.codigo_area && (
-                          <span className="ml-2 text-xs bg-secundario/10 text-secundario px-1.5 py-0.5 rounded">
-                            {ea.codigo_area}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => quitarEntidad(ea.codigo_entidad)}
-                        className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
-                        title="Quitar entidad"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                </>
               )}
 
               {error && (

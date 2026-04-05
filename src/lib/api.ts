@@ -24,6 +24,11 @@ import type {
   CaracteristicaPersona,
   CategoriaConCaracteristicas,
   RolCaractPers,
+  CategoriaCaractDocs,
+  TipoCaractDocs,
+  CaracteristicaDocumento,
+  CategoriaConCaracteristicasDocs,
+  RolCaractDocs,
   EstadoCanonicoConversacion,
   EstadoCanonicoCompromiso,
   TipoConversacion,
@@ -110,6 +115,8 @@ export const authApi = {
     api.post<UsuarioContexto>('/auth/cambiar-entidad', { codigo_entidad: codigoEntidad }).then((r) => r.data),
   cambiarGrupo: (codigoGrupo: string) =>
     api.post<UsuarioContexto>('/auth/cambiar-grupo', { codigo_grupo: codigoGrupo }).then((r) => r.data),
+  cambiarAplicacion: (codigoAplicacion: string) =>
+    api.post<UsuarioContexto>('/auth/cambiar-aplicacion', { codigo_aplicacion: codigoAplicacion }).then((r) => r.data),
 }
 
 // ─── Usuarios ─────────────────────────────────────────────────────────────────
@@ -345,6 +352,15 @@ export const documentosApi = {
   actualizar: (id: number, datos: Partial<Documento>) =>
     api.put<Documento>(`/documentos/${id}`, datos).then((r) => r.data),
   desactivar: (id: number) => api.delete(`/documentos/${id}`),
+  // Características
+  listarCaracteristicas: (id: number) =>
+    api.get<CategoriaConCaracteristicasDocs[]>(`/documentos/${id}/caracteristicas`).then((r) => r.data),
+  crearCaracteristica: (id: number, datos: Partial<CaracteristicaDocumento>) =>
+    api.post<CaracteristicaDocumento>(`/documentos/${id}/caracteristicas`, datos).then((r) => r.data),
+  actualizarCaracteristica: (id: number, idCar: number, datos: Partial<CaracteristicaDocumento>) =>
+    api.put<CaracteristicaDocumento>(`/documentos/${id}/caracteristicas/${idCar}`, datos).then((r) => r.data),
+  eliminarCaracteristica: (id: number, idCar: number) =>
+    api.delete(`/documentos/${id}/caracteristicas/${idCar}`),
 }
 
 // ─── Tipos Documento Persona ─────────────────────────────────────────────────
@@ -385,6 +401,35 @@ export const categoriasCaractPersApi = {
     api.put(`/categorias-caracteristica/${codigo}/roles/orden`, orden),
   quitarRol: (codigo: string, codigoRol: string) =>
     api.delete(`/categorias-caracteristica/${codigo}/roles/${codigoRol}`),
+}
+
+// ─── Categorías Características Documentos ──────────────────────────────────
+
+export const categoriasCaractDocsApi = {
+  listar: () => api.get<CategoriaCaractDocs[]>('/categorias-caracteristica-docs').then((r) => r.data),
+  crear: (datos: Partial<CategoriaCaractDocs>) =>
+    api.post<CategoriaCaractDocs>('/categorias-caracteristica-docs', datos).then((r) => r.data),
+  actualizar: (codigo: string, datos: Partial<CategoriaCaractDocs>) =>
+    api.put<CategoriaCaractDocs>(`/categorias-caracteristica-docs/${codigo}`, datos).then((r) => r.data),
+  desactivar: (codigo: string) => api.delete(`/categorias-caracteristica-docs/${codigo}`),
+  // Tipos
+  listarTipos: (codigo: string) =>
+    api.get<TipoCaractDocs[]>(`/categorias-caracteristica-docs/${codigo}/tipos`).then((r) => r.data),
+  crearTipo: (codigo: string, datos: Partial<TipoCaractDocs>) =>
+    api.post<TipoCaractDocs>(`/categorias-caracteristica-docs/${codigo}/tipos`, datos).then((r) => r.data),
+  actualizarTipo: (codigo: string, codigoTipo: string, datos: Partial<TipoCaractDocs>) =>
+    api.put<TipoCaractDocs>(`/categorias-caracteristica-docs/${codigo}/tipos/${codigoTipo}`, datos).then((r) => r.data),
+  desactivarTipo: (codigo: string, codigoTipo: string) =>
+    api.delete(`/categorias-caracteristica-docs/${codigo}/tipos/${codigoTipo}`),
+  // Roles
+  listarRoles: (codigo: string) =>
+    api.get<RolCaractDocs[]>(`/categorias-caracteristica-docs/${codigo}/roles`).then((r) => r.data),
+  asignarRol: (codigo: string, codigoRol: string) =>
+    api.post(`/categorias-caracteristica-docs/${codigo}/roles`, { codigo_rol: codigoRol }),
+  reordenarRoles: (codigo: string, orden: { codigo_rol: string; orden: number }[]) =>
+    api.put(`/categorias-caracteristica-docs/${codigo}/roles/orden`, orden),
+  quitarRol: (codigo: string, codigoRol: string) =>
+    api.delete(`/categorias-caracteristica-docs/${codigo}/roles/${codigoRol}`),
 }
 
 // ─── Personas ────────────────────────────────────────────────────────────────

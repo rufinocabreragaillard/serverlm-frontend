@@ -17,7 +17,7 @@ import {
   MessageSquare,
   ListChecks,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useTema } from '@/context/ThemeContext'
@@ -76,8 +76,23 @@ export function Sidebar() {
   const { logo, appNombreCorto } = useTema()
   const [colapsado, setColapsado] = useState(false)
 
+  // Filtrar menu por aplicacion activa
+  const menuFiltrado = useMemo(() => {
+    if (!usuario?.menu) return []
+    const appActiva = usuario.aplicacion_activa
+    if (!appActiva) return usuario.menu
+    return usuario.menu
+      .map(rol => ({
+        ...rol,
+        funciones: rol.funciones.filter(fn =>
+          fn.codigo_aplicacion === appActiva || !fn.codigo_aplicacion
+        )
+      }))
+      .filter(rol => rol.funciones.length > 0)
+  }, [usuario?.menu, usuario?.aplicacion_activa])
+
   // Determinar si usar menu dinamico o fallback
-  const menuDinamico = usuario?.menu && usuario.menu.length > 0
+  const menuDinamico = menuFiltrado.length > 0
 
   return (
     <aside
@@ -118,7 +133,7 @@ export function Sidebar() {
       <nav className="flex-1 py-4 px-2 flex flex-col gap-4 overflow-y-auto">
         {menuDinamico ? (
           /* Menu dinamico: roles como secciones, funciones como items */
-          usuario!.menu!.map((rol) => (
+          menuFiltrado.map((rol) => (
             <div key={rol.codigo_rol}>
               {!colapsado && (
                 <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-texto-muted">

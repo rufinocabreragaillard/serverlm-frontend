@@ -26,12 +26,14 @@ interface AuthContextType {
   logout: () => Promise<void>
   cambiarEntidad: (codigoEntidad: string) => Promise<void>
   cambiarGrupo: (codigoGrupo: string) => Promise<void>
+  cambiarAplicacion: (codigoAplicacion: string) => Promise<void>
   tieneFuncion: (codigoFuncion: string) => boolean
   tieneAccesoRuta: (ruta: string) => boolean
   esAdmin: () => boolean
   esSuperAdmin: () => boolean
   entidadActiva: string | null
   grupoActivo: string | null
+  aplicacionActiva: string | null
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -209,6 +211,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const cambiarAplicacion = async (codigoAplicacion: string) => {
+    try {
+      const ctx = await authApi.cambiarAplicacion(codigoAplicacion)
+      setUsuario(ctx)
+      actualizarMapaFunciones(ctx.menu)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar aplicación')
+      throw e
+    }
+  }
+
   const tieneFuncion = (codigoFuncion: string) =>
     usuario?.funciones?.includes(codigoFuncion) ?? false
 
@@ -244,13 +257,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const entidadActiva = usuario?.entidad_activa ?? null
   const grupoActivo = usuario?.grupo_activo ?? null
+  const aplicacionActiva = usuario?.aplicacion_activa ?? null
 
   return (
     <AuthContext.Provider
       value={{
         usuario, cargando, error, login, loginConGoogle, logout,
-        cambiarEntidad, cambiarGrupo, tieneFuncion, tieneAccesoRuta,
-        esAdmin, esSuperAdmin, entidadActiva, grupoActivo,
+        cambiarEntidad, cambiarGrupo, cambiarAplicacion,
+        tieneFuncion, tieneAccesoRuta,
+        esAdmin, esSuperAdmin, entidadActiva, grupoActivo, aplicacionActiva,
       }}
     >
       {children}

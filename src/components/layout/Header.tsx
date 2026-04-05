@@ -1,34 +1,41 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronDown, Building2, Layers, Check, Bell, Settings, LogOut, User, Save } from 'lucide-react'
+import { ChevronDown, Building2, Layers, Check, Bell, Settings, LogOut, User, Save, AppWindow } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Avatar from '@radix-ui/react-avatar'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Boton } from '@/components/ui/boton'
 import { usuariosApi, parametrosApi } from '@/lib/api'
 
 export function Header({ titulo }: { titulo?: string }) {
-  const { usuario, cambiarEntidad, cambiarGrupo, logout } = useAuth()
+  const { usuario, cambiarEntidad, cambiarGrupo, cambiarAplicacion, logout } = useAuth()
   const [cambiando, setCambiando] = useState(false)
 
-  // Modal Mi Cuenta
+  // Modal Mi Cuenta (con tabs: Cuenta + Parametros)
   const [modalCuenta, setModalCuenta] = useState(false)
-  const [formCuenta, setFormCuenta] = useState({ nombre: '', telefono: '', rol_principal: '' })
+  const [tabCuenta, setTabCuenta] = useState<'cuenta' | 'parametros'>('cuenta')
+  const [formCuenta, setFormCuenta] = useState({
+    nombre: '', telefono: '', rol_principal: '', alias: '', descripcion: '', aplicacion_por_defecto: ''
+  })
   const [guardandoCuenta, setGuardandoCuenta] = useState(false)
   const [errorCuenta, setErrorCuenta] = useState('')
   const [exitoCuenta, setExitoCuenta] = useState('')
 
-  // Modal Mis Parámetros
-  const [modalParametros, setModalParametros] = useState(false)
+  // Parametros (dentro de Mi Cuenta, tab Parametros)
   const [parametros, setParametros] = useState<{ categoria_parametro: string; tipo_parametro: string; valor_parametro: string }[]>([])
   const [cargandoParametros, setCargandoParametros] = useState(false)
   const [guardandoParametro, setGuardandoParametro] = useState(false)
   const [errorParametros, setErrorParametros] = useState('')
   const [exitoParametros, setExitoParametros] = useState('')
+
+  // Modal Cambio Aplicacion
+  const [modalAplicacion, setModalAplicacion] = useState(false)
+  const [cambiandoApp, setCambiandoApp] = useState(false)
 
   const handleCambiarEntidad = async (codigoEntidad: string) => {
     if (codigoEntidad === usuario?.entidad_activa) return
@@ -45,25 +52,47 @@ export function Header({ titulo }: { titulo?: string }) {
     setCambiando(true)
     try {
       await cambiarGrupo(codigoGrupo)
-      // El reload se hace en AuthContext.cambiarGrupo
     } catch {
       setCambiando(false)
     }
   }
 
+  const handleCambiarAplicacion = async (codigoApp: string) => {
+    if (codigoApp === usuario?.aplicacion_activa) return
+    setCambiandoApp(true)
+    try {
+      await cambiarAplicacion(codigoApp)
+      setModalAplicacion(false)
+    } catch {
+      // error manejado en AuthContext
+    } finally {
+      setCambiandoApp(false)
+    }
+  }
+
   // Mi Cuenta
   const abrirMiCuenta = () => {
+    setTabCuenta('cuenta')
     setFormCuenta({
       nombre: usuario?.nombre || '',
       telefono: '',
       rol_principal: usuario?.rol_principal || '',
+      alias: '',
+      descripcion: '',
+      aplicacion_por_defecto: usuario?.aplicacion_activa || '',
     })
     setErrorCuenta('')
     setExitoCuenta('')
-    // Cargar datos actuales del usuario
     if (usuario) {
       usuariosApi.obtener(usuario.codigo_usuario).then((u) => {
-        setFormCuenta({ nombre: u.nombre, telefono: u.telefono || '', rol_principal: u.rol_principal || '' })
+        setFormCuenta({
+          nombre: u.nombre,
+          telefono: u.telefono || '',
+          rol_principal: u.rol_principal || '',
+          alias: u.alias || '',
+          descripcion: u.descripcion || '',
+          aplicacion_por_defecto: u.aplicacion_por_defecto || '',
+        })
       }).catch(() => {})
     }
     setModalCuenta(true)
@@ -79,6 +108,9 @@ export function Header({ titulo }: { titulo?: string }) {
         nombre: formCuenta.nombre,
         telefono: formCuenta.telefono || undefined,
         rol_principal: formCuenta.rol_principal || undefined,
+        alias: formCuenta.alias || undefined,
+        descripcion: formCuenta.descripcion || undefined,
+        aplicacion_por_defecto: formCuenta.aplicacion_por_defecto || undefined,
       })
       setExitoCuenta('Datos actualizados correctamente')
     } catch (e) {
@@ -88,7 +120,7 @@ export function Header({ titulo }: { titulo?: string }) {
     }
   }
 
-  // Mis Parámetros
+  // Parametros
   const cargarParametros = useCallback(async () => {
     setCargandoParametros(true)
     setErrorParametros('')
@@ -101,13 +133,6 @@ export function Header({ titulo }: { titulo?: string }) {
       setCargandoParametros(false)
     }
   }, [])
-
-  const abrirMisParametros = () => {
-    setErrorParametros('')
-    setExitoParametros('')
-    cargarParametros()
-    setModalParametros(true)
-  }
 
   const guardarParametro = async (cat: string, tipo: string, valor: string) => {
     setGuardandoParametro(true)
@@ -123,6 +148,13 @@ export function Header({ titulo }: { titulo?: string }) {
       setGuardandoParametro(false)
     }
   }
+
+  // Cargar parametros cuando se abre la tab
+  useEffect(() => {
+    if (modalCuenta && tabCuenta === 'parametros') {
+      cargarParametros()
+    }
+  }, [modalCuenta, tabCuenta, cargarParametros])
 
   const entidadActual = usuario?.entidades?.find(
     (e) => e.codigo_entidad === usuario?.entidad_activa
@@ -144,6 +176,13 @@ export function Header({ titulo }: { titulo?: string }) {
         <h1 className="text-base font-semibold text-texto">{titulo}</h1>
 
         <div className="flex items-center gap-3">
+          {/* Nombre de la aplicacion activa */}
+          {usuario?.nombre_aplicacion && (
+            <span className="text-sm font-medium text-texto-muted hidden sm:block">
+              {usuario.nombre_aplicacion}
+            </span>
+          )}
+
           {/* Selector de grupo */}
           {usuario && tieneMultiplesGrupos && (
             <DropdownMenu.Root>
@@ -231,7 +270,7 @@ export function Header({ titulo }: { titulo?: string }) {
             <Bell size={18} />
           </button>
 
-          {/* Avatar y menú de usuario */}
+          {/* Avatar y menu de usuario */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
               <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-fondo transition-colors focus:outline-none">
@@ -258,11 +297,11 @@ export function Header({ titulo }: { titulo?: string }) {
                   Mi cuenta
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
-                  onSelect={abrirMisParametros}
+                  onSelect={() => setModalAplicacion(true)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-texto hover:bg-fondo cursor-pointer outline-none"
                 >
-                  <Settings size={14} className="shrink-0" />
-                  Mis parametros
+                  <AppWindow size={14} className="shrink-0" />
+                  Cambio aplicacion
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator className="h-px bg-borde my-1" />
                 <DropdownMenu.Item
@@ -278,89 +317,182 @@ export function Header({ titulo }: { titulo?: string }) {
         </div>
       </header>
 
-      {/* Modal Mi Cuenta */}
+      {/* Modal Mi Cuenta (con tabs) */}
       <Modal abierto={modalCuenta} alCerrar={() => setModalCuenta(false)} titulo="Mi cuenta">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">Correo electronico</label>
-            <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.codigo_usuario}</p>
+          {/* Tabs */}
+          <div className="flex border-b border-borde">
+            <button
+              onClick={() => setTabCuenta('cuenta')}
+              className={cn(
+                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                tabCuenta === 'cuenta'
+                  ? 'border-primario text-primario'
+                  : 'border-transparent text-texto-muted hover:text-texto'
+              )}
+            >
+              Cuenta
+            </button>
+            <button
+              onClick={() => setTabCuenta('parametros')}
+              className={cn(
+                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                tabCuenta === 'parametros'
+                  ? 'border-primario text-primario'
+                  : 'border-transparent text-texto-muted hover:text-texto'
+              )}
+            >
+              Parametros
+            </button>
           </div>
-          <Input
-            etiqueta="Nombre completo"
-            value={formCuenta.nombre}
-            onChange={(e) => setFormCuenta({ ...formCuenta, nombre: e.target.value })}
-          />
-          <Input
-            etiqueta="Telefono"
-            value={formCuenta.telefono}
-            onChange={(e) => setFormCuenta({ ...formCuenta, telefono: e.target.value })}
-            placeholder="+56 9 1234 5678"
-          />
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">Rol principal</label>
-            {usuario && usuario.roles.length > 0 ? (
-              <select
-                value={formCuenta.rol_principal}
-                onChange={(e) => setFormCuenta({ ...formCuenta, rol_principal: e.target.value })}
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
-              >
-                <option value="">Sin rol principal</option>
-                {usuario.roles.map((rol) => (
-                  <option key={rol} value={rol}>{rol}</option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.rol_principal || '—'}</p>
-            )}
-          </div>
-          {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
-          {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalCuenta(false)}>Cerrar</Boton>
-            <Boton variante="primario" onClick={guardarMiCuenta} cargando={guardandoCuenta}>
-              <Save size={14} /> Guardar
-            </Boton>
-          </div>
+
+          {tabCuenta === 'cuenta' ? (
+            /* Tab Cuenta */
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">Correo electronico</label>
+                <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.codigo_usuario}</p>
+              </div>
+              <Input
+                etiqueta="Alias"
+                value={formCuenta.alias}
+                onChange={(e) => setFormCuenta({ ...formCuenta, alias: e.target.value })}
+                placeholder="Alias del usuario"
+              />
+              <Input
+                etiqueta="Nombre completo"
+                value={formCuenta.nombre}
+                onChange={(e) => setFormCuenta({ ...formCuenta, nombre: e.target.value })}
+              />
+              <Input
+                etiqueta="Telefono"
+                value={formCuenta.telefono}
+                onChange={(e) => setFormCuenta({ ...formCuenta, telefono: e.target.value })}
+                placeholder="+56 9 1234 5678"
+              />
+              <Textarea
+                etiqueta="Descripcion"
+                value={formCuenta.descripcion}
+                onChange={(e) => setFormCuenta({ ...formCuenta, descripcion: e.target.value })}
+                rows={3}
+              />
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">Rol principal</label>
+                {usuario && usuario.roles.length > 0 ? (
+                  <select
+                    value={formCuenta.rol_principal}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, rol_principal: e.target.value })}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                  >
+                    <option value="">Sin rol principal</option>
+                    {usuario.roles.map((rol) => (
+                      <option key={rol} value={rol}>{rol}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.rol_principal || '\u2014'}</p>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">Aplicacion por defecto</label>
+                {usuario?.aplicaciones_disponibles && usuario.aplicaciones_disponibles.length > 0 ? (
+                  <select
+                    value={formCuenta.aplicacion_por_defecto}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, aplicacion_por_defecto: e.target.value })}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                  >
+                    <option value="">Sin aplicacion por defecto</option>
+                    {usuario.aplicaciones_disponibles.map((app) => (
+                      <option key={app.codigo_aplicacion} value={app.codigo_aplicacion}>{app.nombre}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.aplicacion_activa || '\u2014'}</p>
+                )}
+              </div>
+              {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
+              {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
+              <div className="flex gap-3 justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalCuenta(false)}>Cerrar</Boton>
+                <Boton variante="primario" onClick={guardarMiCuenta} cargando={guardandoCuenta}>
+                  <Save size={14} /> Guardar
+                </Boton>
+              </div>
+            </div>
+          ) : (
+            /* Tab Parametros */
+            <div className="flex flex-col gap-4">
+              {cargandoParametros ? (
+                <div className="flex flex-col gap-2">
+                  {[1, 2].map((i) => <div key={i} className="h-10 bg-fondo rounded-lg animate-pulse" />)}
+                </div>
+              ) : parametros.length === 0 ? (
+                <p className="text-sm text-texto-muted text-center py-4">No tienes parametros configurados</p>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                  {parametros.map((p) => (
+                    <div key={`${p.categoria_parametro}/${p.tipo_parametro}`} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-borde bg-surface">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-texto truncate">{p.categoria_parametro} / {p.tipo_parametro}</p>
+                        <input
+                          type="text"
+                          defaultValue={p.valor_parametro}
+                          onBlur={(e) => {
+                            if (e.target.value !== p.valor_parametro) {
+                              guardarParametro(p.categoria_parametro, p.tipo_parametro, e.target.value)
+                            }
+                          }}
+                          className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {errorParametros && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorParametros}</p></div>}
+              {exitoParametros && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoParametros}</p></div>}
+              <div className="flex justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalCuenta(false)}>Cerrar</Boton>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 
-      {/* Modal Mis Parámetros */}
-      <Modal abierto={modalParametros} alCerrar={() => setModalParametros(false)} titulo="Mis parametros">
-        <div className="flex flex-col gap-4">
-          {/* Lista de parámetros existentes */}
-          {cargandoParametros ? (
-            <div className="flex flex-col gap-2">
-              {[1, 2].map((i) => <div key={i} className="h-10 bg-fondo rounded-lg animate-pulse" />)}
-            </div>
-          ) : parametros.length === 0 ? (
-            <p className="text-sm text-texto-muted text-center py-4">No tienes parametros configurados</p>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-              {parametros.map((p) => (
-                <div key={`${p.categoria_parametro}/${p.tipo_parametro}`} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-borde bg-surface">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-texto truncate">{p.categoria_parametro} / {p.tipo_parametro}</p>
-                    <input
-                      type="text"
-                      defaultValue={p.valor_parametro}
-                      onBlur={(e) => {
-                        if (e.target.value !== p.valor_parametro) {
-                          guardarParametro(p.categoria_parametro, p.tipo_parametro, e.target.value)
-                        }
-                      }}
-                      className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5"
-                    />
-                  </div>
+      {/* Modal Cambio Aplicacion */}
+      <Modal abierto={modalAplicacion} alCerrar={() => setModalAplicacion(false)} titulo="Cambiar aplicacion">
+        <div className="flex flex-col gap-2">
+          {usuario?.aplicaciones_disponibles && usuario.aplicaciones_disponibles.length > 0 ? (
+            usuario.aplicaciones_disponibles.map((app) => (
+              <button
+                key={app.codigo_aplicacion}
+                onClick={() => handleCambiarAplicacion(app.codigo_aplicacion)}
+                disabled={cambiandoApp}
+                className={cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors text-left',
+                  app.codigo_aplicacion === usuario.aplicacion_activa
+                    ? 'bg-primario-muy-claro text-primario font-medium border border-primario/30'
+                    : 'bg-surface border border-borde hover:bg-fondo text-texto',
+                  cambiandoApp && 'opacity-50 cursor-wait'
+                )}
+              >
+                <Check
+                  size={16}
+                  className={cn(
+                    'shrink-0',
+                    app.codigo_aplicacion === usuario.aplicacion_activa ? 'opacity-100 text-primario' : 'opacity-0'
+                  )}
+                />
+                <div>
+                  <p className="font-medium">{app.nombre}</p>
+                  <p className="text-xs text-texto-muted">{app.codigo_aplicacion}</p>
                 </div>
-              ))}
-            </div>
+              </button>
+            ))
+          ) : (
+            <p className="text-sm text-texto-muted text-center py-4">No hay aplicaciones disponibles</p>
           )}
-
-          {errorParametros && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorParametros}</p></div>}
-          {exitoParametros && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoParametros}</p></div>}
-          <div className="flex justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalParametros(false)}>Cerrar</Boton>
-          </div>
         </div>
       </Modal>
     </>

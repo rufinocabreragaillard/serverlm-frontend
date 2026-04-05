@@ -26,6 +26,7 @@ export interface FuncionMenu {
   icono: string | null
   url: string | null
   orden: number
+  codigo_aplicacion?: string | null
 }
 
 export interface RolMenu {
@@ -35,9 +36,15 @@ export interface RolMenu {
   funciones: FuncionMenu[]
 }
 
+export interface AplicacionResumen {
+  codigo_aplicacion: string
+  nombre: string
+}
+
 export interface UsuarioContexto {
   codigo_usuario: string   // email
   nombre: string
+  alias?: string | null
   activo: boolean
   grupo_activo: string
   nombre_grupo?: string
@@ -51,6 +58,10 @@ export interface UsuarioContexto {
   sesion_duracion_minutos?: number
   menu?: RolMenu[]
   tema?: Record<string, unknown> | null
+  aplicacion_por_defecto?: string | null
+  aplicacion_activa?: string | null
+  nombre_aplicacion?: string | null
+  aplicaciones_disponibles?: AplicacionResumen[]
   aplicaciones_url?: Record<string, string>
 }
 
@@ -92,6 +103,7 @@ export interface Area {
 export interface Usuario {
   codigo_usuario: string   // email
   nombre: string
+  alias?: string
   telefono?: string
   fono_verificado?: boolean
   descripcion?: string
@@ -108,6 +120,7 @@ export interface Usuario {
 export interface CrearUsuarioRequest {
   codigo_usuario: string
   nombre: string
+  alias?: string
   password?: string
   telefono?: string
   descripcion?: string
@@ -325,6 +338,8 @@ export interface Documento {
   nombre_documento: string
   ubicacion_documento?: string | null
   resumen_documento?: string | null
+  fecha_modificacion?: string | null
+  tamano_kb?: number | null
   activo: boolean
 }
 
@@ -389,6 +404,50 @@ export interface RolCaractPers {
 export interface CategoriaConCaracteristicas {
   categoria: CategoriaCaractPers
   caracteristicas: CaracteristicaPersona[]
+}
+
+// ─── Características Documentos ─────────────────────────────────────────────
+export interface CategoriaCaractDocs {
+  codigo_grupo: string
+  codigo_cat_docs: string
+  nombre_cat_docs: string
+  descripcion_cat_docs?: string | null
+  es_unica_docs: boolean
+  editable_en_detalle_docs: boolean
+  activo: boolean
+}
+
+export interface TipoCaractDocs {
+  codigo_grupo: string
+  codigo_cat_docs: string
+  codigo_tipo_docs: string
+  nombre_tipo_docs: string
+  activo: boolean
+}
+
+export interface CaracteristicaDocumento {
+  id_caracteristica_docs: number
+  codigo_documento: number
+  codigo_grupo: string
+  codigo_cat_docs: string
+  codigo_tipo_docs: string
+  valor_texto_docs?: string | null
+  valor_numerico_docs?: number | null
+  valor_fecha_docs?: string | null
+  tipos_caract_docs?: { nombre_tipo_docs: string } | null
+}
+
+export interface RolCaractDocs {
+  codigo_grupo: string
+  codigo_rol: string
+  codigo_cat_docs: string
+  orden: number
+  roles?: { nombre_rol: string; activo: boolean } | null
+}
+
+export interface CategoriaConCaracteristicasDocs {
+  categoria: CategoriaCaractDocs
+  caracteristicas: CaracteristicaDocumento[]
 }
 
 // ─── Utilitarios ─────────────────────────────────────────────────────────────
