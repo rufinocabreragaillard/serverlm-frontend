@@ -295,16 +295,25 @@ export default function PaginaUsuarios() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Error al quitar rol') }
   }
 
-  const moverRol = async (index: number, direccion: 'arriba' | 'abajo') => {
+  const moverRol = async (filteredIndex: number, direccion: 'arriba' | 'abajo') => {
     if (!usuarioEditando) return
+    // Trabajar con los roles filtrados del grupo activo
+    const rolesFiltrados = rolesUsuario.filter((r) => r.codigo_grupo === grupoActivo)
+    const swapFilteredIndex = direccion === 'arriba' ? filteredIndex - 1 : filteredIndex + 1
+    if (swapFilteredIndex < 0 || swapFilteredIndex >= rolesFiltrados.length) return
+    // Encontrar los índices reales en el array completo
+    const rolA = rolesFiltrados[filteredIndex]
+    const rolB = rolesFiltrados[swapFilteredIndex]
+    const realIndexA = rolesUsuario.findIndex((r) => r.codigo_grupo === rolA.codigo_grupo && r.codigo_rol === rolA.codigo_rol)
+    const realIndexB = rolesUsuario.findIndex((r) => r.codigo_grupo === rolB.codigo_grupo && r.codigo_rol === rolB.codigo_rol)
+    if (realIndexA === -1 || realIndexB === -1) return
+    // Intercambiar órdenes y posiciones
     const lista = [...rolesUsuario]
-    const swapIndex = direccion === 'arriba' ? index - 1 : index + 1
-    if (swapIndex < 0 || swapIndex >= lista.length) return
-    const ordenA = lista[index].orden
-    const ordenB = lista[swapIndex].orden
-    lista[index].orden = ordenB
-    lista[swapIndex].orden = ordenA
-    ;[lista[index], lista[swapIndex]] = [lista[swapIndex], lista[index]]
+    const ordenA = lista[realIndexA].orden
+    const ordenB = lista[realIndexB].orden
+    lista[realIndexA].orden = ordenB
+    lista[realIndexB].orden = ordenA
+    ;[lista[realIndexA], lista[realIndexB]] = [lista[realIndexB], lista[realIndexA]]
     setRolesUsuario(lista)
     try {
       await usuariosApi.reordenarRoles(usuarioEditando.codigo_usuario, lista.map((r) => ({
