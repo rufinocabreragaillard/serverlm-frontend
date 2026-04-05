@@ -462,6 +462,26 @@ export interface EstadoDoc {
   activo: boolean
 }
 
+// ─── Cola Estados Docs ─────────────────────────────────────────────────────
+
+export interface ColaEstadoDoc {
+  id_cola: number
+  codigo_grupo: string
+  codigo_documento: number
+  codigo_estado_origen?: string | null
+  codigo_estado_destino: string
+  estado_cola: string
+  prioridad: number
+  fecha_cola: string
+  fecha_inicio?: string | null
+  fecha_fin?: string | null
+  codigo_usuario: string
+  resultado?: string | null
+  intentos: number
+  max_intentos: number
+  documentos?: { codigo_documento: number; nombre_documento: string; codigo_estado: string | null } | null
+}
+
 // ─── Ubicaciones Docs ──────────────────────────────────────────────────────
 
 export interface UbicacionDoc {

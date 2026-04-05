@@ -40,6 +40,7 @@ import type {
   Compromiso,
   UbicacionDoc,
   EstadoDoc,
+  ColaEstadoDoc,
 } from './tipos'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -564,6 +565,18 @@ export const estadosDocsApi = {
   actualizar: (codigo: string, datos: Partial<EstadoDoc>) =>
     api.put<EstadoDoc>(`/estados-docs/${codigo}`, datos).then((r) => r.data),
   desactivar: (codigo: string) => api.delete(`/estados-docs/${codigo}`),
+}
+
+// ─── Cola Estados Docs ─────────────────────────────────────────────────────
+
+export const colaEstadosDocsApi = {
+  listar: (estadoCola?: string) =>
+    api.get<ColaEstadoDoc[]>('/cola-estados-docs', { params: estadoCola ? { estado_cola: estadoCola } : undefined }).then((r) => r.data),
+  inicializar: (items: { codigo_documento: number; codigo_estado_destino: string; prioridad?: number }[]) =>
+    api.post<{ encolados: number; omitidos: number; total: number }>('/cola-estados-docs/inicializar', { items }).then((r) => r.data),
+  cerrar: () =>
+    api.post<{ eliminados: number }>('/cola-estados-docs/cerrar').then((r) => r.data),
+  eliminar: (id: number) => api.delete(`/cola-estados-docs/${id}`),
 }
 
 // ─── Ubicaciones Docs ──────────────────────────────────────────────────────

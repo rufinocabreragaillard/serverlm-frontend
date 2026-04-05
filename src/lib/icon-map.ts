@@ -63,6 +63,7 @@ import {
   Files,
   Copy,
   Tag,
+  ListOrdered,
 } from 'lucide-react'
 
 const iconMap: Record<string, LucideIcon> = {
@@ -93,6 +94,9 @@ const iconMap: Record<string, LucideIcon> = {
   SlidersHorizontal,
   Wrench,
   Cog,
+
+  // Listas
+  ListOrdered,
 
   // Datos y reportes
   Database,
