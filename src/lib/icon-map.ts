@@ -62,6 +62,7 @@ import {
   Upload,
   Files,
   Copy,
+  Tag,
 } from 'lucide-react'
 
 const iconMap: Record<string, LucideIcon> = {
@@ -122,6 +123,9 @@ const iconMap: Record<string, LucideIcon> = {
   // Copiar y archivos
   Files,
   Copy,
+
+  // Etiquetas
+  Tag,
 
   // Varios
   Calendar,

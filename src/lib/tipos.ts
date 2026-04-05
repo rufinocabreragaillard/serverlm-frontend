@@ -340,6 +340,7 @@ export interface Documento {
   resumen_documento?: string | null
   fecha_modificacion?: string | null
   tamano_kb?: number | null
+  codigo_estado?: string | null
   activo: boolean
 }
 
@@ -448,6 +449,17 @@ export interface RolCaractDocs {
 export interface CategoriaConCaracteristicasDocs {
   categoria: CategoriaCaractDocs
   caracteristicas: CaracteristicaDocumento[]
+}
+
+// ─── Estados Docs ──────────────────────────────────────────────────────────
+
+export interface EstadoDoc {
+  codigo_grupo: string
+  codigo_estado: string
+  nombre_estado: string
+  descripcion?: string | null
+  orden: number
+  activo: boolean
 }
 
 // ─── Ubicaciones Docs ──────────────────────────────────────────────────────

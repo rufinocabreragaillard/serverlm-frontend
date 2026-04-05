@@ -39,6 +39,7 @@ import type {
   ParticipanteConversacion,
   Compromiso,
   UbicacionDoc,
+  EstadoDoc,
 } from './tipos'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -552,6 +553,17 @@ export const compromisosApi = {
     api.put(`/compromisos/compromisos-lista/${id}`, datos).then((r) => r.data),
   eliminarCompromiso: (id: number) =>
     api.delete(`/compromisos/compromisos-lista/${id}`),
+}
+
+// ─── Estados Docs ──────────────────────────────────────────────────────────
+
+export const estadosDocsApi = {
+  listar: () => api.get<EstadoDoc[]>('/estados-docs').then((r) => r.data),
+  crear: (datos: Partial<EstadoDoc>) =>
+    api.post<EstadoDoc>('/estados-docs', datos).then((r) => r.data),
+  actualizar: (codigo: string, datos: Partial<EstadoDoc>) =>
+    api.put<EstadoDoc>(`/estados-docs/${codigo}`, datos).then((r) => r.data),
+  desactivar: (codigo: string) => api.delete(`/estados-docs/${codigo}`),
 }
 
 // ─── Ubicaciones Docs ──────────────────────────────────────────────────────

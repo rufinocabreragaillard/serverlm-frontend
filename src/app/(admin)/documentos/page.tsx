@@ -8,8 +8,8 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { documentosApi, categoriasCaractDocsApi } from '@/lib/api'
-import type { Documento, CategoriaConCaracteristicasDocs, CaracteristicaDocumento, TipoCaractDocs } from '@/lib/tipos'
+import { documentosApi, categoriasCaractDocsApi, estadosDocsApi } from '@/lib/api'
+import type { Documento, CategoriaConCaracteristicasDocs, CaracteristicaDocumento, TipoCaractDocs, EstadoDoc } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 
@@ -20,6 +20,7 @@ export default function PaginaDocumentos() {
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [documentos, setDocumentos] = useState<Documento[]>([])
+  const [estados, setEstados] = useState<EstadoDoc[]>([])
   const [cargando, setCargando] = useState(true)
   const [busqueda, setBusqueda] = useState('')
 
@@ -33,6 +34,7 @@ export default function PaginaDocumentos() {
     resumen_documento: '',
     fecha_modificacion: '',
     tamano_kb: '',
+    codigo_estado: '',
   })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -60,7 +62,12 @@ export default function PaginaDocumentos() {
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      setDocumentos(await documentosApi.listar())
+      const [docs, ests] = await Promise.all([
+        documentosApi.listar(),
+        estadosDocsApi.listar(),
+      ])
+      setDocumentos(docs)
+      setEstados(ests)
     } finally {
       setCargando(false)
     }
@@ -91,7 +98,7 @@ export default function PaginaDocumentos() {
   // ── CRUD ──────────────────────────────────────────────────────────────────
   const abrirNuevo = () => {
     setEditando(null)
-    setForm({ nombre_documento: '', ubicacion_documento: '', resumen_documento: '', fecha_modificacion: '', tamano_kb: '' })
+    setForm({ nombre_documento: '', ubicacion_documento: '', resumen_documento: '', fecha_modificacion: '', tamano_kb: '', codigo_estado: '' })
     setError('')
     setTabModal('datos')
     setCategoriasConCaract([])
@@ -106,6 +113,7 @@ export default function PaginaDocumentos() {
       resumen_documento: d.resumen_documento || '',
       fecha_modificacion: d.fecha_modificacion ? d.fecha_modificacion.slice(0, 16) : '',
       tamano_kb: d.tamano_kb != null ? String(d.tamano_kb) : '',
+      codigo_estado: d.codigo_estado || '',
     })
     setError('')
     setTabModal('datos')
@@ -127,6 +135,7 @@ export default function PaginaDocumentos() {
           resumen_documento: form.resumen_documento || undefined,
           fecha_modificacion: form.fecha_modificacion || undefined,
           tamano_kb: form.tamano_kb ? parseFloat(form.tamano_kb) : undefined,
+          codigo_estado: form.codigo_estado || undefined,
         })
       } else {
         await documentosApi.crear({
@@ -136,6 +145,7 @@ export default function PaginaDocumentos() {
           resumen_documento: form.resumen_documento || undefined,
           fecha_modificacion: form.fecha_modificacion || undefined,
           tamano_kb: form.tamano_kb ? parseFloat(form.tamano_kb) : undefined,
+          codigo_estado: form.codigo_estado || undefined,
         })
       }
       setModal(false)
@@ -229,6 +239,7 @@ export default function PaginaDocumentos() {
                   { titulo: 'Resumen', campo: 'resumen_documento' },
                   { titulo: 'Fecha Modificación', campo: 'fecha_modificacion' },
                   { titulo: 'Tamaño KB', campo: 'tamano_kb' },
+                  { titulo: 'Estado Doc', campo: 'codigo_estado' },
                   { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
                 ],
                 'documentos'
@@ -256,6 +267,7 @@ export default function PaginaDocumentos() {
             <TablaTh>Resumen</TablaTh>
             <TablaTh>Modificación</TablaTh>
             <TablaTh>KB</TablaTh>
+            <TablaTh>Estado Doc</TablaTh>
             <TablaTh>Estado</TablaTh>
             <TablaTh className="text-right">Acciones</TablaTh>
           </tr>
@@ -263,13 +275,13 @@ export default function PaginaDocumentos() {
         <TablaCuerpo>
           {cargando ? (
             <TablaFila>
-              <TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>
+              <TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>
                 Cargando...
               </TablaTd>
             </TablaFila>
           ) : filtrados.length === 0 ? (
             <TablaFila>
-              <TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>
+              <TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>
                 No se encontraron documentos
               </TablaTd>
             </TablaFila>
@@ -310,6 +322,11 @@ export default function PaginaDocumentos() {
                 </TablaTd>
                 <TablaTd className="text-texto-muted text-sm text-right">
                   {d.tamano_kb != null ? d.tamano_kb.toLocaleString('es-CL') : '—'}
+                </TablaTd>
+                <TablaTd className="text-sm">
+                  {d.codigo_estado
+                    ? (estados.find((e) => e.codigo_estado === d.codigo_estado)?.nombre_estado || d.codigo_estado)
+                    : '—'}
                 </TablaTd>
                 <TablaTd>
                   <Insignia variante={d.activo ? 'exito' : 'error'}>
@@ -405,6 +422,23 @@ export default function PaginaDocumentos() {
                     placeholder="0.00"
                   />
                 </div>
+              </div>
+
+              {/* Estado del documento */}
+              <div>
+                <label className="block text-sm font-medium text-texto mb-1.5">Estado del documento</label>
+                <select
+                  className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
+                  value={form.codigo_estado}
+                  onChange={(e) => setForm({ ...form, codigo_estado: e.target.value })}
+                >
+                  <option value="">— Sin estado —</option>
+                  {estados.filter((e) => e.activo).map((e) => (
+                    <option key={e.codigo_estado} value={e.codigo_estado}>
+                      {e.nombre_estado}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {error && (
