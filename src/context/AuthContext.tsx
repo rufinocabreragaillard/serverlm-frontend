@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const ctx = await authApi.cambiarGrupo(codigoGrupo)
       setUsuario(ctx)
       actualizarMapaFunciones(ctx.menu)
-      window.location.reload()
+      router.push('/dashboard')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cambiar grupo')
       throw e
