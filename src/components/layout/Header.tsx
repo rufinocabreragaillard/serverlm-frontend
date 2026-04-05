@@ -173,16 +173,15 @@ export function Header({ titulo }: { titulo?: string }) {
   return (
     <>
       <header className="h-16 bg-surface border-b border-borde flex items-center justify-between px-6 shrink-0">
-        <h1 className="text-base font-semibold text-texto">{titulo}</h1>
-
-        <div className="flex items-center gap-3">
-          {/* Nombre de la aplicacion activa */}
+        <div className="flex items-center gap-4">
           {usuario?.nombre_aplicacion && (
-            <span className="text-sm font-medium text-texto-muted hidden sm:block">
+            <span className="text-2xl font-bold text-texto-muted">
               {usuario.nombre_aplicacion}
             </span>
           )}
+        </div>
 
+        <div className="flex items-center gap-3">
           {/* Selector de grupo */}
           {usuario && tieneMultiplesGrupos && (
             <DropdownMenu.Root>
