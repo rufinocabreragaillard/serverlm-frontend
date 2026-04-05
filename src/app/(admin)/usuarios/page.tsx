@@ -249,6 +249,10 @@ export default function PaginaUsuarios() {
           telefono: form.telefono || undefined,
           descripcion: form.descripcion || undefined,
           rol_principal: form.rol_principal || undefined,
+          grupo_por_defecto: form.grupo_por_defecto || undefined,
+          entidad_por_defecto: form.entidad_por_defecto || undefined,
+          codigo_area_por_defecto: form.codigo_area_por_defecto || undefined,
+          aplicacion_por_defecto: form.aplicacion_por_defecto || undefined,
         })
       } else {
         await usuariosApi.crear({
