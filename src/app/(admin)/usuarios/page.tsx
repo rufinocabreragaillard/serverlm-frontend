@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Search, Pencil, Trash2, UserCheck, UserX, X, Star, Phone, PhoneOff, Download, ChevronUp, ChevronDown } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
@@ -76,6 +77,7 @@ export default function PaginaUsuarios() {
     codigo_usuario: '',
     nombre: '',
     telefono: '',
+    descripcion: '',
     rol_principal: '',
     grupo_por_defecto: '',
     entidad_por_defecto: '',
@@ -186,7 +188,7 @@ export default function PaginaUsuarios() {
   // ── Abrir modal ────────────────────────────────────────────────────────────
   const abrirNuevo = () => {
     setUsuarioEditando(null)
-    setForm({ codigo_usuario: '', nombre: '', telefono: '', rol_principal: '',
+    setForm({ codigo_usuario: '', nombre: '', telefono: '', descripcion: '', rol_principal: '',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area_por_defecto: '', aplicacion_por_defecto: '', invitar: true })
     setError('')
     setGuardando(false)
@@ -204,6 +206,7 @@ export default function PaginaUsuarios() {
       codigo_usuario: u.codigo_usuario,
       nombre: u.nombre,
       telefono: u.telefono || '',
+      descripcion: u.descripcion || '',
       rol_principal: u.rol_principal || '',
       grupo_por_defecto: u.grupo_por_defecto || '',
       entidad_por_defecto: u.entidad_por_defecto || '',
@@ -241,6 +244,7 @@ export default function PaginaUsuarios() {
         await usuariosApi.actualizar(usuarioEditando.codigo_usuario, {
           nombre: form.nombre,
           telefono: form.telefono || undefined,
+          descripcion: form.descripcion || undefined,
           rol_principal: form.rol_principal || undefined,
           grupo_por_defecto: form.grupo_por_defecto || undefined,
           entidad_por_defecto: form.entidad_por_defecto || undefined,
@@ -252,6 +256,7 @@ export default function PaginaUsuarios() {
           codigo_usuario: form.codigo_usuario,
           nombre: form.nombre,
           telefono: form.telefono || undefined,
+          descripcion: form.descripcion || undefined,
           rol_principal: form.rol_principal || undefined,
           invitar: form.invitar,
         })
@@ -630,6 +635,14 @@ export default function PaginaUsuarios() {
                   <p className="text-xs text-yellow-600">Al guardar, se requerirá verificar el nuevo teléfono</p>
                 )}
               </div>
+
+              {/* Descripción */}
+              <Textarea
+                etiqueta="Descripción"
+                value={form.descripcion}
+                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                rows={3}
+              />
 
               {/* ── Defaults de preferencia (solo edición) ─────────────────── */}
               {usuarioEditando && (

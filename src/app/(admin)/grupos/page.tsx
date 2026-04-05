@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Pencil, Layers, Users, Building2, X, Search, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
@@ -32,7 +33,7 @@ export default function PaginaGrupos() {
 
   const [modalGrupo, setModalGrupo] = useState(false)
   const [grupoEditando, setGrupoEditando] = useState<Grupo | null>(null)
-  const [formGrupo, setFormGrupo] = useState({ codigo_grupo: '', nombre: '' })
+  const [formGrupo, setFormGrupo] = useState({ codigo_grupo: '', nombre: '', descripcion: '' })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -96,14 +97,14 @@ export default function PaginaGrupos() {
 
   const abrirNuevoGrupo = () => {
     setGrupoEditando(null)
-    setFormGrupo({ codigo_grupo: '', nombre: '' })
+    setFormGrupo({ codigo_grupo: '', nombre: '', descripcion: '' })
     setError('')
     setModalGrupo(true)
   }
 
   const abrirEditarGrupo = (g: Grupo) => {
     setGrupoEditando(g)
-    setFormGrupo({ codigo_grupo: g.codigo_grupo, nombre: g.nombre })
+    setFormGrupo({ codigo_grupo: g.codigo_grupo, nombre: g.nombre, descripcion: g.descripcion || '' })
     setError('')
     setModalGrupo(true)
   }
@@ -113,9 +114,9 @@ export default function PaginaGrupos() {
     setGuardando(true)
     try {
       if (grupoEditando) {
-        await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre })
+        await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
       } else {
-        await gruposApi.crear({ codigo_grupo: formGrupo.codigo_grupo, nombre: formGrupo.nombre })
+        await gruposApi.crear({ codigo_grupo: formGrupo.codigo_grupo, nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
       }
       setModalGrupo(false)
       cargar()
@@ -592,6 +593,7 @@ export default function PaginaGrupos() {
         <div className="flex flex-col gap-4">
           <Input etiqueta="Codigo *" value={formGrupo.codigo_grupo} onChange={(e) => setFormGrupo({ ...formGrupo, codigo_grupo: e.target.value.toUpperCase() })} disabled={!!grupoEditando} placeholder="CORP" />
           <Input etiqueta="Nombre *" value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder="Corporacion Municipal" />
+          <Textarea etiqueta="Descripción" value={formGrupo.descripcion} onChange={(e) => setFormGrupo({ ...formGrupo, descripcion: e.target.value })} rows={3} />
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Cancelar</Boton>
@@ -616,7 +618,7 @@ export default function PaginaGrupos() {
             <>
               <Input etiqueta="Código *" value={formEntidad.codigo_entidad} onChange={(e) => setFormEntidad({ ...formEntidad, codigo_entidad: e.target.value.toUpperCase() })} disabled={!!entidadEditando} placeholder="MUNI" />
               <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad" />
-              <Input etiqueta="Descripción" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} placeholder="Descripción opcional" />
+              <Textarea etiqueta="Descripción" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} placeholder="Descripción opcional" rows={3} />
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>

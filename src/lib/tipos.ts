@@ -8,6 +8,7 @@ export interface GrupoResumen {
 export interface Grupo {
   codigo_grupo: string
   nombre: string
+  descripcion?: string
   activo: boolean
 }
 
@@ -93,6 +94,7 @@ export interface Usuario {
   nombre: string
   telefono?: string
   fono_verificado?: boolean
+  descripcion?: string
   activo: boolean
   rol_principal?: string
   entidad_por_defecto?: string
@@ -108,6 +110,7 @@ export interface CrearUsuarioRequest {
   nombre: string
   password?: string
   telefono?: string
+  descripcion?: string
   rol_principal?: string
   entidad_por_defecto?: string
   grupo_por_defecto?: string

@@ -12,7 +12,7 @@ import {
 } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { authApi } from '@/lib/api'
+import { authApi, actualizarMapaFunciones } from '@/lib/api'
 import type { UsuarioContexto } from '@/lib/tipos'
 
 const PUBLIC_ROUTES = ['/login', '/auth/callback', '/auth/reset-password']
@@ -51,9 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const ctx = await authApi.yo()
       setUsuario(ctx)
+      actualizarMapaFunciones(ctx.menu)
       return ctx
     } catch {
       setUsuario(null)
+      actualizarMapaFunciones()
       return null
     }
   }, [])
@@ -180,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut()
     setUsuario(null)
+    actualizarMapaFunciones()
     router.push('/login')
   }
 
@@ -187,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const ctx = await authApi.cambiarEntidad(codigoEntidad)
       setUsuario(ctx)
+      actualizarMapaFunciones(ctx.menu)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cambiar entidad')
       throw e
@@ -197,6 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const ctx = await authApi.cambiarGrupo(codigoGrupo)
       setUsuario(ctx)
+      actualizarMapaFunciones(ctx.menu)
       window.location.reload()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cambiar grupo')

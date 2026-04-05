@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Pencil, Building2, MapPin, Download, Search, Trash2, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
@@ -125,10 +126,9 @@ export default function PaginaEntidades() {
     setGuardando(true)
     try {
       if (entidadEditando) {
-        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre })
+        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined })
       } else {
-        const { descripcion, ...datosLimpios } = formEntidad
-        await entidadesApi.crear({ ...datosLimpios, codigo_grupo: grupoActivo || 'ADMIN' })
+        await entidadesApi.crear({ ...formEntidad, codigo_grupo: grupoActivo || 'ADMIN' })
       }
       setModalEntidad(false)
       cargar()
@@ -456,7 +456,7 @@ export default function PaginaEntidades() {
         <div className="flex flex-col gap-4">
           <Input etiqueta="Codigo *" value={formEntidad.codigo_entidad} onChange={(e) => setFormEntidad({ ...formEntidad, codigo_entidad: e.target.value.toUpperCase() })} disabled={!!entidadEditando} placeholder="MUNI" />
           <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad de..." />
-          <Input etiqueta="Descripcion" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} />
+          <Textarea etiqueta="Descripcion" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} rows={3} />
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>
@@ -507,7 +507,7 @@ export default function PaginaEntidades() {
             <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} disabled={!!rolEditando} placeholder="ADMIN" />
             <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
             <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
-            <Input etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} />
+            <Textarea etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} rows={3} />
             <Input etiqueta="URL de inicio" value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder="/admin/dashboard" />
             {rolEditando && (
               <div className="flex flex-col gap-1"><label className="text-sm font-medium text-texto">Función por defecto</label>

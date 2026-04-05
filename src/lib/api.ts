@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import { obtenerToken } from './supabase'
+import type { RolMenu } from './tipos'
 import type {
   UsuarioContexto,
   Usuario,
@@ -38,10 +39,47 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 const api = axios.create({ baseURL: BASE_URL, timeout: 15000 })
 
-// Interceptor: agrega el token JWT de Supabase en cada request
+// ── Mapa URL → codigo_funcion (para auditoría) ──────────────────────────────
+let _urlToFuncion: Record<string, string> = {}
+
+/**
+ * Actualiza el mapa de URL→codigo_funcion desde el menú dinámico del usuario.
+ * Se llama desde AuthContext cada vez que cambia el usuario/grupo/entidad.
+ */
+export function actualizarMapaFunciones(menu?: RolMenu[]) {
+  const mapa: Record<string, string> = {}
+  if (menu) {
+    for (const rol of menu) {
+      for (const fn of rol.funciones) {
+        if (fn.url) mapa[fn.url] = fn.codigo_funcion
+      }
+    }
+  }
+  _urlToFuncion = mapa
+}
+
+/**
+ * Resuelve el pathname actual al codigo_funcion correspondiente.
+ * Busca coincidencia exacta primero, luego por prefijo (para sub-rutas).
+ */
+function resolverFuncion(): string | null {
+  if (typeof window === 'undefined') return null
+  const path = window.location.pathname
+  // Coincidencia exacta
+  if (_urlToFuncion[path]) return _urlToFuncion[path]
+  // Coincidencia por prefijo (ej: /entidades/editar → /entidades)
+  for (const url of Object.keys(_urlToFuncion)) {
+    if (path.startsWith(url + '/')) return _urlToFuncion[url]
+  }
+  return null
+}
+
+// Interceptor: agrega el token JWT de Supabase y el codigo_funcion en cada request
 api.interceptors.request.use(async (config) => {
   const token = await obtenerToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  const funcion = resolverFuncion()
+  if (funcion) config.headers['X-Codigo-Funcion'] = funcion
   return config
 })
 
