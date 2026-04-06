@@ -141,6 +141,7 @@ export interface Rol {
   descripcion?: string
   url_inicio?: string
   funcion_por_defecto?: string
+  orden?: number
   activo: boolean
 }
 

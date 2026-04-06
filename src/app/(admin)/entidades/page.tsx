@@ -213,13 +213,26 @@ export default function PaginaEntidades() {
     catch { cargarFuncionesRol(rolEditando.codigo_rol) }
   }
 
+  const moverRol = async (index: number, dir: 'arriba' | 'abajo') => {
+    const lista = [...roles]; const swap = dir === 'arriba' ? index - 1 : index + 1
+    if (swap < 0 || swap >= lista.length) return
+    const oA = lista[index].orden ?? index
+    const oB = lista[swap].orden ?? swap
+    lista[index] = { ...lista[index], orden: oB }
+    lista[swap] = { ...lista[swap], orden: oA }
+    ;[lista[index], lista[swap]] = [lista[swap], lista[index]]
+    setRoles(lista)
+    try { await rolesApi.reordenar(lista.map((r, i) => ({ codigo_rol: r.codigo_rol, orden: r.orden ?? i }))) }
+    catch { cargar() }
+  }
+
   const funcionesDisponiblesRol = allFunciones.filter((f) => f.activo && !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion))
   const funcionesEntFiltradas = funcionesDisponiblesRol.filter((f) =>
     busquedaFuncionEnt.length === 0 ||
     f.nombre.toLowerCase().includes(busquedaFuncionEnt.toLowerCase()) ||
     f.codigo_funcion.toLowerCase().includes(busquedaFuncionEnt.toLowerCase())
   )
-  const rolesFiltrados = roles.filter((r) => r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase())).sort((a, b) => a.nombre.localeCompare(b.nombre))
+  const rolesFiltrados = roles.filter((r) => r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase()))
 
   // Áreas filtradas (mantiene orden jerárquico de la función SQL)
   const areasFiltradas = areas
@@ -421,17 +434,26 @@ export default function PaginaEntidades() {
               <Input placeholder="Buscar por nombre, código o alias..." value={busquedaRoles} onChange={(e) => setBusquedaRoles(e.target.value)} icono={<Search size={15} />} />
             </div>
             <div className="flex gap-2 ml-auto">
-              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(rolesFiltrados as Record<string, unknown>[], [{ titulo: 'Grupo', campo: 'codigo_grupo' }, { titulo: 'Código', campo: 'codigo_rol' }, { titulo: 'Alias', campo: 'alias_de_rol' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Descripción', campo: 'descripcion' }, { titulo: 'URL inicio', campo: 'url_inicio' }, { titulo: 'Fn. defecto', campo: 'funcion_por_defecto' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' }], `roles_${grupoActivo || 'todos'}`)} disabled={rolesFiltrados.length === 0}><Download size={15} />Excel</Boton>
+              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(rolesFiltrados as Record<string, unknown>[], [{ titulo: 'Orden', campo: 'orden' }, { titulo: 'Grupo', campo: 'codigo_grupo' }, { titulo: 'Código', campo: 'codigo_rol' }, { titulo: 'Alias', campo: 'alias_de_rol' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Descripción', campo: 'descripcion' }, { titulo: 'URL inicio', campo: 'url_inicio' }, { titulo: 'Fn. defecto', campo: 'funcion_por_defecto' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' }], `roles_${grupoActivo || 'todos'}`)} disabled={rolesFiltrados.length === 0}><Download size={15} />Excel</Boton>
               <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />Nuevo rol</Boton>
             </div>
           </div>
           <Tabla>
-            <TablaCabecera><tr><TablaTh>Código</TablaTh><TablaTh>Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>URL inicio</TablaTh><TablaTh>Fn. defecto</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
+            <TablaCabecera><tr><TablaTh className="w-16">Orden</TablaTh><TablaTh>Código</TablaTh><TablaTh>Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>URL inicio</TablaTh><TablaTh>Fn. defecto</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
             <TablaCuerpo>
-              {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
-              ) : rolesFiltrados.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron roles</TablaTd></TablaFila>
-              ) : rolesFiltrados.map((r) => (
+              {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
+              ) : rolesFiltrados.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron roles</TablaTd></TablaFila>
+              ) : rolesFiltrados.map((r, idx) => (
                 <TablaFila key={r.codigo_rol}>
+                  <TablaTd>
+                    <div className="flex items-center gap-1">
+                      <div className="flex flex-col">
+                        <button onClick={() => moverRol(idx, 'arriba')} disabled={idx === 0 || !!busquedaRoles} className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><ChevronUp size={14} /></button>
+                        <button onClick={() => moverRol(idx, 'abajo')} disabled={idx === rolesFiltrados.length - 1 || !!busquedaRoles} className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><ChevronDown size={14} /></button>
+                      </div>
+                      <span className="text-xs text-texto-muted w-5 text-center">{r.orden ?? idx}</span>
+                    </div>
+                  </TablaTd>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{r.codigo_rol}</code></TablaTd>
                   <TablaTd className="text-sm">{r.alias_de_rol || '—'}</TablaTd>
                   <TablaTd className="font-medium">{r.nombre}</TablaTd>

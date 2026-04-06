@@ -216,6 +216,8 @@ export const rolesApi = {
     api.put(`/roles/${id}/funciones/orden`, orden),
   quitarFuncion: (id: string, codigoFuncion: string) =>
     api.delete(`/roles/${id}/funciones/${codigoFuncion}`),
+  reordenar: (orden: { codigo_rol: string; orden: number }[]) =>
+    api.put('/roles/orden', orden),
   listarPorGrupo: (codigoGrupo: string) =>
     api.get<Rol[]>('/roles', { params: { codigo_grupo: codigoGrupo } }).then((r) => r.data),
   copiar: (datos: { codigo_grupo_origen: string; codigo_rol: string; codigo_grupo_destino: string }) =>
