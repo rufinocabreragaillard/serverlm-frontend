@@ -584,6 +584,7 @@ export default function PaginaUsuarios() {
         alCerrar={() => setModalAbierto(false)}
         titulo={usuarioEditando ? `Mi cuenta: ${usuarioEditando.codigo_usuario}` : 'Nuevo usuario'}
         descripcion={usuarioEditando ? undefined : 'El usuario recibirá una invitación por correo'}
+        className="max-w-2xl"
       >
         <div className="flex flex-col gap-4">
           {/* Pestañas (solo en edición) */}
@@ -608,73 +609,78 @@ export default function PaginaUsuarios() {
           {/* ── Tab Datos ─────────────────────────────────────────────────── */}
           {tabActiva === 'datos' && (
             <>
-              <Input
-                etiqueta="Correo electrónico *"
-                type="email"
-                value={form.codigo_usuario}
-                onChange={(e) => setForm({ ...form, codigo_usuario: e.target.value })}
-                disabled={!!usuarioEditando}
-                placeholder="usuario@correo.com"
-              />
-              <Input
-                etiqueta="Nombre completo *"
-                value={form.nombre}
-                onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                placeholder="Nombre Apellido"
-              />
-              <Input
-                etiqueta="Alias"
-                value={form.alias}
-                onChange={(e) => setForm({ ...form, alias: e.target.value })}
-                placeholder="Alias del usuario"
-              />
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                <div className="col-span-2">
+                  <Input
+                    etiqueta="Correo electrónico *"
+                    type="email"
+                    value={form.codigo_usuario}
+                    onChange={(e) => setForm({ ...form, codigo_usuario: e.target.value })}
+                    disabled={!!usuarioEditando}
+                    placeholder="usuario@correo.com"
+                  />
+                </div>
+                <Input
+                  etiqueta="Nombre completo *"
+                  value={form.nombre}
+                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                  placeholder="Nombre Apellido"
+                />
+                <Input
+                  etiqueta="Alias"
+                  value={form.alias}
+                  onChange={(e) => setForm({ ...form, alias: e.target.value })}
+                  placeholder="Alias del usuario"
+                />
 
-              {/* Teléfono + indicador de verificación */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">Teléfono</label>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1">
-                    <Input
-                      value={form.telefono}
-                      onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                      placeholder="+56 9 1234 5678"
-                    />
-                  </div>
-                  {usuarioEditando && form.telefono && (
-                    <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full shrink-0 ${
-                      usuarioEditando.fono_verificado
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-yellow-50 text-yellow-700'
-                    }`}>
-                      {usuarioEditando.fono_verificado
-                        ? <><Phone size={12} /> Verificado</>
-                        : <><PhoneOff size={12} /> Sin verificar</>
-                      }
+                {/* Teléfono + indicador de verificación */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">Teléfono</label>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <Input
+                        value={form.telefono}
+                        onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                        placeholder="+56 9 1234 5678"
+                      />
                     </div>
+                    {usuarioEditando && form.telefono && (
+                      <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full shrink-0 ${
+                        usuarioEditando.fono_verificado
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-yellow-50 text-yellow-700'
+                      }`}>
+                        {usuarioEditando.fono_verificado
+                          ? <><Phone size={12} /> Verificado</>
+                          : <><PhoneOff size={12} /> Sin verificar</>
+                        }
+                      </div>
+                    )}
+                  </div>
+                  {usuarioEditando && form.telefono !== (usuarioEditando.telefono || '') && (
+                    <p className="text-xs text-yellow-600">Al guardar, se requerirá verificar el nuevo teléfono</p>
                   )}
                 </div>
-                {usuarioEditando && form.telefono !== (usuarioEditando.telefono || '') && (
-                  <p className="text-xs text-yellow-600">Al guardar, se requerirá verificar el nuevo teléfono</p>
-                )}
-              </div>
+                <div /> {/* spacer */}
 
-              {/* Descripción */}
-              <Textarea
-                etiqueta="Descripción"
-                value={form.descripcion}
-                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                rows={3}
-              />
+                <div className="col-span-2">
+                  <Textarea
+                    etiqueta="Descripción"
+                    value={form.descripcion}
+                    onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
 
               {/* ── Defaults de preferencia (solo edición) ─────────────────── */}
               {usuarioEditando && (
-                <>
-                  <div className="border-t border-borde pt-3 mt-1">
-                    <p className="text-xs font-semibold text-texto-muted uppercase tracking-wide mb-3">
-                      Preferencias de inicio de sesión
-                    </p>
-
-                    {/* Grupo por defecto — grupos donde el usuario tiene entidades o acceso directo */}
+                <div className="border-t border-borde pt-3 mt-1">
+                  <p className="text-xs font-semibold text-texto-muted uppercase tracking-wide mb-3">
+                    Preferencias de inicio de sesión
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    {/* Grupo por defecto */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-texto">Grupo por defecto</label>
                       <select
@@ -694,8 +700,8 @@ export default function PaginaUsuarios() {
                       )}
                     </div>
 
-                    {/* Rol principal — filtrado por grupo por defecto seleccionado */}
-                    <div className="flex flex-col gap-1.5 mt-3">
+                    {/* Rol principal */}
+                    <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-texto">Rol principal</label>
                       <select
                         value={form.rol_principal}
@@ -718,8 +724,8 @@ export default function PaginaUsuarios() {
                       )}
                     </div>
 
-                    {/* Aplicación por defecto — solo apps del grupo por defecto */}
-                    <div className="flex flex-col gap-1.5 mt-3">
+                    {/* Aplicación por defecto */}
+                    <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-texto">Aplicación por defecto</label>
                       <select
                         value={form.aplicacion_por_defecto}
@@ -736,8 +742,8 @@ export default function PaginaUsuarios() {
                       </select>
                     </div>
 
-                    {/* Entidad por defecto — solo entidades del usuario en su grupo */}
-                    <div className="flex flex-col gap-1.5 mt-3">
+                    {/* Entidad por defecto */}
+                    <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-medium text-texto">Entidad por defecto</label>
                       <select
                         value={form.entidad_por_defecto}
@@ -757,9 +763,9 @@ export default function PaginaUsuarios() {
                       )}
                     </div>
 
-                    {/* Área por defecto — solo áreas de la entidad seleccionada */}
+                    {/* Área por defecto */}
                     {form.entidad_por_defecto && (
-                      <div className="flex flex-col gap-1.5 mt-3">
+                      <div className="flex flex-col gap-1.5">
                         <label className="text-sm font-medium text-texto">Área por defecto <span className="text-texto-muted font-normal">(opcional)</span></label>
                         <select
                           value={form.codigo_area_por_defecto}
@@ -775,7 +781,7 @@ export default function PaginaUsuarios() {
                       </div>
                     )}
                   </div>
-                </>
+                </div>
               )}
 
               {error && (

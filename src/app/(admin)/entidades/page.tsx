@@ -517,7 +517,7 @@ export default function PaginaEntidades() {
         </div>
       </Modal>
       {/* Modal Rol */}
-      <Modal abierto={modalRol} alCerrar={() => setModalRol(false)} titulo={rolEditando ? `Editar rol: ${rolEditando.nombre}` : 'Nuevo rol'}>
+      <Modal abierto={modalRol} alCerrar={() => setModalRol(false)} titulo={rolEditando ? `Editar rol: ${rolEditando.nombre}` : 'Nuevo rol'} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {rolEditando && (
             <div className="flex border-b border-borde -mx-1">
@@ -526,19 +526,23 @@ export default function PaginaEntidades() {
             </div>
           )}
           {tabModalRol === 'datos' && (<>
-            <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} disabled={!!rolEditando} placeholder="ADMIN" />
-            <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
-            <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
-            <Textarea etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} rows={3} />
-            <Input etiqueta="URL de inicio" value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder="/admin/dashboard" />
-            {rolEditando && (
-              <div className="flex flex-col gap-1"><label className="text-sm font-medium text-texto">Función por defecto</label>
-                <select value={formRol.funcion_por_defecto} onChange={(e) => setFormRol({ ...formRol, funcion_por_defecto: e.target.value })} className={selectClass}>
-                  <option value="">Sin función por defecto</option>
-                  {funcionesRol.map((fa) => (<option key={fa.codigo_funcion} value={fa.codigo_funcion}>{fa.funciones?.nombre_funcion || fa.codigo_funcion}</option>))}
-                </select>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} disabled={!!rolEditando} placeholder="ADMIN" />
+              <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
+              <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
+              <Input etiqueta="URL de inicio" value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder="/admin/dashboard" />
+              {rolEditando && (
+                <div className="flex flex-col gap-1"><label className="text-sm font-medium text-texto">Función por defecto</label>
+                  <select value={formRol.funcion_por_defecto} onChange={(e) => setFormRol({ ...formRol, funcion_por_defecto: e.target.value })} className={selectClass}>
+                    <option value="">Sin función por defecto</option>
+                    {funcionesRol.map((fa) => (<option key={fa.codigo_funcion} value={fa.codigo_funcion}>{fa.funciones?.nombre_funcion || fa.codigo_funcion}</option>))}
+                  </select>
+                </div>
+              )}
+              <div className="col-span-2">
+                <Textarea etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} rows={3} />
               </div>
-            )}
+            </div>
             {errorRol && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorRol}</p></div>}
             <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalRol(false)}>Cancelar</Boton><Boton variante="primario" onClick={guardarRol} cargando={guardandoRol}>{rolEditando ? 'Guardar' : 'Crear rol'}</Boton></div>
           </>)}
