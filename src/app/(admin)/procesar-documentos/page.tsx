@@ -127,14 +127,6 @@ export default function PaginaProcesarDocumentos() {
   const ejecutar = async () => {
     if (!modeloId || seleccionados.size === 0) return
 
-    // Para resumir necesitamos acceso al filesystem
-    if (proceso === 'resumir' && !dirHandle) {
-      try {
-        const handle = await (window as unknown as { showDirectoryPicker: (opts?: Record<string, string>) => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker({ mode: 'read' })
-        setDirHandle(handle)
-      } catch { return }
-    }
-
     const estadoDestino = proceso === 'resumir' ? 'RESUMIDO' : 'ESCANEADO'
 
     // 1. Encolar en cola_estados_docs
@@ -184,14 +176,15 @@ export default function PaginaProcesarDocumentos() {
 
       try {
         let texto: string | undefined
-        if (proceso === 'resumir' && dirHandle) {
-          const ruta = item.ubicacion_documento
-          if (!ruta) throw new Error('Sin ubicación')
-          const fileHandle = await abrirArchivoPorRuta(dirHandle, ruta)
-          if (!fileHandle) throw new Error(`Archivo no encontrado: ${ruta}`)
-          const contenido = await extraerTextoDeArchivo(fileHandle)
-          if (!contenido) throw new Error('Formato no soportado')
-          texto = contenido
+        // Intentar extraer texto si hay directorio seleccionado (opcional)
+        if (proceso === 'resumir' && dirHandle && item.ubicacion_documento) {
+          try {
+            const fileHandle = await abrirArchivoPorRuta(dirHandle, item.ubicacion_documento)
+            if (fileHandle) {
+              const contenido = await extraerTextoDeArchivo(fileHandle)
+              if (contenido) texto = contenido
+            }
+          } catch { /* sin acceso al archivo, continúa solo con metadatos */ }
         }
 
         const res = await colaEstadosDocsApi.procesar(item.id_cola, modeloId, texto)
@@ -284,13 +277,13 @@ export default function PaginaProcesarDocumentos() {
 
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde">
             {proceso === 'resumir' && (
-              <Boton variante={dirHandle ? 'contorno' : 'primario'} tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando}>
+              <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando}>
                 <FolderOpen size={16} />
-                {dirHandle ? `📂 ${dirHandle.name}` : '1. Seleccionar directorio'}
+                {dirHandle ? `📂 ${dirHandle.name}` : 'Seleccionar directorio (opcional)'}
               </Boton>
             )}
             {proceso === 'resumir' && !dirHandle && (
-              <span className="text-xs text-advertencia">← Selecciona el directorio raíz de los documentos para poder leer su contenido</span>
+              <span className="text-xs text-texto-muted">Sin directorio: resumen basado solo en metadatos</span>
             )}
             <div className="ml-auto flex items-center gap-3">
               <span className="text-sm text-texto-muted">
@@ -300,8 +293,8 @@ export default function PaginaProcesarDocumentos() {
                 <Boton variante="contorno" tamano="sm" onClick={detener}><Square size={14} />Detener</Boton>
               ) : (
                 <Boton variante="primario" onClick={ejecutar}
-                  disabled={seleccionados.size === 0 || !modeloId || (proceso === 'resumir' && !dirHandle)}>
-                  <Play size={16} />{proceso === 'resumir' && !dirHandle ? 'Falta directorio' : 'Ejecutar'}
+                  disabled={seleccionados.size === 0 || !modeloId}>
+                  <Play size={16} />Ejecutar
                 </Boton>
               )}
             </div>
