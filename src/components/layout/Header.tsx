@@ -382,7 +382,7 @@ export function Header({ titulo }: { titulo?: string }) {
       </header>
 
       {/* Modal Mi Cuenta (con tabs) */}
-      <Modal abierto={modalCuenta} alCerrar={() => setModalCuenta(false)} titulo="Mi cuenta">
+      <Modal abierto={modalCuenta} alCerrar={() => setModalCuenta(false)} titulo={`Mi cuenta: ${usuario?.codigo_usuario || ''}`} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {/* Tabs */}
           <div className="flex border-b border-borde">
@@ -413,107 +413,110 @@ export function Header({ titulo }: { titulo?: string }) {
           {tabCuenta === 'cuenta' ? (
             /* Tab Cuenta */
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Correo electronico</label>
-                <p className="text-sm text-texto-muted bg-fondo px-3 py-2 rounded-lg">{usuario?.codigo_usuario}</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                <Input
+                  etiqueta="Alias"
+                  value={formCuenta.alias}
+                  onChange={(e) => setFormCuenta({ ...formCuenta, alias: e.target.value })}
+                  placeholder="Alias del usuario"
+                />
+                <Input
+                  etiqueta="Nombre completo"
+                  value={formCuenta.nombre}
+                  onChange={(e) => setFormCuenta({ ...formCuenta, nombre: e.target.value })}
+                />
+                <Input
+                  etiqueta="Telefono"
+                  value={formCuenta.telefono}
+                  onChange={(e) => setFormCuenta({ ...formCuenta, telefono: e.target.value })}
+                  placeholder="+56 9 1234 5678"
+                />
+                <div /> {/* spacer para mantener grid alineado */}
+                <div className="col-span-2">
+                  <Textarea
+                    etiqueta="Descripcion"
+                    value={formCuenta.descripcion}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, descripcion: e.target.value })}
+                    rows={2}
+                  />
+                </div>
               </div>
-              <Input
-                etiqueta="Alias"
-                value={formCuenta.alias}
-                onChange={(e) => setFormCuenta({ ...formCuenta, alias: e.target.value })}
-                placeholder="Alias del usuario"
-              />
-              <Input
-                etiqueta="Nombre completo"
-                value={formCuenta.nombre}
-                onChange={(e) => setFormCuenta({ ...formCuenta, nombre: e.target.value })}
-              />
-              <Input
-                etiqueta="Telefono"
-                value={formCuenta.telefono}
-                onChange={(e) => setFormCuenta({ ...formCuenta, telefono: e.target.value })}
-                placeholder="+56 9 1234 5678"
-              />
-              <Textarea
-                etiqueta="Descripcion"
-                value={formCuenta.descripcion}
-                onChange={(e) => setFormCuenta({ ...formCuenta, descripcion: e.target.value })}
-                rows={3}
-              />
               {/* Preferencias de inicio de sesión */}
-              <p className="text-xs font-semibold text-texto-muted uppercase tracking-wide mt-2">Preferencias de inicio</p>
-              {/* Grupo por defecto */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Grupo por defecto</label>
-                <select
-                  value={formCuenta.grupo_por_defecto}
-                  onChange={(e) => {
-                    const g = e.target.value
-                    setFormCuenta({ ...formCuenta, grupo_por_defecto: g, rol_principal: '', entidad_por_defecto: '', aplicacion_por_defecto: '' })
-                    if (g) {
-                      aplicacionesApi.listar(g).then(apps =>
-                        setAppsCuenta(apps.map(a => ({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre })))
-                      ).catch(() => setAppsCuenta([]))
-                    } else {
-                      setAppsCuenta([])
-                    }
-                  }}
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
-                >
-                  <option value="">Seleccionar grupo...</option>
-                  {gruposCuenta.map((g) => (
-                    <option key={g.codigo_grupo} value={g.codigo_grupo}>{g.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              {/* Rol principal — filtrado por grupo seleccionado */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Rol principal</label>
-                <select
-                  value={formCuenta.rol_principal}
-                  onChange={(e) => setFormCuenta({ ...formCuenta, rol_principal: e.target.value })}
-                  disabled={!formCuenta.grupo_por_defecto}
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
-                >
-                  <option value="">Sin rol principal</option>
-                  {rolesCuenta
-                    .filter(r => r.codigo_grupo === formCuenta.grupo_por_defecto)
-                    .map((r) => (
-                      <option key={r.codigo_rol} value={r.codigo_rol}>{r.nombre}</option>
+              <p className="text-xs font-semibold text-texto-muted uppercase tracking-wide mt-1">Preferencias de inicio</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                {/* Grupo por defecto */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-texto">Grupo por defecto</label>
+                  <select
+                    value={formCuenta.grupo_por_defecto}
+                    onChange={(e) => {
+                      const g = e.target.value
+                      setFormCuenta({ ...formCuenta, grupo_por_defecto: g, rol_principal: '', entidad_por_defecto: '', aplicacion_por_defecto: '' })
+                      if (g) {
+                        aplicacionesApi.listar(g).then(apps =>
+                          setAppsCuenta(apps.map(a => ({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre })))
+                        ).catch(() => setAppsCuenta([]))
+                      } else {
+                        setAppsCuenta([])
+                      }
+                    }}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                  >
+                    <option value="">Seleccionar grupo...</option>
+                    {gruposCuenta.map((g) => (
+                      <option key={g.codigo_grupo} value={g.codigo_grupo}>{g.nombre}</option>
                     ))}
-                </select>
-              </div>
-              {/* Entidad por defecto — filtrada por grupo seleccionado */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Entidad por defecto</label>
-                <select
-                  value={formCuenta.entidad_por_defecto}
-                  onChange={(e) => setFormCuenta({ ...formCuenta, entidad_por_defecto: e.target.value })}
-                  disabled={!formCuenta.grupo_por_defecto}
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
-                >
-                  <option value="">Sin entidad seleccionada</option>
-                  {entidadesCuenta
-                    .filter(e => e.codigo_grupo === formCuenta.grupo_por_defecto)
-                    .map((e) => (
-                      <option key={e.codigo_entidad} value={e.codigo_entidad}>{e.nombre}</option>
+                  </select>
+                </div>
+                {/* Rol principal — filtrado por grupo seleccionado */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-texto">Rol principal</label>
+                  <select
+                    value={formCuenta.rol_principal}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, rol_principal: e.target.value })}
+                    disabled={!formCuenta.grupo_por_defecto}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
+                  >
+                    <option value="">Sin rol principal</option>
+                    {rolesCuenta
+                      .filter(r => r.codigo_grupo === formCuenta.grupo_por_defecto)
+                      .map((r) => (
+                        <option key={r.codigo_rol} value={r.codigo_rol}>{r.nombre}</option>
+                      ))}
+                  </select>
+                </div>
+                {/* Entidad por defecto — filtrada por grupo seleccionado */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-texto">Entidad por defecto</label>
+                  <select
+                    value={formCuenta.entidad_por_defecto}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, entidad_por_defecto: e.target.value })}
+                    disabled={!formCuenta.grupo_por_defecto}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
+                  >
+                    <option value="">Sin entidad seleccionada</option>
+                    {entidadesCuenta
+                      .filter(e => e.codigo_grupo === formCuenta.grupo_por_defecto)
+                      .map((e) => (
+                        <option key={e.codigo_entidad} value={e.codigo_entidad}>{e.nombre}</option>
+                      ))}
+                  </select>
+                </div>
+                {/* Aplicación por defecto — filtrada por grupo seleccionado */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-texto">Aplicacion por defecto</label>
+                  <select
+                    value={formCuenta.aplicacion_por_defecto}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, aplicacion_por_defecto: e.target.value })}
+                    disabled={!formCuenta.grupo_por_defecto}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
+                  >
+                    <option value="">Sin aplicacion por defecto</option>
+                    {appsCuenta.map((app) => (
+                      <option key={app.codigo_aplicacion} value={app.codigo_aplicacion}>{app.nombre}</option>
                     ))}
-                </select>
-              </div>
-              {/* Aplicación por defecto — filtrada por grupo seleccionado */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Aplicacion por defecto</label>
-                <select
-                  value={formCuenta.aplicacion_por_defecto}
-                  onChange={(e) => setFormCuenta({ ...formCuenta, aplicacion_por_defecto: e.target.value })}
-                  disabled={!formCuenta.grupo_por_defecto}
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
-                >
-                  <option value="">Sin aplicacion por defecto</option>
-                  {appsCuenta.map((app) => (
-                    <option key={app.codigo_aplicacion} value={app.codigo_aplicacion}>{app.nombre}</option>
-                  ))}
-                </select>
+                  </select>
+                </div>
               </div>
               {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
               {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
