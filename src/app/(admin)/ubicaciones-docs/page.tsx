@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Download, Search, ChevronRight, ChevronDown, FolderTree, Folder, FolderOpen, FolderInput, RefreshCw } from 'lucide-react'
+import { Plus, Pencil, Trash2, Download, Search, ChevronRight, ChevronDown, FolderTree, Folder, FolderOpen, FolderInput, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -164,6 +164,17 @@ export default function PaginaUbicacionesDocs() {
     }
   }
 
+  const toggleHabilitada = async (u: UbicacionDoc) => {
+    try {
+      await ubicacionesDocsApi.actualizar(u.codigo_ubicacion, {
+        ubicacion_habilitada: !u.ubicacion_habilitada,
+      })
+      cargar()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al cambiar estado')
+    }
+  }
+
   const ejecutarEliminacion = async () => {
     if (!confirmacion) return
     setEliminando(true)
@@ -211,8 +222,11 @@ export default function PaginaUbicacionesDocs() {
       })
       setResultadoSync(res)
       cargar()
-    } catch {
-      alert('Error al sincronizar ubicaciones.')
+    } catch (e: unknown) {
+      const msg = e && typeof e === 'object' && 'response' in e
+        ? (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Error al sincronizar ubicaciones.'
+        : 'Error al sincronizar ubicaciones.'
+      alert(msg)
     } finally {
       setSincronizando(false)
     }
@@ -279,11 +293,26 @@ export default function PaginaUbicacionesDocs() {
             {u.ruta_completa || ''}
           </span>
 
+          <Insignia variante={u.ubicacion_habilitada ? 'exito' : 'advertencia'}>
+            {u.ubicacion_habilitada ? 'Habilitada' : 'Inhabilitada'}
+          </Insignia>
+
           <Insignia variante={u.activo ? 'exito' : 'error'}>
             {u.activo ? 'Activo' : 'Inactivo'}
           </Insignia>
 
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => toggleHabilitada(u)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                u.ubicacion_habilitada
+                  ? 'hover:bg-amber-50 text-texto-muted hover:text-amber-600'
+                  : 'hover:bg-green-50 text-texto-muted hover:text-green-600'
+              }`}
+              title={u.ubicacion_habilitada ? 'Inhabilitar (incluye hijos)' : 'Habilitar (incluye hijos)'}
+            >
+              {u.ubicacion_habilitada ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+            </button>
             <button
               onClick={() => abrirNuevo(u.codigo_ubicacion)}
               className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
@@ -360,6 +389,7 @@ export default function PaginaUbicacionesDocs() {
                   { titulo: 'Ruta', campo: 'ruta_completa' },
                   { titulo: 'Padre', campo: 'codigo_ubicacion_superior' },
                   { titulo: 'Nivel', campo: 'nivel' },
+                  { titulo: 'Habilitada', campo: 'ubicacion_habilitada', formato: (v: unknown) => (v ? 'Sí' : 'No') },
                   { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
                 ],
                 'ubicaciones-docs'

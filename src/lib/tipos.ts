@@ -495,6 +495,7 @@ export interface UbicacionDoc {
   nivel: number
   orden: number
   activo: boolean
+  ubicacion_habilitada: boolean
 }
 
 // ─── Utilitarios ─────────────────────────────────────────────────────────────
