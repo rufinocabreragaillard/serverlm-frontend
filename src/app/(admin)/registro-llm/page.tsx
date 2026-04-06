@@ -182,20 +182,26 @@ export default function PaginaRegistroLLM() {
         </TablaCuerpo>
       </Tabla>
 
-      <Modal abierto={modal} alCerrar={() => setModal(false)} titulo={editando ? `Editar: ${editando.nombre_visible}` : 'Nuevo modelo LLM'}>
+      <Modal abierto={modal} alCerrar={() => setModal(false)} titulo={editando ? `Editar: ${editando.nombre_visible}` : 'Nuevo modelo LLM'} className="max-w-2xl">
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Proveedor *" value={form.proveedor}
-            onChange={(e) => setForm({ ...form, proveedor: e.target.value })}
-            placeholder="Ej: anthropic, openai, google" />
-          <Input etiqueta="Nombre técnico *" value={form.nombre_tecnico}
-            onChange={(e) => setForm({ ...form, nombre_tecnico: e.target.value })}
-            placeholder="Ej: claude-sonnet-4-6, gpt-4o, gemini-1.5-pro" />
-          <Input etiqueta="Nombre visible *" value={form.nombre_visible}
-            onChange={(e) => setForm({ ...form, nombre_visible: e.target.value })}
-            placeholder="Ej: Claude Sonnet 4.6" />
-          <Textarea etiqueta="Descripción" value={form.descripcion}
-            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-            placeholder="Descripción del modelo, capacidades, uso recomendado..." rows={3} />
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            <Input etiqueta="Proveedor *" value={form.proveedor}
+              onChange={(e) => setForm({ ...form, proveedor: e.target.value })}
+              placeholder="Ej: anthropic, openai, google" />
+            <Input etiqueta="Nombre visible *" value={form.nombre_visible}
+              onChange={(e) => setForm({ ...form, nombre_visible: e.target.value })}
+              placeholder="Ej: Claude Sonnet 4.6" />
+            <div className="col-span-2">
+              <Input etiqueta="Nombre técnico *" value={form.nombre_tecnico}
+                onChange={(e) => setForm({ ...form, nombre_tecnico: e.target.value })}
+                placeholder="Ej: claude-sonnet-4-6, gpt-4o, gemini-2.5-pro-preview-06-05" />
+            </div>
+            <div className="col-span-2">
+              <Textarea etiqueta="Descripción" value={form.descripcion}
+                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                placeholder="Descripción del modelo, capacidades, uso recomendado..." rows={3} />
+            </div>
+          </div>
           {editando && (
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.estado_valido}
