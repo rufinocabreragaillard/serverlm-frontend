@@ -134,3 +134,32 @@ export async function escanearDirectorio(): Promise<{
 
   return { nombreRaiz, directorios: resultado }
 }
+
+/**
+ * Abre selector de directorio y retorna SOLO el directorio seleccionado,
+ * sin escanear sus hijos.
+ *
+ * @returns null si el usuario canceló, o un solo directorio
+ */
+export async function escanearDirectorioSinHijos(): Promise<{
+  nombreRaiz: string
+  directorio: DirectorioEscaneado
+} | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dirHandle = await (window as any).showDirectoryPicker().catch(() => null)
+  if (!dirHandle) return null
+
+  const nombreRaiz = dirHandle.name
+  const codigoRaiz = generarCodigo(nombreRaiz)
+
+  return {
+    nombreRaiz,
+    directorio: {
+      codigo_ubicacion: codigoRaiz,
+      nombre_ubicacion: nombreRaiz,
+      codigo_ubicacion_superior: null,
+      ruta_completa: `/${nombreRaiz}`,
+      nivel: 0,
+    },
+  }
+}

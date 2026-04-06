@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Download, Search, ChevronRight, ChevronDown, FolderTree, Folder, FolderOpen, FolderInput, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, Download, Search, ChevronRight, ChevronDown, FolderTree, Folder, FolderOpen, FolderInput, FolderPlus, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,7 +12,7 @@ import { ubicacionesDocsApi } from '@/lib/api'
 import type { UbicacionDoc } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
-import { escanearDirectorio, soportaDirectoryPicker, type DirectorioEscaneado } from '@/lib/escanear-directorio'
+import { escanearDirectorio, escanearDirectorioSinHijos, soportaDirectoryPicker, type DirectorioEscaneado } from '@/lib/escanear-directorio'
 
 export default function PaginaUbicacionesDocs() {
   const { grupoActivo } = useAuth()
@@ -238,6 +238,38 @@ export default function PaginaUbicacionesDocs() {
     setResultadoSync(null)
   }
 
+  // ── Cargar Ubicación individual (sin hijos) ──────────────────────────────
+  const [cargandoUbicacion, setCargandoUbicacion] = useState(false)
+
+  const cargarUbicacionIndividual = async () => {
+    if (!soportaDirectoryPicker()) {
+      alert('Su navegador no soporta la selección de directorios. Use Chrome, Edge o Safari.')
+      return
+    }
+    setCargandoUbicacion(true)
+    try {
+      const resultado = await escanearDirectorioSinHijos()
+      if (!resultado) {
+        setCargandoUbicacion(false)
+        return
+      }
+      const { directorio } = resultado
+      await ubicacionesDocsApi.crear({
+        codigo_ubicacion: directorio.codigo_ubicacion,
+        codigo_grupo: grupoActivo!,
+        nombre_ubicacion: directorio.nombre_ubicacion,
+      })
+      cargar()
+    } catch (e: unknown) {
+      const msg = e && typeof e === 'object' && 'response' in e
+        ? (e as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Error al crear ubicación.'
+        : e instanceof Error ? e.message : 'Error al crear ubicación.'
+      alert(msg)
+    } finally {
+      setCargandoUbicacion(false)
+    }
+  }
+
   // ── Preview: calcular diferencias ─────────────────────────────────────────
   const calcularDiferencias = () => {
     if (!datosEscaneo) return { nuevas: 0, aEliminar: 0, sinCambio: 0 }
@@ -399,6 +431,10 @@ export default function PaginaUbicacionesDocs() {
           >
             <Download size={15} />
             Excel
+          </Boton>
+          <Boton variante="contorno" onClick={cargarUbicacionIndividual} cargando={cargandoUbicacion}>
+            <FolderPlus size={16} />
+            Cargar Ubicación
           </Boton>
           <Boton variante="contorno" onClick={iniciarEscaneo} cargando={escaneando}>
             <FolderInput size={16} />
