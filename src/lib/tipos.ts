@@ -26,7 +26,7 @@ export interface FuncionMenu {
   icono: string | null
   url: string | null
   orden: number
-  codigo_aplicacion?: string | null
+  aplicaciones?: string[]
 }
 
 export interface RolMenu {

@@ -85,7 +85,7 @@ export function Sidebar() {
       .map(rol => ({
         ...rol,
         funciones: rol.funciones.filter(fn =>
-          fn.codigo_aplicacion === appActiva || !fn.codigo_aplicacion
+          fn.aplicaciones?.includes(appActiva) || !fn.aplicaciones?.length
         )
       }))
       .filter(rol => rol.funciones.length > 0)
