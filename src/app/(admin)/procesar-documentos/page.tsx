@@ -356,17 +356,17 @@ export default function PaginaProcesarDocumentos() {
       {cola.length === 0 && (
         <>
           <div className="flex items-center gap-3">
-            <div className="max-w-sm flex-1">
-              <Input placeholder="Buscar por nombre o ubicación..." value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
-            </div>
-            <div className="flex gap-2 ml-auto">
+            <div className="flex gap-2">
               <Boton variante="contorno" tamano="sm" onClick={seleccionarTodos} disabled={ejecutando || docsFiltrados.length === 0}>
                 <CheckSquare size={14} />Todos
               </Boton>
               <Boton variante="contorno" tamano="sm" onClick={deseleccionarTodos} disabled={ejecutando || seleccionados.size === 0}>
                 <SquareIcon size={14} />Ninguno
               </Boton>
+            </div>
+            <div className="max-w-sm flex-1">
+              <Input placeholder="Buscar por nombre o ubicación..." value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
             </div>
           </div>
           <Tabla>
