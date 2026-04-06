@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square } from 'lucide-react'
+import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
+import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
@@ -46,6 +47,7 @@ export default function PaginaProcesarDocumentos() {
   const [documentos, setDocumentos] = useState<Documento[]>([])
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set())
   const [cargando, setCargando] = useState(false)
+  const [busqueda, setBusqueda] = useState('')
 
   // Cola y ejecución
   const [cola, setCola] = useState<ItemCola[]>([])
@@ -106,13 +108,13 @@ export default function PaginaProcesarDocumentos() {
     })
   }
 
-  const toggleTodos = () => {
-    if (seleccionados.size === documentos.length) {
-      setSeleccionados(new Set())
-    } else {
-      setSeleccionados(new Set(documentos.map((d) => d.codigo_documento)))
-    }
-  }
+  const docsFiltrados = documentos.filter((d) =>
+    !busqueda || d.nombre_documento.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (d.ubicacion_documento || '').toLowerCase().includes(busqueda.toLowerCase())
+  )
+
+  const seleccionarTodos = () => setSeleccionados(new Set(docsFiltrados.map((d) => d.codigo_documento)))
+  const deseleccionarTodos = () => setSeleccionados(new Set())
 
   const seleccionarDirectorio = async () => {
     try {
@@ -282,21 +284,24 @@ export default function PaginaProcesarDocumentos() {
 
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde">
             {proceso === 'resumir' && (
-              <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando}>
+              <Boton variante={dirHandle ? 'contorno' : 'primario'} tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando}>
                 <FolderOpen size={16} />
-                {dirHandle ? dirHandle.name : 'Seleccionar directorio'}
+                {dirHandle ? `📂 ${dirHandle.name}` : '1. Seleccionar directorio'}
               </Boton>
+            )}
+            {proceso === 'resumir' && !dirHandle && (
+              <span className="text-xs text-advertencia">← Selecciona el directorio raíz de los documentos para poder leer su contenido</span>
             )}
             <div className="ml-auto flex items-center gap-3">
               <span className="text-sm text-texto-muted">
-                {seleccionados.size} documento{seleccionados.size !== 1 ? 's' : ''}
+                {seleccionados.size}/{documentos.length} seleccionados
               </span>
               {ejecutando ? (
                 <Boton variante="contorno" tamano="sm" onClick={detener}><Square size={14} />Detener</Boton>
               ) : (
                 <Boton variante="primario" onClick={ejecutar}
                   disabled={seleccionados.size === 0 || !modeloId || (proceso === 'resumir' && !dirHandle)}>
-                  <Play size={16} />Ejecutar
+                  <Play size={16} />{proceso === 'resumir' && !dirHandle ? 'Falta directorio' : 'Ejecutar'}
                 </Boton>
               )}
             </div>
@@ -356,43 +361,58 @@ export default function PaginaProcesarDocumentos() {
 
       {/* Lista de documentos candidatos (visible antes de ejecución) */}
       {cola.length === 0 && (
-        <Tabla>
-          <TablaCabecera>
-            <tr>
-              <TablaTh className="w-10">
-                <input type="checkbox" checked={documentos.length > 0 && seleccionados.size === documentos.length}
-                  onChange={toggleTodos} disabled={ejecutando} className="rounded border-borde" />
-              </TablaTh>
-              <TablaTh>Documento</TablaTh>
-              <TablaTh>Ubicación</TablaTh>
-              <TablaTh>Estado</TablaTh>
-            </tr>
-          </TablaCabecera>
-          <TablaCuerpo>
-            {cargando ? (
-              <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>Cargando...</TablaTd></TablaFila>
-            ) : documentos.length === 0 ? (
-              <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>
-                No hay documentos en estado {proceso === 'resumir' ? 'CARGADO' : 'RESUMIDO'}
-              </TablaTd></TablaFila>
-            ) : documentos.map((d) => (
-              <TablaFila key={d.codigo_documento}>
-                <TablaTd>
-                  <input type="checkbox" checked={seleccionados.has(d.codigo_documento)}
-                    onChange={() => toggleSeleccion(d.codigo_documento)} className="rounded border-borde" />
-                </TablaTd>
-                <TablaTd>
-                  <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-texto-muted shrink-0" />
-                    <span className="font-medium text-sm">{d.nombre_documento}</span>
-                  </div>
-                </TablaTd>
-                <TablaTd className="text-xs text-texto-muted max-w-[250px] truncate">{d.ubicacion_documento || '—'}</TablaTd>
-                <TablaTd><Insignia variante="advertencia">{d.codigo_estado_doc}</Insignia></TablaTd>
-              </TablaFila>
-            ))}
-          </TablaCuerpo>
-        </Tabla>
+        <>
+          <div className="flex items-center gap-3">
+            <div className="max-w-sm flex-1">
+              <Input placeholder="Buscar por nombre o ubicación..." value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
+            </div>
+            <div className="flex gap-2 ml-auto">
+              <Boton variante="contorno" tamano="sm" onClick={seleccionarTodos} disabled={ejecutando || docsFiltrados.length === 0}>
+                <CheckSquare size={14} />Todos
+              </Boton>
+              <Boton variante="contorno" tamano="sm" onClick={deseleccionarTodos} disabled={ejecutando || seleccionados.size === 0}>
+                <SquareIcon size={14} />Ninguno
+              </Boton>
+            </div>
+          </div>
+          <Tabla>
+            <TablaCabecera>
+              <tr>
+                <TablaTh className="w-10" />
+                <TablaTh>Documento</TablaTh>
+                <TablaTh>Ubicación</TablaTh>
+                <TablaTh>Estado</TablaTh>
+              </tr>
+            </TablaCabecera>
+            <TablaCuerpo>
+              {cargando ? (
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>Cargando...</TablaTd></TablaFila>
+              ) : docsFiltrados.length === 0 ? (
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>
+                  {documentos.length === 0
+                    ? `No hay documentos en estado ${proceso === 'resumir' ? 'CARGADO' : 'RESUMIDO'}`
+                    : 'Sin resultados para la búsqueda'}
+                </TablaTd></TablaFila>
+              ) : docsFiltrados.map((d) => (
+                <TablaFila key={d.codigo_documento}>
+                  <TablaTd>
+                    <input type="checkbox" checked={seleccionados.has(d.codigo_documento)}
+                      onChange={() => toggleSeleccion(d.codigo_documento)} className="rounded border-borde" />
+                  </TablaTd>
+                  <TablaTd>
+                    <div className="flex items-center gap-2">
+                      <FileText size={14} className="text-texto-muted shrink-0" />
+                      <span className="font-medium text-sm">{d.nombre_documento}</span>
+                    </div>
+                  </TablaTd>
+                  <TablaTd className="text-xs text-texto-muted max-w-[250px] truncate">{d.ubicacion_documento || '—'}</TablaTd>
+                  <TablaTd><Insignia variante="advertencia">{d.codigo_estado_doc}</Insignia></TablaTd>
+                </TablaFila>
+              ))}
+            </TablaCuerpo>
+          </Tabla>
+        </>
       )}
     </div>
   )
