@@ -67,6 +67,29 @@ export default function PaginaCargarDocumentos() {
         return
       }
 
+      // Encontrar la ubicación raíz en BD que coincida con el directorio seleccionado.
+      // El filesystem genera rutas como /inversiones/betterplan pero en BD es
+      // /cab/inversiones/betterplan. Buscamos la ubicación cuya ruta_completa
+      // termine en /nombreRaiz para calcular el prefijo de remapeo.
+      const nombreRaiz = scan.nombreRaiz
+      const rutaRaizFS = `/${nombreRaiz}` // lo que genera el filesystem
+
+      // Buscar match en BD: ubicación cuya ruta termine en /nombreRaiz
+      const ubicacionRaiz = ubicaciones.find(
+        (u) => u.ruta_completa?.endsWith(`/${nombreRaiz}`) || u.ruta_completa === `/${nombreRaiz}`
+      )
+
+      // Prefijo para remapear: si en BD es /cab/inversiones y FS genera /inversiones,
+      // el prefijo es /cab (lo que hay antes de /inversiones en la ruta BD)
+      let prefijoRemap = ''
+      if (ubicacionRaiz?.ruta_completa) {
+        const rutaBD = ubicacionRaiz.ruta_completa
+        prefijoRemap = rutaBD.slice(0, rutaBD.length - rutaRaizFS.length)
+      }
+
+      // Función para convertir ruta FS → ruta BD
+      const remapear = (rutaFS: string) => prefijoRemap + rutaFS
+
       // Mapas de ubicaciones BD
       const rutasHabilitadas = new Set<string>()
       const rutasNoHabilitadas = new Set<string>()
@@ -83,22 +106,24 @@ export default function PaginaCargarDocumentos() {
         }
       }
 
-      // Clasificar archivos
+      // Clasificar archivos usando rutas remapeadas
       const archivosConMatch: ArchivoEscaneado[] = []
       const archivosEnNoHabilitadas: ArchivoEscaneado[] = []
 
       for (const archivo of scan.archivos) {
-        if (rutasHabilitadas.has(archivo.ruta_directorio)) {
-          archivosConMatch.push(archivo)
-        } else if (rutasNoHabilitadas.has(archivo.ruta_directorio)) {
+        const rutaBD = remapear(archivo.ruta_directorio)
+        if (rutasHabilitadas.has(rutaBD)) {
+          // Guardar con ruta remapeada para que el backend encuentre la ubicación
+          archivosConMatch.push({ ...archivo, ruta_directorio: rutaBD, ruta_completa: remapear(archivo.ruta_completa) })
+        } else if (rutasNoHabilitadas.has(rutaBD)) {
           archivosEnNoHabilitadas.push(archivo)
         }
       }
 
-      // Carpetas sin match en BD
-      const carpetasSinMatch = scan.rutasEscaneadas.filter(
-        (ruta) => !todasRutasBD.has(ruta)
-      )
+      // Carpetas sin match en BD (remapeadas)
+      const carpetasSinMatch = scan.rutasEscaneadas
+        .map(remapear)
+        .filter((ruta) => !todasRutasBD.has(ruta))
 
       setDatosEscaneo({
         nombreRaiz: scan.nombreRaiz,
