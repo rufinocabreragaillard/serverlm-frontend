@@ -34,7 +34,7 @@ export default function PaginaRolesGenerales() {
               : 'border-transparent text-texto-muted hover:text-texto'
           }`}
         >
-          Roles globales
+          Roles generales
         </button>
         <button
           onClick={() => setTab('copiar')}
@@ -80,7 +80,7 @@ function TabRolesGlobales() {
       const data = await rolesApi.listarGlobales()
       setRoles(data.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar roles globales')
+      setError(e instanceof Error ? e.message : 'Error al cargar roles generales')
     } finally {
       setCargando(false)
     }
@@ -159,10 +159,10 @@ function TabRolesGlobales() {
     <Tarjeta>
       <TarjetaCabecera>
         <div className="flex items-center justify-between w-full">
-          <TarjetaTitulo>Roles globales (sin grupo)</TarjetaTitulo>
+          <TarjetaTitulo>Roles generales (sin grupo)</TarjetaTitulo>
           <Boton variante="primario" onClick={abrirCrear}>
             <Plus size={16} />
-            Nuevo rol global
+            Nuevo rol general
           </Boton>
         </div>
       </TarjetaCabecera>
@@ -176,7 +176,7 @@ function TabRolesGlobales() {
           <p className="text-sm text-texto-muted">Cargando...</p>
         ) : roles.length === 0 ? (
           <p className="text-sm text-texto-muted">
-            No hay roles globales definidos. Los roles globales son visibles en todos los grupos.
+            No hay roles generales definidos. Los roles generales son visibles en todos los grupos.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -229,7 +229,7 @@ function TabRolesGlobales() {
       <Modal
         abierto={modalAbierto}
         alCerrar={() => setModalAbierto(false)}
-        titulo={editando ? `Editar rol global "${editando.codigo_rol}"` : 'Nuevo rol global'}
+        titulo={editando ? `Editar rol general "${editando.codigo_rol}"` : 'Nuevo rol general'}
       >
         <div className="flex flex-col gap-3 min-w-[420px]">
           {error && (
@@ -284,7 +284,7 @@ function TabRolesGlobales() {
               Cancelar
             </Boton>
             <Boton variante="primario" onClick={guardar} cargando={guardando}>
-              {editando ? 'Guardar cambios' : 'Crear rol global'}
+              {editando ? 'Guardar cambios' : 'Crear rol general'}
             </Boton>
           </div>
         </div>
@@ -294,10 +294,10 @@ function TabRolesGlobales() {
         abierto={!!confirmacion}
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={ejecutarEliminar}
-        titulo="Eliminar rol global"
+        titulo="Eliminar rol general"
         mensaje={
           confirmacion
-            ? `¿Eliminar el rol global "${confirmacion.nombre}" (${confirmacion.codigo_rol})?\n\n` +
+            ? `¿Eliminar el rol general "${confirmacion.nombre}" (${confirmacion.codigo_rol})?\n\n` +
               `Esta acción borra el rol en cascada:\n` +
               `• Asignaciones a funciones (rel_rol_funcion)\n` +
               `• Asignaciones a usuarios en todos los grupos\n\n` +
