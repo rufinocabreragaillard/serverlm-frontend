@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Trash2, Download, Search, Eye } from 'lucide-react'
+import { Plus, Trash2, Download, Search, Eye, ExternalLink } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -367,6 +367,17 @@ export default function PaginaDocumentos() {
                 </TablaTd>
                 <TablaTd>
                   <div className="flex items-center justify-end gap-1">
+                    {d.ubicacion_documento && (
+                      <a
+                        href={d.ubicacion_documento}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
+                        title="Abrir documento original"
+                      >
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
                     <button
                       onClick={() => abrirEditar(d)}
                       className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
@@ -454,7 +465,7 @@ export default function PaginaDocumentos() {
                 </div>
                 {/* Estado — 4 cols */}
                 <div className="col-span-6 md:col-span-4">
-                  <label className="block text-sm font-medium text-texto mb-1.5">Estado del documento</label>
+                  <label className="block text-sm font-medium text-texto mb-1.5">Estado</label>
                   <select
                     className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
                     value={form.codigo_estado_doc}
