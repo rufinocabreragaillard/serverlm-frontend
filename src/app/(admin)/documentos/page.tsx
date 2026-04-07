@@ -346,8 +346,12 @@ export default function PaginaDocumentos() {
                     {d.codigo_documento}
                   </code>
                 </TablaTd>
-                <TablaTd>
-                  <button onClick={() => abrirEditar(d)} className="font-medium text-primario hover:underline text-left">
+                <TablaTd className="max-w-[200px]">
+                  <button
+                    onClick={() => abrirEditar(d)}
+                    className="font-medium text-primario hover:underline text-left truncate block w-full"
+                    title={d.nombre_documento}
+                  >
                     {d.nombre_documento}
                   </button>
                 </TablaTd>
