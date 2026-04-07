@@ -979,7 +979,15 @@ export default function PaginaUsuarios() {
                 <p className="text-sm text-texto-muted text-center py-4">No tiene roles asignados en este grupo</p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {rolesUsuario.filter((ra) => ra.codigo_grupo === grupoActivo).map((ra, idx, arr) => {
+                  {rolesUsuario
+                    .filter((ra) => ra.codigo_grupo === grupoActivo)
+                    .slice()
+                    .sort((a, b) => {
+                      const na = (a.roles?.nombre_rol as string | undefined) || a.codigo_rol || String(a.id_rol)
+                      const nb = (b.roles?.nombre_rol as string | undefined) || b.codigo_rol || String(b.id_rol)
+                      return na.localeCompare(nb, 'es')
+                    })
+                    .map((ra, idx, arr) => {
                     const esPrincipal = form.id_rol_principal === String(ra.id_rol)
                     const codigoRolDisplay = ra.codigo_rol || ra.roles?.codigo_rol || `id ${ra.id_rol}`
                     return (
