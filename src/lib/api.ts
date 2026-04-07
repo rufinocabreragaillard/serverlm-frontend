@@ -640,7 +640,7 @@ export const ubicacionesDocsApi = {
   /** @deprecated usar eliminar() — el backend ahora hace hard delete cascade */
   desactivar: (codigo: string) => api.delete(`/ubicaciones-docs/${codigo}`),
   sincronizar: (datos: { codigo_entidad?: string; directorios: { codigo_ubicacion: string; nombre_ubicacion: string; codigo_ubicacion_superior: string | null; ruta_completa: string; nivel: number }[] }) =>
-    api.post<{ insertadas: number; eliminadas: number; actualizadas: number; total: number }>('/ubicaciones-docs/sincronizar', datos).then((r) => r.data),
+    api.post<{ insertadas: number; eliminadas: number; actualizadas: number; total: number; excluidas: number }>('/ubicaciones-docs/sincronizar', datos).then((r) => r.data),
   // Documentos en ubicación
   listarDocumentos: (codigo: string) =>
     api.get(`/ubicaciones-docs/${codigo}/documentos`).then((r) => r.data),
