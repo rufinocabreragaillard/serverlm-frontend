@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Download, Search } from 'lucide-react'
+import { Plus, Trash2, Download, Search, Eye } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -347,13 +347,9 @@ export default function PaginaDocumentos() {
                   </code>
                 </TablaTd>
                 <TablaTd className="max-w-[200px]">
-                  <button
-                    onClick={() => abrirEditar(d)}
-                    className="font-medium text-primario hover:underline text-left truncate block w-full"
-                    title={d.nombre_documento}
-                  >
+                  <span className="font-medium truncate block" title={d.nombre_documento}>
                     {d.nombre_documento}
-                  </button>
+                  </span>
                 </TablaTd>
                 <TablaTd className="text-sm text-texto-muted max-w-[250px] truncate">
                   {d.ubicacion_documento ? (
@@ -374,9 +370,9 @@ export default function PaginaDocumentos() {
                     <button
                       onClick={() => abrirEditar(d)}
                       className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
-                      title="Editar"
+                      title="Ver detalle"
                     >
-                      <Pencil size={14} />
+                      <Eye size={16} />
                     </button>
                     <button
                       onClick={() => setConfirmacion(d)}
@@ -399,49 +395,46 @@ export default function PaginaDocumentos() {
         alCerrar={() => setModal(false)}
         titulo={editando ? `Documento: ${editando.nombre_documento}` : 'Nuevo documento'}
       >
-        <div className="flex flex-col gap-4 min-w-[500px]">
+        <div className="flex flex-col gap-4 w-[900px] max-w-full">
           {/* Tabs dentro del modal */}
           {editando && (
             <div className="flex gap-1 border-b border-borde -mt-2">
-              {(['datos', 'caracteristicas', 'caracteristicas_genericas'] as TabModal[]).map((t) => (
+              {(['datos', 'caracteristicas_genericas', 'caracteristicas'] as TabModal[]).map((t) => (
                 <button key={t} onClick={() => setTabModal(t)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     tabModal === t ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'
                   }`}>
-                  {t === 'datos' ? 'Datos' : t === 'caracteristicas' ? 'Características' : 'Caract. Genéricas'}
+                  {t === 'datos' ? 'Datos' : t === 'caracteristicas_genericas' ? 'Caract. Genéricas' : 'Características'}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Tab Datos */}
+          {/* Tab Datos — 2 columnas con URL ancha */}
           {(tabModal === 'datos' || !editando) && (
             <div className="flex flex-col gap-4">
-              <Input
-                etiqueta="Nombre del documento *"
-                value={form.nombre_documento}
-                onChange={(e) => setForm({ ...form, nombre_documento: e.target.value })}
-                placeholder="Nombre del documento"
-              />
-              <Input
-                etiqueta="Ubicacion (URL o ruta)"
-                value={form.ubicacion_documento}
-                onChange={(e) => setForm({ ...form, ubicacion_documento: e.target.value })}
-                placeholder="https://ejemplo.com/documento.pdf"
-              />
-              <div>
-                <label className="block text-sm font-medium text-texto mb-1.5">Resumen</label>
-                <textarea
-                  className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none resize-y min-h-[80px]"
-                  value={form.resumen_documento}
-                  onChange={(e) => setForm({ ...form, resumen_documento: e.target.value })}
-                  placeholder="Breve descripcion del contenido del documento"
-                  maxLength={2000}
-                />
-              </div>
+              <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+                {/* Nombre — 5 cols (3/4 del actual de 6) */}
+                <div className="col-span-12 md:col-span-5">
+                  <Input
+                    etiqueta="Nombre del documento *"
+                    value={form.nombre_documento}
+                    onChange={(e) => setForm({ ...form, nombre_documento: e.target.value })}
+                    placeholder="Nombre del documento"
+                  />
+                </div>
+                {/* URL — 7 cols (más ancha) */}
+                <div className="col-span-12 md:col-span-7">
+                  <Input
+                    etiqueta="Ubicación (URL o ruta)"
+                    value={form.ubicacion_documento}
+                    onChange={(e) => setForm({ ...form, ubicacion_documento: e.target.value })}
+                    placeholder="https://ejemplo.com/documento.pdf"
+                  />
+                </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1">
+                {/* Fecha — 5 cols */}
+                <div className="col-span-12 md:col-span-5">
                   <Input
                     etiqueta="Fecha de modificación"
                     type="datetime-local"
@@ -449,7 +442,8 @@ export default function PaginaDocumentos() {
                     onChange={(e) => setForm({ ...form, fecha_modificacion: e.target.value })}
                   />
                 </div>
-                <div className="w-40">
+                {/* Tamaño — 3 cols */}
+                <div className="col-span-6 md:col-span-3">
                   <Input
                     etiqueta="Tamaño (KB)"
                     type="number"
@@ -458,23 +452,33 @@ export default function PaginaDocumentos() {
                     placeholder="0.00"
                   />
                 </div>
-              </div>
+                {/* Estado — 4 cols */}
+                <div className="col-span-6 md:col-span-4">
+                  <label className="block text-sm font-medium text-texto mb-1.5">Estado del documento</label>
+                  <select
+                    className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
+                    value={form.codigo_estado_doc}
+                    onChange={(e) => setForm({ ...form, codigo_estado_doc: e.target.value })}
+                  >
+                    <option value="">— Sin estado —</option>
+                    {estados.filter((e) => e.activo).map((e) => (
+                      <option key={e.codigo_estado_doc} value={e.codigo_estado_doc}>
+                        {e.nombre_estado}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Estado del documento */}
-              <div>
-                <label className="block text-sm font-medium text-texto mb-1.5">Estado del documento</label>
-                <select
-                  className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
-                  value={form.codigo_estado_doc}
-                  onChange={(e) => setForm({ ...form, codigo_estado_doc: e.target.value })}
-                >
-                  <option value="">— Sin estado —</option>
-                  {estados.filter((e) => e.activo).map((e) => (
-                    <option key={e.codigo_estado_doc} value={e.codigo_estado_doc}>
-                      {e.nombre_estado}
-                    </option>
-                  ))}
-                </select>
+                {/* Resumen — fila completa */}
+                <div className="col-span-12">
+                  <label className="block text-sm font-medium text-texto mb-1.5">Resumen</label>
+                  <textarea
+                    className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none resize-y min-h-[100px]"
+                    value={form.resumen_documento}
+                    onChange={(e) => setForm({ ...form, resumen_documento: e.target.value })}
+                    placeholder="Breve descripcion del contenido del documento"
+                  />
+                </div>
               </div>
 
               {error && (
@@ -494,90 +498,38 @@ export default function PaginaDocumentos() {
             </div>
           )}
 
-          {/* Tab Caracteristicas */}
+          {/* Tab Caracteristicas — formato compacto Tipo: Valor */}
           {tabModal === 'caracteristicas' && editando && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {cargandoCaract ? (
-                <p className="text-sm text-texto-muted py-4 text-center">Cargando caracteristicas...</p>
-              ) : categoriasConCaract.length === 0 ? (
-                <p className="text-sm text-texto-muted py-4 text-center">No hay categorias visibles para su rol.</p>
+                <p className="text-sm text-texto-muted py-4 text-center">Cargando características...</p>
+              ) : categoriasConCaract.filter((cc) => cc.caracteristicas.length > 0).length === 0 ? (
+                <p className="text-sm text-texto-muted py-4 text-center">Sin características.</p>
               ) : (
-                categoriasConCaract.map((cc) => {
+                categoriasConCaract.filter((cc) => cc.caracteristicas.length > 0).map((cc) => {
                   const cat = cc.categoria
-                  const tiposDisponibles = (tiposPorCat[cat.codigo_cat_docs] || []).filter((t) => t.activo)
-                  const puedeAgregar = cat.editable_en_detalle_docs && (!cat.es_unica_docs || cc.caracteristicas.length === 0)
-
                   return (
-                    <div key={cat.codigo_cat_docs} className="border border-borde rounded-lg">
-                      {/* Cabecera de categoria */}
-                      <div className="bg-fondo px-4 py-2 flex items-center justify-between rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{cat.nombre_cat_docs}</span>
-                          {cat.es_unica_docs && <Insignia variante="advertencia">Unica</Insignia>}
-                          {!cat.editable_en_detalle_docs && <Insignia variante="neutro">Solo lectura</Insignia>}
-                        </div>
-                        <span className="text-xs text-texto-muted">{cc.caracteristicas.length} registro(s)</span>
+                    <div key={cat.codigo_cat_docs}>
+                      <div className="text-xs font-semibold text-texto-muted uppercase mb-1">{cat.nombre_cat_docs}</div>
+                      <div className="flex flex-col gap-1">
+                        {cc.caracteristicas.map((c) => {
+                          const tipoNombre = c.tipos_caract_docs?.nombre_tipo_docs || c.codigo_tipo_docs
+                          const valor = c.valor_texto_docs || c.valor_numerico_docs || c.valor_fecha_docs
+                          if (!valor) return null
+                          return (
+                            <div key={c.id_caracteristica_docs} className="text-sm flex items-center gap-2 group">
+                              <span className="text-texto-muted">{tipoNombre}:</span>
+                              <span className="text-texto">{valor}</span>
+                              {cat.editable_en_detalle_docs && (
+                                <button onClick={() => eliminarCaracteristica(c.id_caracteristica_docs)}
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-all">
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
-
-                      {/* Lista de caracteristicas */}
-                      <div className="divide-y divide-borde">
-                        {cc.caracteristicas.map((c) => (
-                          <div key={c.id_caracteristica_docs} className="px-4 py-2 flex items-center gap-3 text-sm">
-                            <span className="text-texto-muted min-w-[120px]">
-                              {c.tipos_caract_docs?.nombre_tipo_docs || c.codigo_tipo_docs}
-                            </span>
-                            <span className="flex-1">
-                              {c.valor_texto_docs || c.valor_numerico_docs || c.valor_fecha_docs || '—'}
-                            </span>
-                            {cat.editable_en_detalle_docs && (
-                              <button onClick={() => eliminarCaracteristica(c.id_caracteristica_docs)}
-                                className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors">
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-
-                        {cc.caracteristicas.length === 0 && (
-                          <p className="px-4 py-3 text-sm text-texto-muted">Sin caracteristicas en esta categoria</p>
-                        )}
-                      </div>
-
-                      {/* Formulario agregar */}
-                      {puedeAgregar && (
-                        <div className="border-t border-borde px-4 py-3 flex items-end gap-2">
-                          <div className="flex-1">
-                            <select
-                              className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                              value={formCaract.codigo_cat_docs === cat.codigo_cat_docs ? formCaract.codigo_tipo_docs : ''}
-                              onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_docs: cat.codigo_cat_docs, codigo_tipo_docs: e.target.value })}
-                            >
-                              <option value="">Tipo...</option>
-                              {tiposDisponibles.map((t) => (
-                                <option key={t.codigo_tipo_docs} value={t.codigo_tipo_docs}>{t.nombre_tipo_docs}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <input className="flex-1 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            placeholder="Valor texto"
-                            value={formCaract.codigo_cat_docs === cat.codigo_cat_docs ? formCaract.valor_texto_docs : ''}
-                            onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_docs: cat.codigo_cat_docs, valor_texto_docs: e.target.value })} />
-                          <input className="w-24 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            placeholder="Numero" type="number"
-                            value={formCaract.codigo_cat_docs === cat.codigo_cat_docs ? formCaract.valor_numerico_docs : ''}
-                            onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_docs: cat.codigo_cat_docs, valor_numerico_docs: e.target.value })} />
-                          <input className="w-36 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            type="date"
-                            value={formCaract.codigo_cat_docs === cat.codigo_cat_docs ? formCaract.valor_fecha_docs : ''}
-                            onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_docs: cat.codigo_cat_docs, valor_fecha_docs: e.target.value })} />
-                          <Boton variante="primario" tamano="sm"
-                            onClick={() => agregarCaracteristica(cat.codigo_cat_docs)}
-                            cargando={guardandoCaract}
-                            disabled={formCaract.codigo_cat_docs !== cat.codigo_cat_docs || !formCaract.codigo_tipo_docs}>
-                            <Plus size={14} />
-                          </Boton>
-                        </div>
-                      )}
                     </div>
                   )
                 })
@@ -585,87 +537,38 @@ export default function PaginaDocumentos() {
             </div>
           )}
 
-          {/* Tab Caracteristicas Genericas */}
+          {/* Tab Caracteristicas Genericas — formato compacto Tipo: Valor */}
           {tabModal === 'caracteristicas_genericas' && editando && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {cargandoGene ? (
                 <p className="text-sm text-texto-muted py-4 text-center">Cargando características genéricas...</p>
-              ) : categoriasGene.length === 0 ? (
-                <p className="text-sm text-texto-muted py-4 text-center">No hay categorías genéricas configuradas.</p>
+              ) : categoriasGene.filter((cc) => cc.caracteristicas.length > 0).length === 0 ? (
+                <p className="text-sm text-texto-muted py-4 text-center">Sin características.</p>
               ) : (
-                categoriasGene.map((cc) => {
+                categoriasGene.filter((cc) => cc.caracteristicas.length > 0).map((cc) => {
                   const cat = cc.categoria
-                  const tiposDisponibles = (tiposPorCatGene[cat.codigo_cat_gene_docs] || []).filter((t) => t.activo)
-                  const puedeAgregar = cat.editable_en_detalle_gene_docs && (!cat.es_unica_gene_docs || cc.caracteristicas.length === 0)
-
                   return (
-                    <div key={cat.codigo_cat_gene_docs} className="border border-borde rounded-lg">
-                      <div className="bg-fondo px-4 py-2 flex items-center justify-between rounded-t-lg">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{cat.nombre_cat_gene_docs}</span>
-                          {cat.es_unica_gene_docs && <Insignia variante="advertencia">Única</Insignia>}
-                          {!cat.editable_en_detalle_gene_docs && <Insignia variante="neutro">Solo lectura</Insignia>}
-                        </div>
-                        <span className="text-xs text-texto-muted">{cc.caracteristicas.length} registro(s)</span>
+                    <div key={cat.codigo_cat_gene_docs}>
+                      <div className="text-xs font-semibold text-texto-muted uppercase mb-1">{cat.nombre_cat_gene_docs}</div>
+                      <div className="flex flex-col gap-1">
+                        {cc.caracteristicas.map((c) => {
+                          const tipoNombre = c.tipos_caract_gene_docs?.nombre_tipo_gene_docs || c.codigo_tipo_gene_docs
+                          const valor = c.valor_texto_gene_docs || c.valor_numerico_gene_docs || c.valor_fecha_gene_docs
+                          if (!valor) return null
+                          return (
+                            <div key={c.id_caracteristica_gene_docs} className="text-sm flex items-center gap-2 group">
+                              <span className="text-texto-muted">{tipoNombre}:</span>
+                              <span className="text-texto">{valor}</span>
+                              {cat.editable_en_detalle_gene_docs && (
+                                <button onClick={() => eliminarCaracteristicaGene(c.id_caracteristica_gene_docs)}
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-all">
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
-
-                      <div className="divide-y divide-borde">
-                        {cc.caracteristicas.map((c) => (
-                          <div key={c.id_caracteristica_gene_docs} className="px-4 py-2 flex items-center gap-3 text-sm">
-                            <span className="text-texto-muted min-w-[120px]">
-                              {c.tipos_caract_gene_docs?.nombre_tipo_gene_docs || c.codigo_tipo_gene_docs}
-                            </span>
-                            <span className="flex-1">
-                              {c.valor_texto_gene_docs || c.valor_numerico_gene_docs || c.valor_fecha_gene_docs || '—'}
-                            </span>
-                            {cat.editable_en_detalle_gene_docs && (
-                              <button onClick={() => eliminarCaracteristicaGene(c.id_caracteristica_gene_docs)}
-                                className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors">
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-
-                        {cc.caracteristicas.length === 0 && (
-                          <p className="px-4 py-3 text-sm text-texto-muted">Sin características en esta categoría</p>
-                        )}
-                      </div>
-
-                      {puedeAgregar && (
-                        <div className="border-t border-borde px-4 py-3 flex items-end gap-2">
-                          <div className="flex-1">
-                            <select
-                              className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                              value={formGene.codigo_cat_gene_docs === cat.codigo_cat_gene_docs ? formGene.codigo_tipo_gene_docs : ''}
-                              onChange={(e) => setFormGene({ ...formGene, codigo_cat_gene_docs: cat.codigo_cat_gene_docs, codigo_tipo_gene_docs: e.target.value })}
-                            >
-                              <option value="">Tipo...</option>
-                              {tiposDisponibles.map((t) => (
-                                <option key={t.codigo_tipo_gene_docs} value={t.codigo_tipo_gene_docs}>{t.nombre_tipo_gene_docs}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <input className="flex-1 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            placeholder="Valor texto"
-                            value={formGene.codigo_cat_gene_docs === cat.codigo_cat_gene_docs ? formGene.valor_texto_gene_docs : ''}
-                            onChange={(e) => setFormGene({ ...formGene, codigo_cat_gene_docs: cat.codigo_cat_gene_docs, valor_texto_gene_docs: e.target.value })} />
-                          <input className="w-24 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            placeholder="Número" type="number"
-                            value={formGene.codigo_cat_gene_docs === cat.codigo_cat_gene_docs ? formGene.valor_numerico_gene_docs : ''}
-                            onChange={(e) => setFormGene({ ...formGene, codigo_cat_gene_docs: cat.codigo_cat_gene_docs, valor_numerico_gene_docs: e.target.value })} />
-                          <input className="w-36 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            type="date"
-                            value={formGene.codigo_cat_gene_docs === cat.codigo_cat_gene_docs ? formGene.valor_fecha_gene_docs : ''}
-                            onChange={(e) => setFormGene({ ...formGene, codigo_cat_gene_docs: cat.codigo_cat_gene_docs, valor_fecha_gene_docs: e.target.value })} />
-                          <Boton variante="primario" tamano="sm"
-                            onClick={() => agregarCaracteristicaGene(cat.codigo_cat_gene_docs)}
-                            cargando={guardandoGene}
-                            disabled={formGene.codigo_cat_gene_docs !== cat.codigo_cat_gene_docs || !formGene.codigo_tipo_gene_docs}>
-                            <Plus size={14} />
-                          </Boton>
-                        </div>
-                      )}
                     </div>
                   )
                 })
