@@ -65,6 +65,8 @@ export default function PaginaProcesarDocumentos() {
   const [ejecutando, setEjecutando] = useState(false)
   const [procesados, setProcesados] = useState(0)
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
+  const [archivosEnDir, setArchivosEnDir] = useState<Set<string> | null>(null)
+  const [escaneandoDir, setEscaneandoDir] = useState(false)
   const abortRef = useRef(false)
 
   // Tab Cola (datos persistidos)
@@ -187,24 +189,65 @@ export default function PaginaProcesarDocumentos() {
     })
   }
 
-  const docsFiltrados = documentos.filter((d) =>
-    !busqueda || d.nombre_documento.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (d.ubicacion_documento || '').toLowerCase().includes(busqueda.toLowerCase())
-  )
+  const docsFiltrados = documentos.filter((d) => {
+    if (archivosEnDir && !archivosEnDir.has(d.nombre_documento)) return false
+    if (busqueda && !d.nombre_documento.toLowerCase().includes(busqueda.toLowerCase()) &&
+        !(d.ubicacion_documento || '').toLowerCase().includes(busqueda.toLowerCase())) return false
+    return true
+  })
+
+  // Cuando se escanea un directorio, marcar automáticamente los documentos encontrados
+  useEffect(() => {
+    if (archivosEnDir) {
+      const ids = documentos.filter((d) => archivosEnDir.has(d.nombre_documento)).map((d) => d.codigo_documento)
+      setSeleccionados(new Set(ids))
+    }
+  }, [archivosEnDir, documentos])
 
   const seleccionarTodos = () => setSeleccionados(new Set(docsFiltrados.map((d) => d.codigo_documento)))
   const deseleccionarTodos = () => setSeleccionados(new Set())
+
+  const escanearDirectorio = async (handle: FileSystemDirectoryHandle): Promise<Set<string>> => {
+    const archivos = new Set<string>()
+    const walk = async (dir: FileSystemDirectoryHandle) => {
+      // @ts-expect-error - values() is FileSystemDirectoryHandle iterator
+      for await (const entry of dir.values()) {
+        if (entry.kind === 'file') archivos.add(entry.name)
+        else if (entry.kind === 'directory') await walk(entry as FileSystemDirectoryHandle)
+      }
+    }
+    await walk(handle)
+    return archivos
+  }
 
   const seleccionarDirectorio = async () => {
     try {
       const handle = await (window as unknown as { showDirectoryPicker: (opts?: Record<string, string>) => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker({ mode: 'read' })
       setDirHandle(handle)
+      setEscaneandoDir(true)
+      try {
+        const archivos = await escanearDirectorio(handle)
+        setArchivosEnDir(archivos)
+      } finally {
+        setEscaneandoDir(false)
+      }
     } catch { /* cancelado */ }
+  }
+
+  const limpiarDirectorio = () => {
+    setDirHandle(null)
+    setArchivosEnDir(null)
   }
 
   // Ejecutar: encolar + procesar
   const ejecutar = async () => {
     if (!modeloId || seleccionados.size === 0) return
+
+    // Feedback inmediato: bloquear UI y mostrar estado de encolado
+    setEjecutando(true)
+    setProcesados(0)
+    setCola([])
+    abortRef.current = false
 
     const estadoDestino = proceso === 'resumir' ? 'RESUMIDO' : 'ESCANEADO'
 
@@ -218,10 +261,14 @@ export default function PaginaProcesarDocumentos() {
     try {
       encoladosRes = await colaEstadosDocsApi.inicializar(items)
     } catch {
+      setEjecutando(false)
       return
     }
 
-    if (encoladosRes.encolados === 0) return
+    if (encoladosRes.encolados === 0) {
+      setEjecutando(false)
+      return
+    }
 
     // 2. Obtener ítems PENDIENTES de la cola
     const pendientes = await colaEstadosDocsApi.listar('PENDIENTE')
@@ -241,9 +288,6 @@ export default function PaginaProcesarDocumentos() {
       }
     })
     setCola(colaInicial)
-    setEjecutando(true)
-    setProcesados(0)
-    abortRef.current = false
 
     // 3. Procesar uno por uno
     for (let i = 0; i < colaInicial.length; i++) {
@@ -371,19 +415,26 @@ export default function PaginaProcesarDocumentos() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde">
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde flex-wrap">
             {proceso === 'resumir' && (
-              <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando}>
-                <FolderOpen size={16} />
-                {dirHandle ? `📂 ${dirHandle.name}` : 'Seleccionar directorio (opcional)'}
-              </Boton>
+              <>
+                <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando || escaneandoDir}>
+                  {escaneandoDir ? <Loader2 size={16} className="animate-spin" /> : <FolderOpen size={16} />}
+                  {escaneandoDir ? 'Escaneando...' : dirHandle ? `📂 ${dirHandle.name}` : 'Seleccionar directorio (opcional)'}
+                </Boton>
+                {dirHandle && !escaneandoDir && (
+                  <Boton variante="contorno" tamano="sm" onClick={limpiarDirectorio} disabled={ejecutando}>
+                    Quitar
+                  </Boton>
+                )}
+              </>
             )}
             {proceso === 'resumir' && !dirHandle && (
               <span className="text-xs text-texto-muted">Sin directorio: resumen basado solo en metadatos</span>
             )}
             <div className="ml-auto flex items-center gap-3">
               <span className="text-sm text-texto-muted">
-                {seleccionados.size}/{documentos.length} seleccionados
+                {seleccionados.size}/{documentos.length} seleccionados{archivosEnDir && ` (filtrado por directorio)`}
               </span>
               <Boton variante="primario" onClick={ejecutar}
                 disabled={ejecutando || seleccionados.size === 0 || !modeloId}>
