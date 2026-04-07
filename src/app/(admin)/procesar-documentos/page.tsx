@@ -59,6 +59,7 @@ export default function PaginaProcesarDocumentos() {
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set())
   const [cargando, setCargando] = useState(false)
   const [busqueda, setBusqueda] = useState('')
+  const [yaCargado, setYaCargado] = useState(false)
 
   // Cola y ejecución
   const [cola, setCola] = useState<ItemCola[]>([])
@@ -160,9 +161,13 @@ export default function PaginaProcesarDocumentos() {
   const cargarDocumentos = useCallback(async () => {
     setCargando(true)
     try {
-      const todos = await documentosApi.listar()
       const estadoFiltro = proceso === 'resumir' ? 'CARGADO' : 'RESUMIDO'
-      let filtrados = todos.filter((d) => d.activo && d.codigo_estado_doc === estadoFiltro)
+      const todos = await documentosApi.listar({
+        codigo_estado_doc: estadoFiltro,
+        activo: true,
+        q: busqueda.trim() || undefined,
+      })
+      let filtrados = todos
 
       if (alcance === 'ubicacion' && ubicacionSel) {
         const ubic = ubicaciones.find((u) => u.codigo_ubicacion === ubicacionSel)
@@ -174,12 +179,18 @@ export default function PaginaProcesarDocumentos() {
       setDocumentos(filtrados)
       setSeleccionados(new Set(filtrados.map((d) => d.codigo_documento)))
       setCola([])
+      setYaCargado(true)
     } finally {
       setCargando(false)
     }
-  }, [proceso, alcance, ubicacionSel, ubicaciones])
+  }, [proceso, alcance, ubicacionSel, ubicaciones, busqueda])
 
-  useEffect(() => { cargarDocumentos() }, [cargarDocumentos])
+  // Resetear lista cuando cambian filtros de proceso/alcance/ubicación
+  useEffect(() => {
+    setDocumentos([])
+    setSeleccionados(new Set())
+    setYaCargado(false)
+  }, [proceso, alcance, ubicacionSel])
 
   const toggleSeleccion = (id: number) => {
     setSeleccionados((prev) => {
@@ -512,9 +523,17 @@ export default function PaginaProcesarDocumentos() {
               </Boton>
             </div>
             <div className="max-w-sm flex-1">
-              <Input placeholder="Buscar por nombre o ubicación..." value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
+              <Input
+                placeholder="Filtrar y Enter (vacío = todos)..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') cargarDocumentos() }}
+                icono={<Search size={15} />}
+              />
             </div>
+            <Boton variante="contorno" tamano="sm" onClick={cargarDocumentos} disabled={cargando}>
+              {cargando ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}Listar
+            </Boton>
           </div>
           <Tabla>
             <TablaCabecera>
@@ -530,7 +549,9 @@ export default function PaginaProcesarDocumentos() {
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>Cargando...</TablaTd></TablaFila>
               ) : docsFiltrados.length === 0 ? (
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>
-                  {documentos.length === 0
+                  {!yaCargado
+                    ? 'Escribe un filtro y presiona Enter (vacío = todos) o haz clic en Listar'
+                    : documentos.length === 0
                     ? `No hay documentos en estado ${proceso === 'resumir' ? 'CARGADO' : 'RESUMIDO'}`
                     : 'Sin resultados para la búsqueda'}
                 </TablaTd></TablaFila>

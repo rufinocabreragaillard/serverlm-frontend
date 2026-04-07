@@ -375,7 +375,8 @@ export const datosBasicosApi = {
 // ─── Documentos ──────────────────────────────────────────────────────────────
 
 export const documentosApi = {
-  listar: () => api.get<Documento[]>('/documentos').then((r) => r.data),
+  listar: (params?: { codigo_estado_doc?: string; activo?: boolean; q?: string; limit?: number }) =>
+    api.get<Documento[]>('/documentos', { params }).then((r) => r.data),
   crear: (datos: Partial<Documento>) =>
     api.post<Documento>('/documentos', datos).then((r) => r.data),
   actualizar: (id: number, datos: Partial<Documento>) =>
