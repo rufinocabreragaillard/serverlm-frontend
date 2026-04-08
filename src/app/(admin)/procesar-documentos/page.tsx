@@ -22,7 +22,7 @@ const ESTADO_COLA_CONFIG: Record<string, { variante: 'exito' | 'error' | 'advert
   ERROR: { variante: 'error', icono: AlertTriangle },
 }
 
-type Proceso = 'resumir' | 'escanear'
+type Proceso = 'resumir' | 'escanear' | 'restablecer'
 type Alcance = 'pendientes' | 'ubicacion'
 
 interface UbicacionOption {
@@ -186,12 +186,22 @@ export default function PaginaProcesarDocumentos() {
   const cargarDocumentos = useCallback(async () => {
     setCargando(true)
     try {
-      const estadoFiltro = proceso === 'resumir' ? 'CARGADO' : 'RESUMIDO'
-      const todos = await documentosApi.listar({
-        codigo_estado_doc: estadoFiltro,
-        activo: true,
-        q: busqueda.trim() || undefined,
-      })
+      let todos: Documento[]
+      if (proceso === 'restablecer') {
+        // Restablecer: listar documentos en NO_ESCANEABLE + NO_ENCONTRADO
+        const [a, b] = await Promise.all([
+          documentosApi.listar({ codigo_estado_doc: 'NO_ESCANEABLE', activo: true, q: busqueda.trim() || undefined }),
+          documentosApi.listar({ codigo_estado_doc: 'NO_ENCONTRADO', activo: true, q: busqueda.trim() || undefined }),
+        ])
+        todos = [...a, ...b]
+      } else {
+        const estadoFiltro = proceso === 'resumir' ? 'CARGADO' : 'RESUMIDO'
+        todos = await documentosApi.listar({
+          codigo_estado_doc: estadoFiltro,
+          activo: true,
+          q: busqueda.trim() || undefined,
+        })
+      }
       let filtrados = todos
 
       if (alcance === 'ubicacion' && ubicacionSel) {
@@ -290,16 +300,46 @@ export default function PaginaProcesarDocumentos() {
     idbSetHandle(null)
   }
 
-  // Ejecutar: encolar + procesar
+  // Ejecutar: rama segun proceso (resumir / escanear / restablecer)
   const ejecutar = async () => {
-    if (!modeloId || seleccionados.size === 0) return
+    if (seleccionados.size === 0) return
+    if (proceso !== 'restablecer' && !modeloId) return
 
-    // Feedback inmediato: bloquear UI y mostrar estado de encolado
     setEjecutando(true)
     setProcesados(0)
     setCola([])
     abortRef.current = false
 
+    // ── Rama RESTABLECER: no usa cola ni LLM, una sola llamada al backend.
+    if (proceso === 'restablecer') {
+      try {
+        const ids = Array.from(seleccionados)
+        const res = await documentosApi.restablecerEstado(ids)
+        // Mostramos el resultado como un único item de "cola" para coherencia.
+        setCola([{
+          id_cola: 0,
+          codigo_documento: 0,
+          nombre_documento: `Restablecidos: ${res.restablecidos} (${res.a_cargado} a CARGADO, ${res.a_resumido} a RESUMIDO)`,
+          ubicacion_documento: undefined,
+          estado_cola: 'COMPLETADO',
+        }])
+        setProcesados(res.restablecidos)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Error al restablecer'
+        setCola([{
+          id_cola: 0,
+          codigo_documento: 0,
+          nombre_documento: msg,
+          ubicacion_documento: undefined,
+          estado_cola: 'ERROR',
+        }])
+      }
+      setEjecutando(false)
+      cargarDocumentos()
+      return
+    }
+
+    // ── Rama RESUMIR / ESCANEAR: encolar + procesar item por item con LLM.
     const estadoDestino = proceso === 'resumir' ? 'RESUMIDO' : 'ESCANEADO'
 
     // 1. Encolar en cola_estados_docs
@@ -345,23 +385,53 @@ export default function PaginaProcesarDocumentos() {
       if (abortRef.current) break
       const item = colaInicial[i]
 
-      // Marcar procesando en UI
       setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'EN_PROCESO' } : c))
 
       try {
         let texto: string | undefined
-        // Intentar extraer texto si hay directorio seleccionado (opcional)
-        if (proceso === 'resumir' && dirHandle && item.ubicacion_documento) {
+        let archivoNoEncontrado = false
+        let formatoNoSoportado: string | undefined
+        let contenidoVacio = false
+
+        // Solo en resumir intentamos leer el archivo del filesystem.
+        if (proceso === 'resumir' && item.ubicacion_documento) {
+          if (!dirHandle) {
+            // Sin directorio, no podemos leer el archivo. Mejor abortar la
+            // operacion: marcar la fila como error y NO mandar al backend.
+            // (Si quisieras forzar, podrias seguir, pero el backend ahora
+            // exige texto cuando destino=RESUMIDO y marca NO_ESCANEABLE.)
+            throw new Error('Selecciona el directorio raiz para leer los archivos.')
+          }
           try {
             const fileHandle = await abrirArchivoPorRuta(dirHandle, item.ubicacion_documento)
-            if (fileHandle) {
+            if (!fileHandle) {
+              archivoNoEncontrado = true
+            } else {
+              const ext = (item.ubicacion_documento.split('.').pop() || '').toLowerCase()
               const contenido = await extraerTextoDeArchivo(fileHandle)
-              if (contenido) texto = contenido
+              if (contenido === null) {
+                formatoNoSoportado = ext || 'desconocido'
+              } else if (!contenido.trim()) {
+                contenidoVacio = true
+              } else {
+                texto = contenido
+              }
             }
-          } catch { /* sin acceso al archivo, continúa solo con metadatos */ }
+          } catch {
+            archivoNoEncontrado = true
+          }
         }
 
-        const res = await colaEstadosDocsApi.procesar(item.id_cola, modeloId, texto)
+        const res = await colaEstadosDocsApi.procesar(
+          item.id_cola,
+          modeloId!,
+          texto,
+          {
+            archivo_no_encontrado: archivoNoEncontrado || undefined,
+            formato_no_soportado: formatoNoSoportado,
+            contenido_vacio: contenidoVacio || undefined,
+          },
+        )
 
         setCola((prev) => prev.map((c, idx) => idx === i ? {
           ...c,
@@ -380,7 +450,6 @@ export default function PaginaProcesarDocumentos() {
     }
 
     setEjecutando(false)
-    // Refrescar candidatos: los procesados ya cambiaron de estado y no deben aparecer
     setCola([])
     cargarDocumentos()
   }
@@ -434,6 +503,7 @@ export default function PaginaProcesarDocumentos() {
               <select value={proceso} onChange={(e) => setProceso(e.target.value as Proceso)} className={selectClass} disabled={ejecutando}>
                 <option value="resumir">Resumir (CARGADO → RESUMIDO)</option>
                 <option value="escanear">Escanear (RESUMIDO → ESCANEADO)</option>
+                <option value="restablecer">Restablecer (NO_ESCANEABLE / NO_ENCONTRADO → CARGADO/RESUMIDO)</option>
               </select>
             </div>
 

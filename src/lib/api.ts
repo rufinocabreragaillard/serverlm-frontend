@@ -380,6 +380,12 @@ export const documentosApi = {
   actualizar: (id: number, datos: Partial<Documento>) =>
     api.put<Documento>(`/documentos/${id}`, datos).then((r) => r.data),
   desactivar: (id: number) => api.delete(`/documentos/${id}`),
+  // Restablecer documentos NO_ESCANEABLE / NO_ENCONTRADO a CARGADO/RESUMIDO
+  restablecerEstado: (codigos_documento: number[]) =>
+    api.post<{ restablecidos: number; a_cargado: number; a_resumido: number; omitidos: number }>(
+      '/documentos/restablecer-estado',
+      { codigos_documento },
+    ).then((r) => r.data),
   // Características
   listarCaracteristicas: (id: number) =>
     api.get<CategoriaConCaracteristicasDocs[]>(`/documentos/${id}/caracteristicas`).then((r) => r.data),
@@ -730,9 +736,20 @@ export const colaEstadosDocsApi = {
   cerrar: () =>
     api.post<{ eliminados: number }>('/cola-estados-docs/cerrar').then((r) => r.data),
   eliminar: (id: number) => api.delete(`/cola-estados-docs/${id}`),
-  procesar: (id: number, idModelo: number, texto?: string) =>
+  procesar: (
+    id: number,
+    idModelo: number,
+    texto?: string,
+    opts?: {
+      archivo_no_encontrado?: boolean
+      formato_no_soportado?: string
+      contenido_vacio?: boolean
+    },
+  ) =>
     api.post<{ id_cola: number; estado_cola: string; resultado: string | null; tiempo_ms: number }>(
-      `/cola-estados-docs/${id}/procesar`, { id_modelo: idModelo, texto }, { timeout: 120000 }
+      `/cola-estados-docs/${id}/procesar`,
+      { id_modelo: idModelo, texto, ...(opts || {}) },
+      { timeout: 120000 },
     ).then((r) => r.data),
 }
 

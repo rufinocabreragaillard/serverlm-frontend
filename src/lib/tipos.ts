@@ -375,6 +375,7 @@ export interface Documento {
   fecha_modificacion?: string | null
   tamano_kb?: number | null
   codigo_estado_doc?: string | null
+  detalle_estado?: string | null
   activo: boolean
 }
 

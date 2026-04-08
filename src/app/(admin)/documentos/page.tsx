@@ -476,6 +476,16 @@ export default function PaginaDocumentos() {
                   </select>
                 </div>
 
+                {/* Detalle del estado — solo lectura, fila completa, oculto si vacio */}
+                {editando && editando.detalle_estado && (
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-texto mb-1.5">Detalle del estado</label>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 whitespace-pre-wrap">
+                      {editando.detalle_estado}
+                    </div>
+                  </div>
+                )}
+
                 {/* Resumen — fila completa */}
                 <div className="col-span-12">
                   <label className="block text-sm font-medium text-texto mb-1.5">Resumen</label>
