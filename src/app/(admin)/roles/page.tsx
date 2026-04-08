@@ -28,7 +28,7 @@ export default function PaginaRoles() {
   // Modal rol
   const [modalRol, setModalRol] = useState(false)
   const [rolEditando, setRolEditando] = useState<Rol | null>(null)
-  const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '' })
+  const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: '' })
   const [tabModalRol, setTabModalRol] = useState<'datos' | 'funciones'>('datos')
 
   // Funciones del rol en edición
@@ -48,6 +48,7 @@ export default function PaginaRoles() {
     alias_de_funcion: '', icono_de_funcion: '',
     id_modelo: '' as string,  // string para el <select>; '' = sin LLM
     system_prompt: '',
+    codigo_aplicacion_origen: '',
   })
   const [tabModalFuncion, setTabModalFuncion] = useState<'datos' | 'aplicaciones' | 'llm'>('datos')
   const [modelosLLM, setModelosLLM] = useState<RegistroLLM[]>([])
@@ -112,7 +113,7 @@ export default function PaginaRoles() {
 
   const abrirNuevoRol = () => {
     setRolEditando(null)
-    setFormRol({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '' })
+    setFormRol({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: '' })
     setError('')
     setTabModalRol('datos')
     setModalRol(true)
@@ -120,7 +121,7 @@ export default function PaginaRoles() {
 
   const abrirEditarRol = (r: Rol) => {
     setRolEditando(r)
-    setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, alias_de_rol: r.alias_de_rol || '', descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '' })
+    setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, alias_de_rol: r.alias_de_rol || '', descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '', codigo_aplicacion_origen: r.codigo_aplicacion_origen || '' })
     setError('')
     setTabModalRol('datos')
     setFuncionNueva('')
@@ -133,10 +134,11 @@ export default function PaginaRoles() {
     if (!formRol.codigo_rol || !formRol.nombre) { setError('Código y nombre son obligatorios'); return }
     setGuardando(true)
     try {
+      const origen = formRol.codigo_aplicacion_origen || null
       if (rolEditando) {
-        await rolesApi.actualizar(rolEditando.id_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined })
+        await rolesApi.actualizar(rolEditando.id_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined, codigo_aplicacion_origen: origen })
       } else {
-        await rolesApi.crear({ ...formRol, codigo_grupo: grupoActivo || 'ADMIN' })
+        await rolesApi.crear({ ...formRol, codigo_aplicacion_origen: origen, codigo_grupo: grupoActivo || 'ADMIN' })
       }
       setModalRol(false)
       cargar()
@@ -215,14 +217,25 @@ export default function PaginaRoles() {
     }
   }
 
-  // Listas filtradas y ordenadas por nombre
+  // Mapa codigo_aplicacion → nombre, para mostrar y ordenar por aplicación origen
+  const mapaAppNombre = Object.fromEntries(todasApps.map((a) => [a.codigo_aplicacion, a.nombre]))
+  const nombreApp = (codigo?: string | null) => (codigo ? (mapaAppNombre[codigo] || codigo) : '')
+  const compararPorAppYNombre = <T extends { codigo_aplicacion_origen?: string | null; nombre: string }>(a: T, b: T) => {
+    const na = nombreApp(a.codigo_aplicacion_origen); const nb = nombreApp(b.codigo_aplicacion_origen)
+    const sa = na ? 0 : 1; const sb = nb ? 0 : 1
+    if (sa !== sb) return sa - sb
+    if (na !== nb) return na.localeCompare(nb)
+    return a.nombre.localeCompare(b.nombre)
+  }
+
+  // Listas filtradas, ordenadas por aplicación origen → nombre
   const rolesFiltrados = roles
     .filter((r) => r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase()))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .sort(compararPorAppYNombre)
 
   const funcionesFiltradas = funciones
     .filter((f) => f.nombre.toLowerCase().includes(busquedaFunciones.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaFunciones.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busquedaFunciones.toLowerCase()))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    .sort(compararPorAppYNombre)
 
   // Funciones disponibles para asignar (excluir las ya asignadas)
   const funcionesDisponibles = funciones.filter((f) =>
@@ -275,7 +288,7 @@ export default function PaginaRoles() {
 
   const abrirNuevaFuncion = () => {
     setFuncionEditando(null)
-    setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '', id_modelo: '', system_prompt: '' })
+    setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '', id_modelo: '', system_prompt: '', codigo_aplicacion_origen: '' })
     setError('')
     setTabModalFuncion('datos')
     setModalFuncion(true)
@@ -292,6 +305,7 @@ export default function PaginaRoles() {
       icono_de_funcion: f.icono_de_funcion || '',
       id_modelo: f.id_modelo != null ? String(f.id_modelo) : '',
       system_prompt: f.system_prompt || '',
+      codigo_aplicacion_origen: f.codigo_aplicacion_origen || '',
     })
     setError('')
     setTabModalFuncion('datos')
@@ -311,6 +325,7 @@ export default function PaginaRoles() {
         icono_de_funcion: formFuncion.icono_de_funcion || undefined,
         id_modelo: formFuncion.id_modelo ? Number(formFuncion.id_modelo) : null,
         system_prompt: formFuncion.system_prompt || null,
+        codigo_aplicacion_origen: formFuncion.codigo_aplicacion_origen || null,
       }
       if (funcionEditando) {
         await funcionesApi.actualizar(funcionEditando.codigo_funcion, payload)
@@ -389,6 +404,7 @@ export default function PaginaRoles() {
           <Tabla>
             <TablaCabecera>
               <tr>
+                <TablaTh>App origen</TablaTh>
                 <TablaTh>Código</TablaTh>
                 <TablaTh>Alias</TablaTh>
                 <TablaTh>Nombre</TablaTh>
@@ -400,11 +416,12 @@ export default function PaginaRoles() {
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
               ) : rolesFiltrados.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron roles</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron roles</TablaTd></TablaFila>
               ) : rolesFiltrados.map((r) => (
                 <TablaFila key={r.id_rol}>
+                  <TablaTd className="text-xs text-texto-muted">{nombreApp(r.codigo_aplicacion_origen) || '—'}</TablaTd>
                   <TablaTd>
                     <code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{r.codigo_rol}</code>
                     {r.codigo_grupo == null && <span className="ml-2 text-xs bg-primario/10 text-primario px-1.5 py-0.5 rounded">Global</span>}
@@ -462,6 +479,7 @@ export default function PaginaRoles() {
           <Tabla>
             <TablaCabecera>
               <tr>
+                <TablaTh>App origen</TablaTh>
                 <TablaTh>Código</TablaTh>
                 <TablaTh>Alias</TablaTh>
                 <TablaTh>Nombre</TablaTh>
@@ -473,11 +491,12 @@ export default function PaginaRoles() {
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
               ) : funcionesFiltradas.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron funciones</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron funciones</TablaTd></TablaFila>
               ) : funcionesFiltradas.map((f) => (
                 <TablaFila key={f.codigo_funcion}>
+                  <TablaTd className="text-xs text-texto-muted">{nombreApp(f.codigo_aplicacion_origen) || '—'}</TablaTd>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{f.codigo_funcion}</code></TablaTd>
                   <TablaTd className="text-sm">{f.alias_de_funcion || '—'}</TablaTd>
                   <TablaTd className="font-medium">{f.nombre}</TablaTd>
@@ -532,6 +551,15 @@ export default function PaginaRoles() {
               <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} disabled={!!rolEditando} placeholder="ADMIN" />
               <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
               <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">Aplicación origen</label>
+                <select value={formRol.codigo_aplicacion_origen} onChange={(e) => setFormRol({ ...formRol, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
+                  <option value="">— sin asignar —</option>
+                  {[...todasApps].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((a) => (
+                    <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
+                  ))}
+                </select>
+              </div>
               <Input etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} placeholder="Descripción del rol..." />
               <Input etiqueta="URL de inicio" value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder="/admin/dashboard" />
               {rolEditando && (
@@ -698,6 +726,15 @@ export default function PaginaRoles() {
               <Input etiqueta="Código *" value={formFuncion.codigo_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_funcion: e.target.value.toUpperCase() })} disabled={!!funcionEditando} placeholder="GEST_USUARIOS" />
               <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
               <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">Aplicación origen</label>
+                <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
+                  <option value="">— sin asignar —</option>
+                  {[...todasApps].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((a) => (
+                    <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
+                  ))}
+                </select>
+              </div>
               <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
               <Input etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
               <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />

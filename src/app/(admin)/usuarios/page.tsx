@@ -97,16 +97,19 @@ export default function PaginaUsuarios() {
 
   // Apps disponibles para el grupo del usuario editado
   const [appsGrupoUsuario, setAppsGrupoUsuario] = useState<Aplicacion[]>([])
+  // Catálogo de apps del grupo activo del admin (para detectar RESTRINGIDA al asignar roles)
+  const [catalogoApps, setCatalogoApps] = useState<Aplicacion[]>([])
 
   // ── Carga inicial ──────────────────────────────────────────────────────────
   const cargar = useCallback(async () => {
     setCargando(true)
     setErrorCarga('')
     try {
-      const [u, r, e] = await Promise.all([usuariosApi.listar(), rolesApi.listar(), entidadesApi.listar()])
+      const [u, r, e, a] = await Promise.all([usuariosApi.listar(), rolesApi.listar(), entidadesApi.listar(), aplicacionesApi.listar()])
       setUsuarios(u)
       setRoles(r)
       setEntidades(e)
+      setCatalogoApps(a)
     } catch (e) {
       setErrorCarga(e instanceof Error ? e.message : 'Error al cargar usuarios')
     } finally {
@@ -401,14 +404,19 @@ export default function PaginaUsuarios() {
   // Roles disponibles para asignar al usuario en el grupo activo:
   // - Roles del grupo activo + roles globales (codigo_grupo NULL)
   // - Excluyendo los que ya tiene asignados en el grupo activo
+  // - Excluyendo los roles cuya aplicación origen es RESTRINGIDA, salvo super-admin (grupo ADMIN)
   // Roles "Administrador General" no se asignan desde la app — solo desde la BD.
   const ROLES_PROTEGIDOS = new Set(['SEG_ADMIN_GRUPO', 'ADMIN'])
+  const esSuperAdmin = (usuarioActual?.grupos || []).some((g) => g.codigo_grupo === 'ADMIN')
+  const appsRestringidas = new Set(catalogoApps.filter((a) => a.tipo === 'RESTRINGIDA').map((a) => a.codigo_aplicacion))
   const rolesDisponibles = roles
     .filter((r) =>
       r.activo &&
       !ROLES_PROTEGIDOS.has(r.codigo_rol) &&
       (r.codigo_grupo === grupoActivo || r.codigo_grupo == null) &&
-      !rolesUsuario.some((ra) => ra.codigo_grupo === grupoActivo && ra.id_rol === r.id_rol)
+      !rolesUsuario.some((ra) => ra.codigo_grupo === grupoActivo && ra.id_rol === r.id_rol) &&
+      // Filtro RESTRINGIDA: ocultar roles de apps restringidas a no-super-admin
+      (esSuperAdmin || !r.codigo_aplicacion_origen || !appsRestringidas.has(r.codigo_aplicacion_origen))
     )
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   const rolesDisponiblesFiltrados = rolesDisponibles.filter((r) =>

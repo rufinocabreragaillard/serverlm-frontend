@@ -30,7 +30,7 @@ export default function PaginaAplicacionesFunciones() {
   // ── Modal Aplicación ──────────────────────────────────────────────────────
   const [modalApp, setModalApp] = useState(false)
   const [appEditando, setAppEditando] = useState<Aplicacion | null>(null)
-  const [formApp, setFormApp] = useState({ codigo_aplicacion: '', nombre: '', descripcion: '' })
+  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; descripcion: string; tipo: 'NORMAL' | 'RESTRINGIDA' }>({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL' })
   const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos'>('datos')
   const [guardandoApp, setGuardandoApp] = useState(false)
   const [errorApp, setErrorApp] = useState('')
@@ -54,7 +54,7 @@ export default function PaginaAplicacionesFunciones() {
   // ── Modal Función ─────────────────────────────────────────────────────────
   const [modalFuncion, setModalFuncion] = useState(false)
   const [funcionEditando, setFuncionEditando] = useState<Funcion | null>(null)
-  const [formFuncion, setFormFuncion] = useState({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '' })
+  const [formFuncion, setFormFuncion] = useState<{ codigo_funcion: string; nombre: string; descripcion: string; url_funcion: string; alias_de_funcion: string; icono_de_funcion: string; codigo_aplicacion_origen: string }>({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '', codigo_aplicacion_origen: '' })
   const [tabModalFuncion, setTabModalFuncion] = useState<'datos' | 'aplicaciones'>('datos')
   const [guardandoFuncion, setGuardandoFuncion] = useState(false)
   const [errorFuncion, setErrorFuncion] = useState('')
@@ -110,18 +110,18 @@ export default function PaginaAplicacionesFunciones() {
 
   // ── Aplicación: CRUD ──────────────────────────────────────────────────────
   const abrirNuevaApp = () => {
-    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '' })
+    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL' })
     setErrorApp(''); setTabModalApp('datos'); setModalApp(true)
   }
   const abrirEditarApp = (a: Aplicacion) => {
-    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '' })
+    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '', tipo: (a.tipo as 'NORMAL' | 'RESTRINGIDA') || 'NORMAL' })
     setErrorApp(''); setTabModalApp('datos'); cargarFuncionesApp(a.codigo_aplicacion); cargarGruposApp(a.codigo_aplicacion); setModalApp(true)
   }
   const guardarApp = async () => {
     if (!formApp.codigo_aplicacion || !formApp.nombre) { setErrorApp('Código y nombre son obligatorios'); return }
     setGuardandoApp(true)
     try {
-      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined }) }
+      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo }) }
       else { await aplicacionesApi.crear(formApp) }
       setModalApp(false); cargar()
     } catch (e) { setErrorApp(e instanceof Error ? e.message : 'Error') }
@@ -154,21 +154,22 @@ export default function PaginaAplicacionesFunciones() {
 
   // ── Función: CRUD ─────────────────────────────────────────────────────────
   const abrirNuevaFuncion = () => {
-    setFuncionEditando(null); setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '' })
+    setFuncionEditando(null); setFormFuncion({ codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '', alias_de_funcion: '', icono_de_funcion: '', codigo_aplicacion_origen: '' })
     setErrorFuncion(''); setTabModalFuncion('datos'); setModalFuncion(true)
   }
   const abrirEditarFuncion = (f: Funcion) => {
-    setFuncionEditando(f); setFormFuncion({ codigo_funcion: f.codigo_funcion, nombre: f.nombre, descripcion: f.descripcion || '', url_funcion: f.url_funcion || '', alias_de_funcion: f.alias_de_funcion || '', icono_de_funcion: f.icono_de_funcion || '' })
+    setFuncionEditando(f); setFormFuncion({ codigo_funcion: f.codigo_funcion, nombre: f.nombre, descripcion: f.descripcion || '', url_funcion: f.url_funcion || '', alias_de_funcion: f.alias_de_funcion || '', icono_de_funcion: f.icono_de_funcion || '', codigo_aplicacion_origen: f.codigo_aplicacion_origen || '' })
     setErrorFuncion(''); setTabModalFuncion('datos'); cargarAppsDeFuncion(f.codigo_funcion); setModalFuncion(true)
   }
   const guardarFuncion = async () => {
     if (!formFuncion.codigo_funcion || !formFuncion.nombre) { setErrorFuncion('Código y nombre son obligatorios'); return }
     setGuardandoFuncion(true)
     try {
+      const payloadOrigen = formFuncion.codigo_aplicacion_origen || null
       if (funcionEditando) {
-        await funcionesApi.actualizar(funcionEditando.codigo_funcion, { nombre: formFuncion.nombre, descripcion: formFuncion.descripcion, url_funcion: formFuncion.url_funcion, alias_de_funcion: formFuncion.alias_de_funcion, icono_de_funcion: formFuncion.icono_de_funcion || undefined })
+        await funcionesApi.actualizar(funcionEditando.codigo_funcion, { nombre: formFuncion.nombre, descripcion: formFuncion.descripcion, url_funcion: formFuncion.url_funcion, alias_de_funcion: formFuncion.alias_de_funcion, icono_de_funcion: formFuncion.icono_de_funcion || undefined, codigo_aplicacion_origen: payloadOrigen })
       } else {
-        await funcionesApi.crear(formFuncion)
+        await funcionesApi.crear({ ...formFuncion, codigo_aplicacion_origen: payloadOrigen })
       }
       setModalFuncion(false); cargar()
     } catch (e) { setErrorFuncion(e instanceof Error ? e.message : 'Error') }
@@ -215,8 +216,23 @@ export default function PaginaAplicacionesFunciones() {
 
   const gruposDisponiblesApp = todosGrupos.filter((g) => g.activo && !gruposApp.some((ga) => ga.codigo_grupo === g.codigo_grupo))
 
-  const appsFiltradas = aplicaciones.filter((a) => a.nombre.toLowerCase().includes(busquedaApps.toLowerCase()) || a.codigo_aplicacion.toLowerCase().includes(busquedaApps.toLowerCase())).sort((a, b) => a.nombre.localeCompare(b.nombre))
-  const funcionesFiltradas = funciones.filter((f) => f.nombre.toLowerCase().includes(busquedaFunciones.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaFunciones.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busquedaFunciones.toLowerCase())).sort((a, b) => a.nombre.localeCompare(b.nombre))
+  // Mapa codigo_aplicacion → nombre, para mostrar y ordenar funciones por aplicación origen
+  const mapaAppNombre = Object.fromEntries(aplicaciones.map((a) => [a.codigo_aplicacion, a.nombre]))
+  const nombreApp = (codigo?: string | null) => (codigo ? (mapaAppNombre[codigo] || codigo) : '')
+  // Apps: ordenar por (tipo, nombre) — RESTRINGIDA primero por convención alfabética, luego nombre
+  const appsFiltradas = aplicaciones.filter((a) => a.nombre.toLowerCase().includes(busquedaApps.toLowerCase()) || a.codigo_aplicacion.toLowerCase().includes(busquedaApps.toLowerCase())).sort((a, b) => {
+    const ta = (a.tipo || 'NORMAL'); const tb = (b.tipo || 'NORMAL')
+    if (ta !== tb) return ta.localeCompare(tb)
+    return a.nombre.localeCompare(b.nombre)
+  })
+  // Funciones: ordenar por (nombre app origen, nombre función). NULL al final.
+  const funcionesFiltradas = funciones.filter((f) => f.nombre.toLowerCase().includes(busquedaFunciones.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaFunciones.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busquedaFunciones.toLowerCase())).sort((a, b) => {
+    const na = nombreApp(a.codigo_aplicacion_origen); const nb = nombreApp(b.codigo_aplicacion_origen)
+    const sa = na ? 0 : 1; const sb = nb ? 0 : 1
+    if (sa !== sb) return sa - sb
+    if (na !== nb) return na.localeCompare(nb)
+    return a.nombre.localeCompare(b.nombre)
+  })
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
@@ -247,14 +263,15 @@ export default function PaginaAplicacionesFunciones() {
             </div>
           </div>
           <Tabla>
-            <TablaCabecera><tr><TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
+            <TablaCabecera><tr><TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
             <TablaCuerpo>
-              {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>Cargando...</TablaTd></TablaFila>
-              ) : appsFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>No se encontraron aplicaciones</TablaTd></TablaFila>
+              {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando...</TablaTd></TablaFila>
+              ) : appsFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>No se encontraron aplicaciones</TablaTd></TablaFila>
               ) : appsFiltradas.map((a) => (
                 <TablaFila key={a.codigo_aplicacion}>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{a.codigo_aplicacion}</code></TablaTd>
                   <TablaTd className="font-medium">{a.nombre}</TablaTd>
+                  <TablaTd><Insignia variante={a.tipo === 'RESTRINGIDA' ? 'advertencia' : 'primario'}>{a.tipo || 'NORMAL'}</Insignia></TablaTd>
                   <TablaTd className="text-texto-muted text-sm">{a.descripcion || '—'}</TablaTd>
                   <TablaTd><Insignia variante={a.activo ? 'exito' : 'error'}>{a.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
                   <TablaTd>
@@ -283,12 +300,13 @@ export default function PaginaAplicacionesFunciones() {
             </div>
           </div>
           <Tabla>
-            <TablaCabecera><tr><TablaTh>Código</TablaTh><TablaTh>Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Icono</TablaTh><TablaTh>URL</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
+            <TablaCabecera><tr><TablaTh>App origen</TablaTh><TablaTh>Código</TablaTh><TablaTh>Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Icono</TablaTh><TablaTh>URL</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
             <TablaCuerpo>
-              {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
-              ) : funcionesFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron funciones</TablaTd></TablaFila>
+              {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
+              ) : funcionesFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron funciones</TablaTd></TablaFila>
               ) : funcionesFiltradas.map((f) => (
                 <TablaFila key={f.codigo_funcion}>
+                  <TablaTd className="text-xs text-texto-muted">{nombreApp(f.codigo_aplicacion_origen) || '—'}</TablaTd>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{f.codigo_funcion}</code></TablaTd>
                   <TablaTd className="text-sm">{f.alias_de_funcion || '—'}</TablaTd>
                   <TablaTd className="font-medium">{f.nombre}</TablaTd>
@@ -323,6 +341,13 @@ export default function PaginaAplicacionesFunciones() {
           {tabModalApp === 'datos' && (<>
             <Input etiqueta="Código *" value={formApp.codigo_aplicacion} onChange={(e) => setFormApp({ ...formApp, codigo_aplicacion: e.target.value.toUpperCase() })} disabled={!!appEditando} placeholder="SEGURIDAD" />
             <Input etiqueta="Nombre *" value={formApp.nombre} onChange={(e) => setFormApp({ ...formApp, nombre: e.target.value })} placeholder="Sistema de Seguridad" />
+            <div>
+              <label className="block text-sm font-medium text-texto mb-1">Tipo *</label>
+              <select value={formApp.tipo} onChange={(e) => setFormApp({ ...formApp, tipo: e.target.value as 'NORMAL' | 'RESTRINGIDA' })} className={selectClass}>
+                <option value="NORMAL">NORMAL — visible para asignar a cualquier usuario</option>
+                <option value="RESTRINGIDA">RESTRINGIDA — solo super-admin puede asignar sus roles</option>
+              </select>
+            </div>
             <Input etiqueta="Descripción" value={formApp.descripcion} onChange={(e) => setFormApp({ ...formApp, descripcion: e.target.value })} />
             {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
             <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Cancelar</Boton><Boton variante="primario" onClick={guardarApp} cargando={guardandoApp}>{appEditando ? 'Guardar' : 'Crear'}</Boton></div>
@@ -414,6 +439,15 @@ export default function PaginaAplicacionesFunciones() {
             <Input etiqueta="Código *" value={formFuncion.codigo_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_funcion: e.target.value.toUpperCase() })} disabled={!!funcionEditando} placeholder="GEST_USUARIOS" />
             <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
             <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
+            <div>
+              <label className="block text-sm font-medium text-texto mb-1">Aplicación origen</label>
+              <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className={selectClass}>
+                <option value="">— sin asignar —</option>
+                {[...aplicaciones].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((a) => (
+                  <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
+                ))}
+              </select>
+            </div>
             <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
             <Textarea etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} rows={3} />
             <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />

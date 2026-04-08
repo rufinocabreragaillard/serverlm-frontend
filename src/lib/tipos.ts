@@ -146,6 +146,7 @@ export interface Rol {
   descripcion?: string
   url_inicio?: string
   funcion_por_defecto?: string
+  codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
   orden?: number
   activo: boolean
 }
@@ -157,6 +158,7 @@ export interface Funcion {
   url_funcion?: string
   alias_de_funcion?: string
   icono_de_funcion?: string
+  codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
   activo: boolean
   id_modelo?: number | null  // FK a registro_llm. NULL = sin LLM
   system_prompt?: string | null  // instrucciones extra al LLM
@@ -195,6 +197,7 @@ export interface Aplicacion {
   codigo_aplicacion: string
   nombre: string
   descripcion?: string
+  tipo?: 'NORMAL' | 'RESTRINGIDA'
   activo: boolean
 }
 
