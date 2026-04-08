@@ -7,7 +7,7 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaDescripcion, TarjetaContenido } from '@/components/ui/tarjeta'
 import { useAuth } from '@/context/AuthContext'
 import { parametrosApi, entidadesApi, datosBasicosApi } from '@/lib/api'
-import type { CategoriaParametro, TipoParametro } from '@/lib/tipos'
+import type { CategoriaParametro, TipoParametro, ParametroGeneral, ParametroUsuario } from '@/lib/tipos'
 
 type TabId = 'generales' | 'grupo' | 'entidad' | 'usuario'
 
@@ -77,7 +77,7 @@ export default function PaginaParametros() {
     setCargandoGenerales(true)
     try {
       const data = await parametrosApi.listarGenerales()
-      setParamsGenerales(data.map((p: Record<string, string>) => ({
+      setParamsGenerales(data.map((p: ParametroGeneral) => ({
         categoria_parametro: p.categoria_parametro,
         tipo_parametro: p.tipo_parametro,
         valor_parametro: p.valor_parametro,
@@ -113,7 +113,7 @@ export default function PaginaParametros() {
     setCargandoUsuario(true)
     try {
       const data = await parametrosApi.listarUsuario()
-      setParamsUsuario(data.map((p: Record<string, string>) => ({
+      setParamsUsuario(data.map((p: ParametroUsuario) => ({
         categoria_parametro: p.categoria_parametro,
         tipo_parametro: p.tipo_parametro,
         valor_parametro: p.valor_parametro,

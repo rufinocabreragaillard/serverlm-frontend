@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig: NextConfig & { eslint?: { ignoreDuringBuilds?: boolean } } = {
   typescript: {
     // Permite que el build pase aunque haya errores de tipos
     ignoreBuildErrors: true,

@@ -14,7 +14,13 @@ import { useAuth } from '@/context/AuthContext'
 import type { Usuario, Rol, Entidad, Area, Aplicacion } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
-type RolAsignado = { codigo_grupo: string; codigo_rol: string; orden: number; roles: { nombre: string; activo: boolean } }
+type RolAsignado = {
+  codigo_grupo: string
+  id_rol: number
+  codigo_rol?: string
+  orden: number
+  roles?: { codigo_rol: string; nombre: string; activo: boolean; codigo_grupo: string | null }
+}
 type GrupoAsignado = { codigo_grupo: string; grupos_entidades: { nombre: string; activo: boolean } }
 type EntidadAsignada = {
   codigo_entidad: string
@@ -488,7 +494,7 @@ export default function PaginaUsuarios() {
         <Boton
           variante="contorno"
           tamano="sm"
-          onClick={() => exportarExcel(usuariosFiltrados as Record<string, unknown>[], [
+          onClick={() => exportarExcel(usuariosFiltrados as unknown as Record<string, unknown>[], [
             { titulo: 'Correo', campo: 'codigo_usuario' },
             { titulo: 'Nombre', campo: 'nombre' },
             { titulo: 'Teléfono', campo: 'telefono' },
@@ -588,9 +594,9 @@ export default function PaginaUsuarios() {
       <Modal
         abierto={modalAbierto}
         alCerrar={() => setModalAbierto(false)}
-        titulo={usuarioEditando ? `Mi cuenta: ${usuarioEditando.codigo_usuario}` : 'Nuevo usuario'}
+        titulo={usuarioEditando ? `Usuario: ${usuarioEditando.codigo_usuario}` : 'Nuevo usuario'}
         descripcion={usuarioEditando ? undefined : 'El usuario recibirá una invitación por correo'}
-        className="max-w-2xl"
+        className="w-[min(95vw,42rem)] max-w-none"
       >
         <div className="flex flex-col gap-4">
           {/* Pestañas (solo en edición) */}

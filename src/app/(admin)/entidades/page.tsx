@@ -160,9 +160,9 @@ export default function PaginaEntidades() {
   }
 
   // ── Roles: CRUD + funciones ────────────────────────────────────────────────
-  const cargarFuncionesRol = useCallback(async (codigo: string) => {
+  const cargarFuncionesRol = useCallback(async (idRol: number) => {
     setCargandoFuncionesRol(true)
-    try { setFuncionesRol(await rolesApi.listarFunciones(codigo)) } catch { setFuncionesRol([]) }
+    try { setFuncionesRol(await rolesApi.listarFunciones(idRol)) } catch { setFuncionesRol([]) }
     finally { setCargandoFuncionesRol(false) }
   }, [])
 
@@ -172,13 +172,13 @@ export default function PaginaEntidades() {
   }
   const abrirEditarRol = (r: Rol) => {
     setRolEditando(r); setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, alias_de_rol: r.alias_de_rol || '', descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '' })
-    setErrorRol(''); setTabModalRol('datos'); setFuncionNueva(''); cargarFuncionesRol(r.codigo_rol); setModalRol(true)
+    setErrorRol(''); setTabModalRol('datos'); setFuncionNueva(''); cargarFuncionesRol(r.id_rol); setModalRol(true)
   }
   const guardarRol = async () => {
     if (!formRol.codigo_rol || !formRol.nombre) { setErrorRol('Código y nombre son obligatorios'); return }
     setGuardandoRol(true)
     try {
-      if (rolEditando) { await rolesApi.actualizar(rolEditando.codigo_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined }) }
+      if (rolEditando) { await rolesApi.actualizar(rolEditando.id_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined }) }
       else { await rolesApi.crear({ ...formRol, codigo_grupo: grupoActivo || 'ADMIN' }) }
       setModalRol(false); cargar()
     } catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error') }
@@ -186,19 +186,19 @@ export default function PaginaEntidades() {
   }
   const ejecutarEliminarRol = async () => {
     if (!rolAEliminar) return; setEliminandoRol(true)
-    try { await rolesApi.eliminar(rolAEliminar.codigo_rol); setRolAEliminar(null); cargar() }
+    try { await rolesApi.eliminar(rolAEliminar.id_rol); setRolAEliminar(null); cargar() }
     catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error'); setRolAEliminar(null) }
     finally { setEliminandoRol(false) }
   }
 
   const asignarFuncionRol = async () => {
     if (!funcionNueva || !rolEditando) return; setAsignandoFuncion(true)
-    try { await rolesApi.asignarFuncion(rolEditando.codigo_rol, funcionNueva); setFuncionNueva(''); setBusquedaFuncionEnt(''); cargarFuncionesRol(rolEditando.codigo_rol) }
+    try { await rolesApi.asignarFuncion(rolEditando.id_rol, funcionNueva); setFuncionNueva(''); setBusquedaFuncionEnt(''); cargarFuncionesRol(rolEditando.id_rol) }
     catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error') } finally { setAsignandoFuncion(false) }
   }
   const quitarFuncionRol = async (c: string) => {
     if (!rolEditando) return
-    try { await rolesApi.quitarFuncion(rolEditando.codigo_rol, c); cargarFuncionesRol(rolEditando.codigo_rol) }
+    try { await rolesApi.quitarFuncion(rolEditando.id_rol, c); cargarFuncionesRol(rolEditando.id_rol) }
     catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error') }
   }
   const moverFuncionRol = async (index: number, dir: 'arriba' | 'abajo') => {
@@ -209,8 +209,8 @@ export default function PaginaEntidades() {
     lista[index].orden = oB; lista[swap].orden = oA
     ;[lista[index], lista[swap]] = [lista[swap], lista[index]]
     setFuncionesRol(lista)
-    try { await rolesApi.reordenarFunciones(rolEditando.codigo_rol, lista.map((f) => ({ codigo_funcion: f.codigo_funcion, orden: f.orden }))) }
-    catch { cargarFuncionesRol(rolEditando.codigo_rol) }
+    try { await rolesApi.reordenarFunciones(rolEditando.id_rol, lista.map((f) => ({ codigo_funcion: f.codigo_funcion, orden: f.orden }))) }
+    catch { cargarFuncionesRol(rolEditando.id_rol) }
   }
 
   const moverRol = async (index: number, dir: 'arriba' | 'abajo') => {
@@ -222,7 +222,7 @@ export default function PaginaEntidades() {
     lista[swap] = { ...lista[swap], orden: oA }
     ;[lista[index], lista[swap]] = [lista[swap], lista[index]]
     setRoles(lista)
-    try { await rolesApi.reordenar(lista.map((r, i) => ({ codigo_rol: r.codigo_rol, orden: r.orden ?? i }))) }
+    try { await rolesApi.reordenar(lista.map((r, i) => ({ id_rol: r.id_rol, orden: r.orden ?? i }))) }
     catch { cargar() }
   }
 
@@ -266,7 +266,7 @@ export default function PaginaEntidades() {
           <Boton
             variante="contorno"
             tamano="sm"
-            onClick={() => exportarExcel(entidades as Record<string, unknown>[], [
+            onClick={() => exportarExcel(entidades as unknown as Record<string, unknown>[], [
               { titulo: 'Grupo', campo: 'codigo_grupo' },
               { titulo: 'Código', campo: 'codigo_entidad' },
               { titulo: 'Nombre', campo: 'nombre' },
@@ -341,7 +341,7 @@ export default function PaginaEntidades() {
                   <Boton
                     variante="contorno"
                     tamano="sm"
-                    onClick={() => exportarExcel(areasFiltradas as Record<string, unknown>[], [
+                    onClick={() => exportarExcel(areasFiltradas as unknown as Record<string, unknown>[], [
                       { titulo: 'Entidad', campo: 'codigo_entidad' },
                       { titulo: 'Código área', campo: 'codigo_area' },
                       { titulo: 'Nombre', campo: 'nombre' },
@@ -434,7 +434,7 @@ export default function PaginaEntidades() {
               <Input placeholder="Buscar por nombre, código o alias..." value={busquedaRoles} onChange={(e) => setBusquedaRoles(e.target.value)} icono={<Search size={15} />} />
             </div>
             <div className="flex gap-2 ml-auto">
-              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(rolesFiltrados as Record<string, unknown>[], [{ titulo: 'Orden', campo: 'orden' }, { titulo: 'Grupo', campo: 'codigo_grupo' }, { titulo: 'Código', campo: 'codigo_rol' }, { titulo: 'Alias', campo: 'alias_de_rol' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Descripción', campo: 'descripcion' }, { titulo: 'URL inicio', campo: 'url_inicio' }, { titulo: 'Fn. defecto', campo: 'funcion_por_defecto' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' }], `roles_${grupoActivo || 'todos'}`)} disabled={rolesFiltrados.length === 0}><Download size={15} />Excel</Boton>
+              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(rolesFiltrados as unknown as Record<string, unknown>[], [{ titulo: 'Orden', campo: 'orden' }, { titulo: 'Grupo', campo: 'codigo_grupo' }, { titulo: 'Código', campo: 'codigo_rol' }, { titulo: 'Alias', campo: 'alias_de_rol' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Descripción', campo: 'descripcion' }, { titulo: 'URL inicio', campo: 'url_inicio' }, { titulo: 'Fn. defecto', campo: 'funcion_por_defecto' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' }], `roles_${grupoActivo || 'todos'}`)} disabled={rolesFiltrados.length === 0}><Download size={15} />Excel</Boton>
               <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />Nuevo rol</Boton>
             </div>
           </div>

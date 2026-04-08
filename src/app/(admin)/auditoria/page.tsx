@@ -51,7 +51,7 @@ export default function PaginaAuditoria() {
           <Boton
             variante="contorno"
             tamano="sm"
-            onClick={() => exportarExcel(filtrados as Record<string, unknown>[], [
+            onClick={() => exportarExcel(filtrados as unknown as Record<string, unknown>[], [
               { titulo: 'Fecha y hora', campo: 'fecha_hora', formato: (v) => v ? new Date(v as string).toLocaleString('es-CL') : '' },
               { titulo: 'Usuario', campo: 'codigo_usuario' },
               { titulo: 'Tabla', campo: 'tabla_afectada' },

@@ -339,7 +339,7 @@ export default function PaginaCompromisos() {
         <Boton
           variante="contorno"
           tamano="sm"
-          onClick={() => exportarExcel(compromisosFiltrados as Record<string, unknown>[], [
+          onClick={() => exportarExcel(compromisosFiltrados as unknown as Record<string, unknown>[], [
             { titulo: 'ID', campo: 'id_compromiso' },
             { titulo: 'Asunto', campo: 'asunto' },
             { titulo: 'Tipo', campo: 'codigo_tipo_compromiso', formato: (v) => nombreTipo(v as string) },

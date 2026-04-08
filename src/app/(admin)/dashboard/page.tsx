@@ -184,7 +184,7 @@ export default function PaginaDashboard() {
             ) : (
               <div className="flex flex-col divide-y divide-borde">
                 {auditoria.map((reg) => (
-                  <div key={reg.id} className="flex items-center justify-between py-2.5 gap-4">
+                  <div key={reg.id_auditoria} className="flex items-center justify-between py-2.5 gap-4">
                     <div className="flex items-center gap-3 min-w-0">
                       <Insignia
                         variante={

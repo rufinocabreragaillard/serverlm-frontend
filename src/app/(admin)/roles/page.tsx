@@ -368,7 +368,7 @@ export default function PaginaRoles() {
             <Boton
               variante="contorno"
               tamano="sm"
-              onClick={() => exportarExcel(rolesFiltrados as Record<string, unknown>[], [
+              onClick={() => exportarExcel(rolesFiltrados as unknown as Record<string, unknown>[], [
                 { titulo: 'Grupo', campo: 'codigo_grupo' },
                 { titulo: 'Código', campo: 'codigo_rol' },
                 { titulo: 'Alias', campo: 'alias_de_rol' },
@@ -442,7 +442,7 @@ export default function PaginaRoles() {
             <Boton
               variante="contorno"
               tamano="sm"
-              onClick={() => exportarExcel(funcionesFiltradas as Record<string, unknown>[], [
+              onClick={() => exportarExcel(funcionesFiltradas as unknown as Record<string, unknown>[], [
                 { titulo: 'Código', campo: 'codigo_funcion' },
                 { titulo: 'Alias', campo: 'alias_de_funcion' },
                 { titulo: 'Nombre', campo: 'nombre' },

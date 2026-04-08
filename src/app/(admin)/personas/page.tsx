@@ -160,7 +160,7 @@ export default function PaginaPersonas() {
       } else {
         await personasApi.crear({
           nombre: form.nombre,
-          codigo_grupo: grupoActivo,
+          codigo_grupo: grupoActivo ?? undefined,
           codigo_tipo_doc: form.codigo_tipo_doc || undefined,
           documento_id: form.documento_id || undefined,
           codigo_entidad: form.codigo_entidad || undefined,
@@ -193,7 +193,7 @@ export default function PaginaPersonas() {
     setGuardandoCaract(true)
     try {
       await personasApi.crearCaracteristica(editando.id_persona, {
-        codigo_grupo: grupoActivo,
+        codigo_grupo: grupoActivo ?? undefined,
         codigo_cat_pers: codigoCat,
         codigo_tipo_pers: formCaract.codigo_tipo_pers,
         valor_texto_pers: formCaract.valor_texto_pers || undefined,

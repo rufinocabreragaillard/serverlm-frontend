@@ -9,7 +9,7 @@ export const tema = {
     version: '1.0.0',
   },
   logo: {
-    src: '/logo.png',
+    url: '/logo.png',
     alt: 'Logo',
     ancho: 110,
     alto: 36,

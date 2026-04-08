@@ -83,7 +83,7 @@ export default function PaginaLogin() {
 
         <div className="relative z-10 flex flex-col items-center text-center gap-6 max-w-sm">
           <Image
-            src={tema.logo.src}
+            src={tema.logo.url}
             alt={tema.logo.alt}
             width={160}
             height={52}
@@ -108,7 +108,7 @@ export default function PaginaLogin() {
           {/* Logo mobile */}
           <div className="lg:hidden flex justify-center mb-8">
             <Image
-              src={tema.logo.src}
+              src={tema.logo.url}
               alt={tema.logo.alt}
               width={120}
               height={40}

@@ -148,7 +148,7 @@ export default function PaginaCategoriasCaracteristica() {
       } else {
         await categoriasCaractPersApi.crear({
           codigo_cat_pers: formCat.codigo_cat_pers.toUpperCase(),
-          codigo_grupo: grupoActivo,
+          codigo_grupo: grupoActivo ?? undefined,
           nombre_cat_pers: formCat.nombre_cat_pers,
           descripcion_cat_pers: formCat.descripcion_cat_pers || undefined,
           es_unica_pers: formCat.es_unica_pers,
@@ -205,7 +205,7 @@ export default function PaginaCategoriasCaracteristica() {
         })
       } else {
         await categoriasCaractPersApi.crearTipo(catSeleccionada.codigo_cat_pers, {
-          codigo_grupo: grupoActivo,
+          codigo_grupo: grupoActivo ?? undefined,
           codigo_cat_pers: catSeleccionada.codigo_cat_pers,
           codigo_tipo_pers: formTipo.codigo_tipo_pers.toUpperCase(),
           nombre_tipo_pers: formTipo.nombre_tipo_pers,

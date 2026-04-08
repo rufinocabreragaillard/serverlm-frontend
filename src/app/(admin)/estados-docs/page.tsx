@@ -22,7 +22,7 @@ export default function PaginaEstadosDocs() {
       nombre_estado: f.nombre_estado,
       descripcion: f.descripcion || undefined,
     }),
-    eliminarFn: estadosDocsApi.desactivar,
+    eliminarFn: async (id: string) => { await estadosDocsApi.desactivar(id) },
     getId: (e) => e.codigo_estado_doc,
     camposBusqueda: (e) => [e.codigo_estado_doc, e.nombre_estado],
     formInicial: { codigo_estado_doc: '', nombre_estado: '', descripcion: '' },
@@ -56,10 +56,10 @@ export default function PaginaEstadosDocs() {
 
       <TablaCrud
         columnas={[
-          columnaCodigo('Código', (e) => e.codigo_estado_doc),
-          columnaNombre('Nombre', (e) => e.nombre_estado),
-          columnaDescripcion('Descripción', (e) => e.descripcion),
-          columnaEstado((e) => e.activo),
+          columnaCodigo<EstadoDoc>('Código', (e) => e.codigo_estado_doc),
+          columnaNombre<EstadoDoc>('Nombre', (e) => e.nombre_estado),
+          columnaDescripcion<EstadoDoc>('Descripción', (e) => e.descripcion),
+          columnaEstado<EstadoDoc>((e) => e.activo),
         ]}
         items={filtradosOrdenados}
         cargando={crud.cargando}

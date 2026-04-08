@@ -242,7 +242,7 @@ export default function PaginaAplicacionesFunciones() {
               <Input placeholder="Buscar por nombre o código..." value={busquedaApps} onChange={(e) => setBusquedaApps(e.target.value)} icono={<Search size={15} />} />
             </div>
             <div className="flex gap-2 ml-auto">
-              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(appsFiltradas as Record<string, unknown>[], [{ titulo: 'Código', campo: 'codigo_aplicacion' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Descripción', campo: 'descripcion' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' }], 'aplicaciones')} disabled={appsFiltradas.length === 0}><Download size={15} />Excel</Boton>
+              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(appsFiltradas as unknown as Record<string, unknown>[], [{ titulo: 'Código', campo: 'codigo_aplicacion' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Descripción', campo: 'descripcion' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' }], 'aplicaciones')} disabled={appsFiltradas.length === 0}><Download size={15} />Excel</Boton>
               <Boton variante="primario" onClick={abrirNuevaApp}><Plus size={16} />Nueva aplicación</Boton>
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function PaginaAplicacionesFunciones() {
               <Input placeholder="Buscar por nombre, código o alias..." value={busquedaFunciones} onChange={(e) => setBusquedaFunciones(e.target.value)} icono={<Search size={15} />} />
             </div>
             <div className="flex gap-2 ml-auto">
-              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(funcionesFiltradas as Record<string, unknown>[], [{ titulo: 'Código', campo: 'codigo_funcion' }, { titulo: 'Alias', campo: 'alias_de_funcion' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Icono', campo: 'icono_de_funcion' }, { titulo: 'URL', campo: 'url_funcion' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activa' : 'Inactiva' }], `funciones_${grupoActivo || 'todos'}`)} disabled={funcionesFiltradas.length === 0}><Download size={15} />Excel</Boton>
+              <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(funcionesFiltradas as unknown as Record<string, unknown>[], [{ titulo: 'Código', campo: 'codigo_funcion' }, { titulo: 'Alias', campo: 'alias_de_funcion' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Icono', campo: 'icono_de_funcion' }, { titulo: 'URL', campo: 'url_funcion' }, { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activa' : 'Inactiva' }], `funciones_${grupoActivo || 'todos'}`)} disabled={funcionesFiltradas.length === 0}><Download size={15} />Excel</Boton>
               <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />Nueva función</Boton>
             </div>
           </div>

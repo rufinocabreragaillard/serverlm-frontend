@@ -117,7 +117,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Image
-            src={tema.logo.src}
+            src={tema.logo.url}
             alt={tema.logo.alt}
             width={120}
             height={40}

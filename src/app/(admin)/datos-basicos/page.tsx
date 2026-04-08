@@ -240,7 +240,7 @@ export default function PaginaDatosBasicos() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(categorias as Record<string, unknown>[], [
+                onClick={() => exportarExcel(categorias as unknown as Record<string, unknown>[], [
                   { titulo: 'Código', campo: 'categoria_parametro' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Descripción', campo: 'descripcion' },
@@ -351,7 +351,7 @@ export default function PaginaDatosBasicos() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(tiposFiltrados as Record<string, unknown>[], [
+                onClick={() => exportarExcel(tiposFiltrados as unknown as Record<string, unknown>[], [
                   { titulo: 'Categoría', campo: 'categoria_parametro' },
                   { titulo: 'Código tipo', campo: 'tipo_parametro' },
                   { titulo: 'Nombre', campo: 'nombre' },

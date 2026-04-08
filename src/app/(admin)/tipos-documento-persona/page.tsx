@@ -18,7 +18,7 @@ export default function PaginaTiposDocumentoPersona() {
     cargarFn: tiposDocumentoPersonaApi.listar,
     crearFn: (f) => tiposDocumentoPersonaApi.crear({
       codigo_tipo_doc: f.codigo_tipo_doc.toUpperCase(),
-      codigo_grupo: grupoActivo,
+      codigo_grupo: grupoActivo ?? undefined,
       nombre: f.nombre,
       descripcion: f.descripcion || undefined,
     }),
@@ -26,7 +26,7 @@ export default function PaginaTiposDocumentoPersona() {
       nombre: f.nombre,
       descripcion: f.descripcion || undefined,
     }),
-    eliminarFn: tiposDocumentoPersonaApi.desactivar,
+    eliminarFn: async (id: string) => { await tiposDocumentoPersonaApi.desactivar(id) },
     getId: (t) => t.codigo_tipo_doc,
     camposBusqueda: (t) => [t.codigo_tipo_doc, t.nombre],
     formInicial: { codigo_tipo_doc: '', nombre: '', descripcion: '' },
@@ -60,10 +60,10 @@ export default function PaginaTiposDocumentoPersona() {
 
       <TablaCrud
         columnas={[
-          columnaCodigo('Código', (t) => t.codigo_tipo_doc),
-          columnaNombre('Nombre', (t) => t.nombre),
-          columnaDescripcion('Descripción', (t) => t.descripcion),
-          columnaEstado((t) => t.activo),
+          columnaCodigo<TipoDocumentoPersona>('Código', (t) => t.codigo_tipo_doc),
+          columnaNombre<TipoDocumentoPersona>('Nombre', (t) => t.nombre),
+          columnaDescripcion<TipoDocumentoPersona>('Descripción', (t) => t.descripcion),
+          columnaEstado<TipoDocumentoPersona>((t) => t.activo),
         ]}
         items={filtradosOrdenados}
         cargando={crud.cargando}

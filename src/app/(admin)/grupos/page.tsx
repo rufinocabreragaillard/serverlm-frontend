@@ -381,7 +381,7 @@ export default function PaginaGrupos() {
                     tamano="sm"
                     onClick={() => {
                       if (tabActivo === 'entidades') {
-                        exportarExcel(entidadesFiltradas as Record<string, unknown>[], [
+                        exportarExcel(entidadesFiltradas as unknown as Record<string, unknown>[], [
                           { titulo: 'Grupo', campo: 'codigo_grupo' },
                           { titulo: 'Código entidad', campo: 'codigo_entidad' },
                           { titulo: 'Nombre', campo: 'nombre' },
@@ -705,7 +705,7 @@ export default function PaginaGrupos() {
         alConfirmar={() => confirmarDesactivar && desactivarEntidad(confirmarDesactivar)}
         titulo="Desactivar entidad"
         mensaje={`¿Desea desactivar la entidad "${confirmarDesactivar?.nombre}"?`}
-        variante="error"
+        variante="peligro"
       />
     </div>
   )

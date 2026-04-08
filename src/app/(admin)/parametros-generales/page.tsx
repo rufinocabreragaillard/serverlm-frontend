@@ -7,7 +7,7 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaDescripcion, TarjetaContenido } from '@/components/ui/tarjeta'
 import { useAuth } from '@/context/AuthContext'
 import { parametrosApi, datosBasicosApi } from '@/lib/api'
-import type { CategoriaParametro, TipoParametro } from '@/lib/tipos'
+import type { CategoriaParametro, TipoParametro, ParametroGeneral, ParametroUsuario } from '@/lib/tipos'
 
 interface ParametroRow {
   categoria_parametro: string
@@ -37,7 +37,7 @@ export default function PaginaParametrosGenerales() {
     setCargando(true)
     try {
       const data = await parametrosApi.listarGenerales()
-      setParams(data.map((p: Record<string, string>) => ({
+      setParams(data.map((p: ParametroGeneral) => ({
         categoria_parametro: p.categoria_parametro,
         tipo_parametro: p.tipo_parametro,
         valor_parametro: p.valor_parametro,

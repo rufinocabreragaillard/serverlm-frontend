@@ -565,7 +565,7 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(tiposCnv as Record<string, unknown>[], [
+                onClick={() => exportarExcel(tiposCnv as unknown as Record<string, unknown>[], [
                   { titulo: 'Codigo', campo: 'codigo_tipo_conversacion' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Descripcion', campo: 'descripcion' },
@@ -662,7 +662,7 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(estadosCnv as Record<string, unknown>[], [
+                onClick={() => exportarExcel(estadosCnv as unknown as Record<string, unknown>[], [
                   { titulo: 'Tipo', campo: 'codigo_tipo_conversacion' },
                   { titulo: 'Codigo', campo: 'codigo_estado_conversacion' },
                   { titulo: 'Nombre', campo: 'nombre' },
@@ -759,7 +759,7 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(tiposCmp as Record<string, unknown>[], [
+                onClick={() => exportarExcel(tiposCmp as unknown as Record<string, unknown>[], [
                   { titulo: 'Codigo', campo: 'codigo_tipo_compromiso' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Descripcion', campo: 'descripcion' },
@@ -856,7 +856,7 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(estadosCmp as Record<string, unknown>[], [
+                onClick={() => exportarExcel(estadosCmp as unknown as Record<string, unknown>[], [
                   { titulo: 'Tipo', campo: 'codigo_tipo_compromiso' },
                   { titulo: 'Codigo', campo: 'codigo_estado_compromiso' },
                   { titulo: 'Nombre', campo: 'nombre' },
@@ -953,7 +953,7 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(canonicosCnv as Record<string, unknown>[], [
+                onClick={() => exportarExcel(canonicosCnv as unknown as Record<string, unknown>[], [
                   { titulo: 'Codigo', campo: 'codigo_estado_canonico' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
@@ -1033,7 +1033,7 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(canonicosCmp as Record<string, unknown>[], [
+                onClick={() => exportarExcel(canonicosCmp as unknown as Record<string, unknown>[], [
                   { titulo: 'Codigo', campo: 'codigo_estado_canonico' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },

@@ -201,17 +201,16 @@ export interface Aplicacion {
 // ─── Parámetros ──────────────────────────────────────────────────────────────
 
 export interface ParametroGeneral {
-  codigo_parametro: string
-  nombre: string
-  valor: string
-  tipo_dato: string
+  categoria_parametro: string
+  tipo_parametro: string
+  valor_parametro: string
   descripcion?: string
-  editable: boolean
 }
 
 export interface ParametroUsuario {
-  codigo_parametro: string
-  valor: string
+  categoria_parametro: string
+  tipo_parametro: string
+  valor_parametro: string
 }
 
 // ─── Datos Básicos ────────────────────────────────────────────────────────────

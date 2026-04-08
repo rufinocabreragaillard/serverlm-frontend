@@ -398,7 +398,7 @@ export default function PaginaConversaciones() {
                 <TablaTd>{c.id_conversacion}</TablaTd>
                 <TablaTd>{c.fecha_conversacion?.slice(0, 10)}</TablaTd>
                 <TablaTd>
-                  <Insignia variante="info">{nombreTipo(c.codigo_tipo_conversacion)}</Insignia>
+                  <Insignia variante="primario">{nombreTipo(c.codigo_tipo_conversacion)}</Insignia>
                 </TablaTd>
                 <TablaTd>{c.nombre_persona}</TablaTd>
                 <TablaTd className="max-w-[250px] truncate">{c.asunto}</TablaTd>
@@ -425,9 +425,9 @@ export default function PaginaConversaciones() {
       {/* Modal crear/editar */}
       <Modal
         abierto={modalAbierto}
-        onCerrar={() => setModalAbierto(false)}
+        alCerrar={() => setModalAbierto(false)}
         titulo={editando ? 'Editar Conversación' : 'Nueva Conversación'}
-        ancho="lg"
+        className="w-[min(95vw,56rem)] max-w-none"
       >
         {/* Tabs */}
         <div className="flex gap-2 border-b border-borde mb-4">
@@ -816,8 +816,8 @@ export default function PaginaConversaciones() {
       {/* Modal confirmar eliminación */}
       <ModalConfirmar
         abierto={confirmarEliminar !== null}
-        onCerrar={() => setConfirmarEliminar(null)}
-        onConfirmar={eliminar}
+        alCerrar={() => setConfirmarEliminar(null)}
+        alConfirmar={eliminar}
         titulo="Eliminar conversación"
         mensaje="¿Está seguro de eliminar esta conversación? Esta acción no se puede deshacer."
       />

@@ -51,7 +51,7 @@ async function recorrer(
   codigos: Set<string>,
 ): Promise<void> {
   const entries: FileSystemHandle[] = []
-  for await (const entry of handle.values()) {
+  for await (const entry of (handle as unknown as { values(): AsyncIterable<FileSystemHandle> }).values()) {
     if (entry.kind === 'directory') {
       entries.push(entry)
     }

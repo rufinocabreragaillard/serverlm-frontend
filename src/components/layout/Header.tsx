@@ -153,7 +153,7 @@ export function Header({ titulo }: { titulo?: string }) {
     setExitoCuenta('')
     try {
       // Solo enviar campos que realmente cambiaron
-      const cambios: Record<string, string | null | undefined> = {}
+      const cambios: Record<string, string | number | null | undefined> = {}
       // nombre siempre se envía
       cambios.nombre = formCuenta.nombre
       if (formCuenta.telefono !== datosOriginales.telefono) cambios.telefono = formCuenta.telefono || undefined
@@ -189,7 +189,7 @@ export function Header({ titulo }: { titulo?: string }) {
     setErrorParametros('')
     try {
       const data = await parametrosApi.listarUsuario()
-      setParametros(data)
+      setParametros(data as unknown as { categoria_parametro: string; tipo_parametro: string; valor_parametro: string }[])
     } catch {
       setParametros([])
     } finally {
