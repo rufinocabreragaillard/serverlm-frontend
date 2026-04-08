@@ -398,10 +398,13 @@ export default function PaginaChatUsuario() {
 
 function Mensaje({ mensaje, streaming = false }: { mensaje: ChatMensaje; streaming?: boolean }) {
   const esUser = mensaje.rol === 'user'
+  // Si el mensaje del assistant contiene una tabla markdown, le damos
+  // ancho casi total para que no se rompan las celdas verticalmente.
+  const tieneTabla = !esUser && /(^|\n)\s*\|.*\|.*\n\s*\|[-:| ]+\|/.test(mensaje.contenido)
   return (
     <div className={`flex ${esUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[80%] px-4 py-2 rounded-lg text-sm ${
+        className={`${tieneTabla ? 'max-w-[95%] w-full' : 'max-w-[80%]'} px-4 py-2 rounded-lg text-sm ${
           esUser
             ? 'bg-primario text-white'
             : 'bg-fondo border border-borde text-texto'
@@ -410,8 +413,45 @@ function Mensaje({ mensaje, streaming = false }: { mensaje: ChatMensaje; streami
         {esUser ? (
           <div className="whitespace-pre-wrap">{mensaje.contenido}</div>
         ) : (
-          <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:my-2 prose-pre:bg-surface prose-pre:text-texto prose-code:text-texto prose-code:bg-surface prose-code:px-1 prose-code:rounded prose-code:text-xs prose-headings:my-2">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:my-2 prose-pre:bg-surface prose-pre:text-texto prose-code:text-texto prose-code:bg-surface prose-code:px-1 prose-code:rounded prose-code:text-xs prose-headings:my-2 prose-a:text-primario prose-a:underline">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                // Tablas: wrapper con scroll horizontal y estilos explicitos.
+                table: ({ children, ...props }) => (
+                  <div className="overflow-x-auto my-2">
+                    <table className="border-collapse border border-borde text-xs w-full" {...props}>
+                      {children}
+                    </table>
+                  </div>
+                ),
+                thead: ({ children, ...props }) => (
+                  <thead className="bg-primario-muy-claro" {...props}>{children}</thead>
+                ),
+                th: ({ children, ...props }) => (
+                  <th className="border border-borde px-2 py-1 text-left font-semibold" {...props}>{children}</th>
+                ),
+                td: ({ children, ...props }) => (
+                  <td className="border border-borde px-2 py-1 align-top" {...props}>{children}</td>
+                ),
+                // Links internos como enlaces relativos del mismo origen para
+                // que el router del frontend los maneje (sin abrir nueva pestaña).
+                a: ({ href, children, ...props }) => {
+                  const esInterno = href && href.startsWith('/')
+                  return (
+                    <a
+                      href={href}
+                      target={esInterno ? undefined : '_blank'}
+                      rel={esInterno ? undefined : 'noopener noreferrer'}
+                      className="text-primario underline hover:text-primario-hover"
+                      {...props}
+                    >
+                      {children}
+                    </a>
+                  )
+                },
+              }}
+            >
               {mensaje.contenido}
             </ReactMarkdown>
             {streaming && <span className="inline-block w-1 h-3 ml-0.5 bg-primario animate-pulse" />}
