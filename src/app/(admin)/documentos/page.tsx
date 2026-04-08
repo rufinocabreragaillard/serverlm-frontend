@@ -309,7 +309,7 @@ export default function PaginaDocumentos() {
                 </TablaTd>
                 <TablaTd>
                   <div className="flex items-center justify-end gap-1">
-                    {d.ubicacion_documento && (
+                    {d.ubicacion_documento && /^https?:\/\//i.test(d.ubicacion_documento) && (
                       <a
                         href={d.ubicacion_documento}
                         target="_blank"
