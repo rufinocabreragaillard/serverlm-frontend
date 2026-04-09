@@ -327,7 +327,7 @@ export default function PaginaAplicacionesFunciones() {
       )}
 
       {/* ═══ MODAL APLICACIÓN ═══ */}
-      <Modal abierto={modalApp} alCerrar={() => setModalApp(false)} titulo={appEditando ? `Editar aplicación: ${appEditando.nombre}` : 'Nueva aplicación'}>
+      <Modal abierto={modalApp} alCerrar={() => setModalApp(false)} titulo={appEditando ? `Editar aplicación: ${appEditando.nombre}` : 'Nueva aplicación'} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {appEditando && (
             <div className="flex border-b border-borde -mx-1">
@@ -427,7 +427,7 @@ export default function PaginaAplicacionesFunciones() {
       </Modal>
 
       {/* ═══ MODAL FUNCIÓN ═══ */}
-      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? `Editar función: ${funcionEditando.nombre}` : 'Nueva función'}>
+      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? `Editar función: ${funcionEditando.nombre}` : 'Nueva función'} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {funcionEditando && (
             <div className="flex border-b border-borde -mx-1">
