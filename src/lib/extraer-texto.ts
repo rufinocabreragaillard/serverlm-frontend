@@ -61,7 +61,9 @@ async function extraerTextoPDF(file: File): Promise<string> {
     paginas.push(texto)
   }
 
-  return paginas.join('\n\n')
+  // \f (form feed) = separador de página. El backend chunking.py lo usa
+  // para dividir exactamente 1 chunk por página en PDFs nativos.
+  return paginas.join('\f')
 }
 
 /**

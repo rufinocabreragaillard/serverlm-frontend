@@ -17,7 +17,10 @@ import { useAuth } from '@/context/AuthContext'
 import { abrirArchivoPorRuta } from '@/lib/extraer-texto'
 import { getDirectoryHandle, ensureReadPermission } from '@/lib/file-handle-store'
 
-type TabModal = 'datos' | 'caracteristicas'
+type TabModal = 'datos' | 'caracteristicas' | 'chunks'
+
+// Estados en los que ya hay chunks disponibles
+const ESTADOS_CON_CHUNKS = new Set(['CHUNKEADO', 'VECTORIZADO'])
 
 export default function PaginaDocumentos() {
   const { grupoActivo } = useAuth()
@@ -71,6 +74,25 @@ export default function PaginaDocumentos() {
   const [categoriasConCaract, setCategoriasConCaract] = useState<CategoriaConCaracteristicasDocs[]>([])
   const [cargandoCaract, setCargandoCaract] = useState(false)
   const [tiposPorCat, setTiposPorCat] = useState<Record<string, TipoCaractDocs[]>>({})
+
+  // ── Chunks ────────────────────────────────────────────────────────────────
+  const [chunksData, setChunksData] = useState<Awaited<ReturnType<typeof documentosApi.listarChunks>> | null>(null)
+  const [cargandoChunks, setCargandoChunks] = useState(false)
+  const [busquedaChunk, setBusquedaChunk] = useState('')
+  const [busquedaChunkInput, setBusquedaChunkInput] = useState('')
+  const [paginaChunk, setPaginaChunk] = useState(1)
+
+  const cargarChunks = useCallback(async (idDocumento: number, q?: string, page = 1) => {
+    setCargandoChunks(true)
+    try {
+      const data = await documentosApi.listarChunks(idDocumento, { q: q || undefined, page, limit: 10 })
+      setChunksData(data)
+    } catch {
+      setChunksData(null)
+    } finally {
+      setCargandoChunks(false)
+    }
+  }, [])
 
   // ── Formulario nueva caracteristica ───────────────────────────────────────
   const [formCaract, setFormCaract] = useState<{
@@ -131,6 +153,10 @@ export default function PaginaDocumentos() {
     })
     setError('')
     setTabModal('datos')
+    setChunksData(null)
+    setBusquedaChunk('')
+    setBusquedaChunkInput('')
+    setPaginaChunk(1)
     setModal(true)
     cargarCaracteristicas(d.codigo_documento)
   }
@@ -429,6 +455,19 @@ export default function PaginaDocumentos() {
                   {t === 'datos' ? 'Datos' : 'Características'}
                 </button>
               ))}
+              {editando && ESTADOS_CON_CHUNKS.has(editando.codigo_estado_doc || '') && (
+                <button
+                  onClick={() => {
+                    setTabModal('chunks')
+                    if (!chunksData) cargarChunks(editando.codigo_documento)
+                  }}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    tabModal === 'chunks' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'
+                  }`}
+                >
+                  Chunks {chunksData ? `(${chunksData.stats.total_chunks})` : ''}
+                </button>
+              )}
             </div>
           )}
 
@@ -565,6 +604,130 @@ export default function PaginaDocumentos() {
                     </div>
                   )
                 })
+              )}
+            </div>
+          )}
+
+          {/* Tab Chunks */}
+          {tabModal === 'chunks' && editando && (
+            <div className="flex flex-col gap-3">
+              {/* Buscador */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
+                  <input
+                    className="w-full rounded-lg border border-borde bg-fondo-tarjeta pl-8 pr-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none"
+                    placeholder="Buscar en chunks... (Enter)"
+                    value={busquedaChunkInput}
+                    onChange={(e) => setBusquedaChunkInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setBusquedaChunk(busquedaChunkInput)
+                        setPaginaChunk(1)
+                        cargarChunks(editando.codigo_documento, busquedaChunkInput, 1)
+                      }
+                    }}
+                  />
+                </div>
+                <Boton variante="contorno" onClick={() => {
+                  setBusquedaChunk(busquedaChunkInput)
+                  setPaginaChunk(1)
+                  cargarChunks(editando.codigo_documento, busquedaChunkInput, 1)
+                }}>
+                  Buscar
+                </Boton>
+                {busquedaChunk && (
+                  <Boton variante="contorno" onClick={() => {
+                    setBusquedaChunk('')
+                    setBusquedaChunkInput('')
+                    setPaginaChunk(1)
+                    cargarChunks(editando.codigo_documento, '', 1)
+                  }}>
+                    Limpiar
+                  </Boton>
+                )}
+              </div>
+
+              {/* Stats */}
+              {chunksData && (
+                <div className="flex gap-4 text-xs text-texto-muted bg-fondo px-3 py-2 rounded-lg">
+                  <span><b className="text-texto">{chunksData.stats.total_chunks}</b> chunks</span>
+                  <span><b className="text-texto">{chunksData.stats.avg_chars.toLocaleString()}</b> chars promedio</span>
+                  <span><b className="text-texto">{(chunksData.stats.n_chars_total / 1000).toFixed(1)}k</b> chars total</span>
+                  {chunksData.stats.vectorizado
+                    ? <span className="text-green-600 font-medium">Vectorizado</span>
+                    : <span className="text-amber-600">Sin vectorizar — búsqueda solo textual</span>
+                  }
+                </div>
+              )}
+
+              {/* Lista de chunks */}
+              {cargandoChunks ? (
+                <p className="text-sm text-texto-muted py-4 text-center">Cargando chunks...</p>
+              ) : !chunksData ? (
+                <p className="text-sm text-texto-muted py-4 text-center">Sin datos.</p>
+              ) : chunksData.chunks.length === 0 ? (
+                <p className="text-sm text-texto-muted py-4 text-center">
+                  {busquedaChunk ? `Sin resultados para "${busquedaChunk}"` : 'Sin chunks generados.'}
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
+                  {chunksData.chunks.map((chunk) => {
+                    const texto = chunk.texto
+                    const mi = chunk.match_inicio
+                    const mf = chunk.match_fin
+                    const tieneMatch = mi >= 0 && mf > mi
+
+                    return (
+                      <div key={chunk.id_chunk} className="rounded-lg border border-borde bg-fondo px-3 py-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-texto-muted">
+                            Chunk {chunk.nro_chunk}
+                          </span>
+                          <span className="text-xs text-texto-muted">{chunk.n_chars.toLocaleString()} chars</span>
+                        </div>
+                        <p className="text-xs text-texto leading-relaxed whitespace-pre-wrap break-words">
+                          {tieneMatch ? (
+                            <>
+                              {texto.slice(0, mi)}
+                              <mark className="bg-yellow-200 text-yellow-900 rounded px-0.5">
+                                {texto.slice(mi, mf)}
+                              </mark>
+                              {texto.slice(mf)}
+                            </>
+                          ) : (
+                            texto.length > 400 ? texto.slice(0, 400) + '…' : texto
+                          )}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Paginación chunks */}
+              {chunksData && chunksData.busqueda.total_filtrado > 10 && (
+                <div className="flex items-center justify-between text-xs text-texto-muted pt-1">
+                  <span>
+                    {((paginaChunk - 1) * 10) + 1}–{Math.min(paginaChunk * 10, chunksData.busqueda.total_filtrado)} de {chunksData.busqueda.total_filtrado}
+                  </span>
+                  <div className="flex gap-1">
+                    <Boton variante="contorno" onClick={() => {
+                      const p = paginaChunk - 1
+                      setPaginaChunk(p)
+                      cargarChunks(editando.codigo_documento, busquedaChunk, p)
+                    }} deshabilitado={paginaChunk <= 1}>
+                      ‹
+                    </Boton>
+                    <Boton variante="contorno" onClick={() => {
+                      const p = paginaChunk + 1
+                      setPaginaChunk(p)
+                      cargarChunks(editando.codigo_documento, busquedaChunk, p)
+                    }} deshabilitado={paginaChunk * 10 >= chunksData.busqueda.total_filtrado}>
+                      ›
+                    </Boton>
+                  </div>
+                </div>
               )}
             </div>
           )}

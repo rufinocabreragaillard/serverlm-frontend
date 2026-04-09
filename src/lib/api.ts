@@ -157,6 +157,8 @@ export const authApi = {
 
 export const usuariosApi = {
   listar: () => api.get<Usuario[]>('/usuarios').then((r) => r.data),
+  listarTodos: (params?: { activo?: boolean; q?: string }) =>
+    api.get<Usuario[]>('/usuarios/todos', { params }).then((r) => r.data),
   listarPaginado: (params: { page: number; limit: number; activo?: boolean; q?: string }) =>
     api.get<RespuestaPaginadaApi<Usuario>>('/usuarios/paginado', { params }).then((r) => r.data),
   obtener: (id: string) => api.get<Usuario>(`/usuarios/${id}`).then((r) => r.data),
@@ -199,7 +201,8 @@ export const usuariosApi = {
 // ─── Roles ────────────────────────────────────────────────────────────────────
 
 export const rolesApi = {
-  listar: () => api.get<Rol[]>('/roles').then((r) => r.data),
+  listar: (activo?: boolean, codigoGrupo?: string, incluirGlobales?: boolean) =>
+    api.get<Rol[]>('/roles', { params: { ...(activo !== undefined && { activo }), ...(codigoGrupo && { codigo_grupo: codigoGrupo }), ...(incluirGlobales !== undefined && { incluir_globales: incluirGlobales }) } }).then((r) => r.data),
   listarGlobales: () => api.get<Rol[]>('/roles/globales').then((r) => r.data),
   obtener: (idRol: number) => api.get<Rol>(`/roles/${idRol}`).then((r) => r.data),
   crear: (datos: Partial<Rol>) => api.post<Rol>('/roles', datos).then((r) => r.data),
@@ -429,6 +432,27 @@ export const documentosApi = {
     api.post<{ codigo_documento: number; codigo_estado_doc: string; caracteres: number; paginas: number | null }>(
       `/documentos/${id}/texto`, body, { timeout: 60000 },
     ).then((r) => r.data),
+  // CHUNKS: ver chunks generados por el proceso CHUNKEAR
+  listarChunks: (
+    id: number,
+    params?: { q?: string; page?: number; limit?: number },
+  ) =>
+    api.get<{
+      documento: { codigo_documento: number; nombre_documento: string; codigo_estado_doc: string }
+      stats: { total_chunks: number; n_chars_total: number; avg_chars: number; vectorizado: boolean }
+      busqueda: { q: string; total_filtrado: number; page: number; limit: number }
+      chunks: {
+        id_chunk: number
+        nro_chunk: number
+        texto: string
+        n_chars: number
+        n_tokens_aprox: number
+        metadata: Record<string, unknown>
+        modelo_embedding: string | null
+        match_inicio: number
+        match_fin: number
+      }[]
+    }>(`/documentos/${id}/chunks`, { params }).then((r) => r.data),
 }
 
 // ─── Procesos (catálogo genérico multi-dominio) ────────────────────────────
