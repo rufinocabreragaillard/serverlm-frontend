@@ -17,7 +17,7 @@ export default function PaginaTiposDocumentoPersona() {
   const crud = useCrudPage<TipoDocumentoPersona, { codigo_tipo_doc: string; nombre: string; descripcion: string }>({
     cargarFn: tiposDocumentoPersonaApi.listar,
     crearFn: (f) => tiposDocumentoPersonaApi.crear({
-      codigo_tipo_doc: f.codigo_tipo_doc.toUpperCase(),
+      ...(f.codigo_tipo_doc.trim() ? { codigo_tipo_doc: f.codigo_tipo_doc.toUpperCase() } : { codigo_tipo_doc: '' }),
       codigo_grupo: grupoActivo ?? undefined,
       nombre: f.nombre,
       descripcion: f.descripcion || undefined,
@@ -60,10 +60,10 @@ export default function PaginaTiposDocumentoPersona() {
 
       <TablaCrud
         columnas={[
-          columnaCodigo<TipoDocumentoPersona>('Código', (t) => t.codigo_tipo_doc),
           columnaNombre<TipoDocumentoPersona>('Nombre', (t) => t.nombre),
           columnaDescripcion<TipoDocumentoPersona>('Descripción', (t) => t.descripcion),
           columnaEstado<TipoDocumentoPersona>((t) => t.activo),
+          columnaCodigo<TipoDocumentoPersona>('Código', (t) => t.codigo_tipo_doc),
         ]}
         items={filtradosOrdenados}
         cargando={crud.cargando}
@@ -75,13 +75,6 @@ export default function PaginaTiposDocumentoPersona() {
 
       <Modal abierto={crud.modal} alCerrar={crud.cerrarModal} titulo={crud.editando ? `Editar tipo: ${crud.editando.nombre}` : 'Nuevo tipo de documento'}>
         <div className="flex flex-col gap-4">
-          <Input
-            etiqueta="Código *"
-            value={crud.form.codigo_tipo_doc}
-            onChange={(e) => crud.updateForm('codigo_tipo_doc', e.target.value.toUpperCase())}
-            placeholder="Ej: RUT, PASAPORTE"
-            disabled={!!crud.editando}
-          />
           <Input
             etiqueta="Nombre *"
             value={crud.form.nombre}
@@ -97,6 +90,9 @@ export default function PaginaTiposDocumentoPersona() {
               placeholder="Descripción opcional"
             />
           </div>
+          {crud.editando && (
+            <Input etiqueta="Código" value={crud.form.codigo_tipo_doc} disabled readOnly />
+          )}
           {crud.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
               <p className="text-sm text-error">{crud.error}</p>
@@ -107,8 +103,8 @@ export default function PaginaTiposDocumentoPersona() {
             <Boton
               variante="primario"
               onClick={() => {
-                if (!crud.form.codigo_tipo_doc.trim() || !crud.form.nombre.trim()) {
-                  crud.setError('Código y nombre son obligatorios')
+                if (!crud.form.nombre.trim()) {
+                  crud.setError('El nombre es obligatorio')
                   return
                 }
                 crud.guardar()

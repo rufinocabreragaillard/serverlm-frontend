@@ -131,14 +131,20 @@ export default function PaginaRoles() {
   }
 
   const guardarRol = async () => {
-    if (!formRol.codigo_rol || !formRol.nombre) { setError('Código y nombre son obligatorios'); return }
+    const esGlobalCreate = !rolEditando && grupoActivo === 'ADMIN'
+    if (!formRol.nombre || (esGlobalCreate && !formRol.codigo_rol)) {
+      setError(esGlobalCreate ? 'Código y nombre son obligatorios para roles globales' : 'El nombre es obligatorio')
+      return
+    }
     setGuardando(true)
     try {
       const origen = formRol.codigo_aplicacion_origen || null
       if (rolEditando) {
         await rolesApi.actualizar(rolEditando.id_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined, codigo_aplicacion_origen: origen })
       } else {
-        await rolesApi.crear({ ...formRol, codigo_aplicacion_origen: origen, codigo_grupo: grupoActivo || 'ADMIN' })
+        const payload: Record<string, unknown> = { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined, codigo_aplicacion_origen: origen, codigo_grupo: grupoActivo || 'ADMIN' }
+        if (esGlobalCreate && formRol.codigo_rol) payload.codigo_rol = formRol.codigo_rol
+        await rolesApi.crear(payload as Parameters<typeof rolesApi.crear>[0])
       }
       setModalRol(false)
       cargar()
@@ -314,7 +320,7 @@ export default function PaginaRoles() {
   }
 
   const guardarFuncion = async () => {
-    if (!formFuncion.codigo_funcion || !formFuncion.nombre) { setError('Código y nombre son obligatorios'); return }
+    if (!formFuncion.nombre) { setError('El nombre es obligatorio'); return }
     setGuardando(true)
     try {
       const payload: Partial<Funcion> = {
@@ -330,7 +336,7 @@ export default function PaginaRoles() {
       if (funcionEditando) {
         await funcionesApi.actualizar(funcionEditando.codigo_funcion, payload)
       } else {
-        await funcionesApi.crear({ codigo_funcion: formFuncion.codigo_funcion, ...payload })
+        await funcionesApi.crear({ ...(formFuncion.codigo_funcion ? { codigo_funcion: formFuncion.codigo_funcion } : {}), ...payload })
       }
       setModalFuncion(false)
       cargar()
@@ -405,12 +411,12 @@ export default function PaginaRoles() {
             <TablaCabecera>
               <tr>
                 <TablaTh>App origen</TablaTh>
-                <TablaTh>Código</TablaTh>
                 <TablaTh>Alias</TablaTh>
                 <TablaTh>Nombre</TablaTh>
                 <TablaTh>URL inicio</TablaTh>
                 <TablaTh>Fn. por defecto</TablaTh>
                 <TablaTh>Estado</TablaTh>
+                <TablaTh>Código</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr>
             </TablaCabecera>
@@ -422,15 +428,15 @@ export default function PaginaRoles() {
               ) : rolesFiltrados.map((r) => (
                 <TablaFila key={r.id_rol}>
                   <TablaTd className="text-xs text-texto-muted">{nombreApp(r.codigo_aplicacion_origen) || '—'}</TablaTd>
-                  <TablaTd>
-                    <code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{r.codigo_rol}</code>
-                    {r.codigo_grupo == null && <span className="ml-2 text-xs bg-primario/10 text-primario px-1.5 py-0.5 rounded">Global</span>}
-                  </TablaTd>
                   <TablaTd className="text-sm">{r.alias_de_rol || '—'}</TablaTd>
                   <TablaTd className="font-medium">{r.nombre}</TablaTd>
                   <TablaTd className="text-texto-muted text-xs">{r.url_inicio || '—'}</TablaTd>
                   <TablaTd className="text-texto-muted text-xs">{r.funcion_por_defecto || '—'}</TablaTd>
                   <TablaTd><Insignia variante={r.activo ? 'exito' : 'error'}>{r.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+                  <TablaTd>
+                    <code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{r.codigo_rol}</code>
+                    {r.codigo_grupo == null && <span className="ml-2 text-xs bg-primario/10 text-primario px-1.5 py-0.5 rounded">Global</span>}
+                  </TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => abrirEditarRol(r)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -480,12 +486,12 @@ export default function PaginaRoles() {
             <TablaCabecera>
               <tr>
                 <TablaTh>App origen</TablaTh>
-                <TablaTh>Código</TablaTh>
                 <TablaTh>Alias</TablaTh>
                 <TablaTh>Nombre</TablaTh>
                 <TablaTh>Icono</TablaTh>
                 <TablaTh>URL función</TablaTh>
                 <TablaTh>Estado</TablaTh>
+                <TablaTh>Código</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr>
             </TablaCabecera>
@@ -497,12 +503,12 @@ export default function PaginaRoles() {
               ) : funcionesFiltradas.map((f) => (
                 <TablaFila key={f.codigo_funcion}>
                   <TablaTd className="text-xs text-texto-muted">{nombreApp(f.codigo_aplicacion_origen) || '—'}</TablaTd>
-                  <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{f.codigo_funcion}</code></TablaTd>
                   <TablaTd className="text-sm">{f.alias_de_funcion || '—'}</TablaTd>
                   <TablaTd className="font-medium">{f.nombre}</TablaTd>
                   <TablaTd className="text-texto-muted text-xs">{f.icono_de_funcion || '—'}</TablaTd>
                   <TablaTd className="text-texto-muted text-xs">{f.url_funcion || '—'}</TablaTd>
                   <TablaTd><Insignia variante={f.activo ? 'exito' : 'error'}>{f.activo ? 'Activa' : 'Inactiva'}</Insignia></TablaTd>
+                  <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{f.codigo_funcion}</code></TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => abrirEditarFuncion(f)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -549,9 +555,14 @@ export default function PaginaRoles() {
           {tabModalRol === 'datos' && (
             <>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} disabled={!!rolEditando} placeholder="ADMIN" />
-                <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
                 <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
+                <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
+                {/* Código: visible en edición (disabled) o cuando super-admin crea global */}
+                {rolEditando ? (
+                  <Input etiqueta="Código" value={formRol.codigo_rol} disabled readOnly />
+                ) : grupoActivo === 'ADMIN' ? (
+                  <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} placeholder="ADMIN" />
+                ) : null}
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-texto">Aplicación origen</label>
                   <select value={formRol.codigo_aplicacion_origen} onChange={(e) => setFormRol({ ...formRol, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
@@ -725,9 +736,8 @@ export default function PaginaRoles() {
           {/* Tab Datos */}
           {tabModalFuncion === 'datos' && (
             <>
-              <Input etiqueta="Código *" value={formFuncion.codigo_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_funcion: e.target.value.toUpperCase() })} disabled={!!funcionEditando} placeholder="GEST_USUARIOS" />
-              <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
               <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
+              <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-texto">Aplicación origen</label>
                 <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
@@ -740,6 +750,9 @@ export default function PaginaRoles() {
               <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
               <Input etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
               <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
+              {funcionEditando && (
+                <Input etiqueta="Código" value={formFuncion.codigo_funcion} disabled readOnly />
+              )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton>

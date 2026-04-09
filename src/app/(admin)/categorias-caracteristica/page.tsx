@@ -132,8 +132,8 @@ export default function PaginaCategoriasCaracteristica() {
   }
 
   const guardarCat = async () => {
-    if (!formCat.codigo_cat_pers.trim() || !formCat.nombre_cat_pers.trim()) {
-      setErrorCat('Código y nombre son obligatorios')
+    if (!formCat.nombre_cat_pers.trim()) {
+      setErrorCat('El nombre es obligatorio')
       return
     }
     setGuardandoCat(true)
@@ -147,7 +147,7 @@ export default function PaginaCategoriasCaracteristica() {
         })
       } else {
         await categoriasCaractPersApi.crear({
-          codigo_cat_pers: formCat.codigo_cat_pers.toUpperCase(),
+          ...(formCat.codigo_cat_pers.trim() ? { codigo_cat_pers: formCat.codigo_cat_pers.toUpperCase() } : {}),
           codigo_grupo: grupoActivo ?? undefined,
           nombre_cat_pers: formCat.nombre_cat_pers,
           descripcion_cat_pers: formCat.descripcion_cat_pers || undefined,
@@ -193,8 +193,8 @@ export default function PaginaCategoriasCaracteristica() {
 
   const guardarTipo = async () => {
     if (!catSeleccionada) return
-    if (!formTipo.codigo_tipo_pers.trim() || !formTipo.nombre_tipo_pers.trim()) {
-      setErrorTipo('Código y nombre son obligatorios')
+    if (!formTipo.nombre_tipo_pers.trim()) {
+      setErrorTipo('El nombre es obligatorio')
       return
     }
     setGuardandoTipo(true)
@@ -207,7 +207,7 @@ export default function PaginaCategoriasCaracteristica() {
         await categoriasCaractPersApi.crearTipo(catSeleccionada.codigo_cat_pers, {
           codigo_grupo: grupoActivo ?? undefined,
           codigo_cat_pers: catSeleccionada.codigo_cat_pers,
-          codigo_tipo_pers: formTipo.codigo_tipo_pers.toUpperCase(),
+          ...(formTipo.codigo_tipo_pers.trim() ? { codigo_tipo_pers: formTipo.codigo_tipo_pers.toUpperCase() } : { codigo_tipo_pers: '' }),
           nombre_tipo_pers: formTipo.nombre_tipo_pers,
         })
       }
@@ -381,11 +381,11 @@ export default function PaginaCategoriasCaracteristica() {
             <TablaCabecera>
               <tr>
                 <TablaTh>Orden</TablaTh>
-                <TablaTh>Código</TablaTh>
                 <TablaTh>Nombre</TablaTh>
                 <TablaTh>Única</TablaTh>
                 <TablaTh>Editable</TablaTh>
                 <TablaTh>Estado</TablaTh>
+                <TablaTh>Código</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr>
             </TablaCabecera>
@@ -405,11 +405,11 @@ export default function PaginaCategoriasCaracteristica() {
                       <span className="text-xs text-texto-muted w-5 text-center">{c.orden ?? idx}</span>
                     </div>
                   </TablaTd>
-                  <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{c.codigo_cat_pers}</code></TablaTd>
                   <TablaTd className="font-medium">{c.nombre_cat_pers}</TablaTd>
                   <TablaTd><Insignia variante={c.es_unica_pers ? 'advertencia' : 'neutro'}>{c.es_unica_pers ? 'Sí' : 'No'}</Insignia></TablaTd>
                   <TablaTd><Insignia variante={c.editable_en_detalle_pers ? 'exito' : 'neutro'}>{c.editable_en_detalle_pers ? 'Sí' : 'No'}</Insignia></TablaTd>
                   <TablaTd><Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+                  <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{c.codigo_cat_pers}</code></TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -436,9 +436,9 @@ export default function PaginaCategoriasCaracteristica() {
               <Tabla>
                 <TablaCabecera>
                   <tr>
-                    <TablaTh>Código</TablaTh>
                     <TablaTh>Nombre</TablaTh>
                     <TablaTh>Estado</TablaTh>
+                    <TablaTh>Código</TablaTh>
                     <TablaTh className="text-right">Acciones</TablaTh>
                   </tr>
                 </TablaCabecera>
@@ -449,9 +449,9 @@ export default function PaginaCategoriasCaracteristica() {
                     <TablaFila><TablaTd className="py-6 text-center text-texto-muted" colSpan={4 as never}>Sin tipos</TablaTd></TablaFila>
                   ) : tipos.map((t) => (
                     <TablaFila key={t.codigo_tipo_pers}>
-                      <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{t.codigo_tipo_pers}</code></TablaTd>
                       <TablaTd className="font-medium">{t.nombre_tipo_pers}</TablaTd>
                       <TablaTd><Insignia variante={t.activo ? 'exito' : 'error'}>{t.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+                      <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{t.codigo_tipo_pers}</code></TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"><Pencil size={14} /></button>
@@ -554,9 +554,6 @@ export default function PaginaCategoriasCaracteristica() {
       {/* Modal Categoría */}
       <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? `Editar: ${catEditando.nombre_cat_pers}` : 'Nueva categoría'}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Código *" value={formCat.codigo_cat_pers}
-            onChange={(e) => setFormCat({ ...formCat, codigo_cat_pers: e.target.value.toUpperCase() })}
-            placeholder="Ej: DATOS_CONTACTO" disabled={!!catEditando} />
           <Input etiqueta="Nombre *" value={formCat.nombre_cat_pers}
             onChange={(e) => setFormCat({ ...formCat, nombre_cat_pers: e.target.value })}
             placeholder="Nombre de la categoría" />
@@ -580,6 +577,9 @@ export default function PaginaCategoriasCaracteristica() {
               Editable en detalle
             </label>
           </div>
+          {catEditando && (
+            <Input etiqueta="Código" value={formCat.codigo_cat_pers} disabled readOnly />
+          )}
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalCat(false)}>Cancelar</Boton>
@@ -591,12 +591,12 @@ export default function PaginaCategoriasCaracteristica() {
       {/* Modal Tipo */}
       <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? `Editar: ${tipoEditando.nombre_tipo_pers}` : 'Nuevo tipo'}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Código *" value={formTipo.codigo_tipo_pers}
-            onChange={(e) => setFormTipo({ ...formTipo, codigo_tipo_pers: e.target.value.toUpperCase() })}
-            placeholder="Ej: EMAIL, TELEFONO" disabled={!!tipoEditando} />
           <Input etiqueta="Nombre *" value={formTipo.nombre_tipo_pers}
             onChange={(e) => setFormTipo({ ...formTipo, nombre_tipo_pers: e.target.value })}
             placeholder="Nombre del tipo" />
+          {tipoEditando && (
+            <Input etiqueta="Código" value={formTipo.codigo_tipo_pers} disabled readOnly />
+          )}
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalTipo(false)}>Cancelar</Boton>

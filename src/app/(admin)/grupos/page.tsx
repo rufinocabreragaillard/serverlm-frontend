@@ -110,13 +110,13 @@ export default function PaginaGrupos() {
   }
 
   const guardarGrupo = async () => {
-    if (!formGrupo.codigo_grupo || !formGrupo.nombre) { setError('Codigo y nombre son obligatorios'); return }
+    if (!formGrupo.nombre) { setError('El nombre es obligatorio'); return }
     setGuardando(true)
     try {
       if (grupoEditando) {
         await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
       } else {
-        await gruposApi.crear({ codigo_grupo: formGrupo.codigo_grupo, nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
+        await gruposApi.crear({ nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
       }
       setModalGrupo(false)
       cargar()
@@ -180,13 +180,13 @@ export default function PaginaGrupos() {
   }
 
   const guardarEntidad = async () => {
-    if (!formEntidad.codigo_entidad || !formEntidad.nombre) { setErrorEntidad('Código y nombre son obligatorios'); return }
+    if (!formEntidad.nombre) { setErrorEntidad('El nombre es obligatorio'); return }
     setGuardandoEntidad(true)
     try {
       if (entidadEditando) {
         await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined })
       } else {
-        await entidadesApi.crear({ codigo_entidad: formEntidad.codigo_entidad, nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined, codigo_grupo: grupoSeleccionado?.codigo_grupo })
+        await entidadesApi.crear({ nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined, codigo_grupo: grupoSeleccionado?.codigo_grupo })
       }
       setModalEntidad(false)
       if (grupoSeleccionado) cargarDetalle(grupoSeleccionado.codigo_grupo)
@@ -442,7 +442,7 @@ export default function PaginaGrupos() {
                     </div>
                   <Tabla>
                     <TablaCabecera>
-                      <tr><TablaTh>Codigo</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Estado</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr>
+                      <tr><TablaTh>Nombre</TablaTh><TablaTh>Estado</TablaTh><TablaTh>Codigo</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr>
                     </TablaCabecera>
                     <TablaCuerpo>
                       {cargandoDetalle ? (
@@ -451,9 +451,9 @@ export default function PaginaGrupos() {
                         <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>{busquedaEntidades ? 'No se encontraron entidades' : 'No hay entidades en este grupo'}</TablaTd></TablaFila>
                       ) : entidadesFiltradas.map((e) => (
                         <TablaFila key={e.codigo_entidad}>
-                          <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{e.codigo_entidad}</code></TablaTd>
                           <TablaTd className="font-medium">{e.nombre}</TablaTd>
                           <TablaTd><Insignia variante={e.activo ? 'exito' : 'advertencia'}>{e.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+                          <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{e.codigo_entidad}</code></TablaTd>
                           <TablaTd className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               <button onClick={() => abrirEditarEntidad(e)} className="p-1 rounded hover:bg-fondo text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -591,9 +591,11 @@ export default function PaginaGrupos() {
       {/* Modal grupo */}
       <Modal abierto={modalGrupo} alCerrar={() => setModalGrupo(false)} titulo={grupoEditando ? 'Editar grupo' : 'Nuevo grupo'}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Codigo *" value={formGrupo.codigo_grupo} onChange={(e) => setFormGrupo({ ...formGrupo, codigo_grupo: e.target.value.toUpperCase() })} disabled={!!grupoEditando} placeholder="CORP" />
           <Input etiqueta="Nombre *" value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder="Corporacion Municipal" />
           <Textarea etiqueta="Descripción" value={formGrupo.descripcion} onChange={(e) => setFormGrupo({ ...formGrupo, descripcion: e.target.value })} rows={3} />
+          {grupoEditando && (
+            <Input etiqueta="Código" value={formGrupo.codigo_grupo} disabled readOnly />
+          )}
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Cancelar</Boton>
@@ -616,9 +618,11 @@ export default function PaginaGrupos() {
           {/* Tab Datos */}
           {tabModalEntidad === 'datos' && (
             <>
-              <Input etiqueta="Código *" value={formEntidad.codigo_entidad} onChange={(e) => setFormEntidad({ ...formEntidad, codigo_entidad: e.target.value.toUpperCase() })} disabled={!!entidadEditando} placeholder="MUNI" />
               <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad" />
               <Textarea etiqueta="Descripción" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} placeholder="Descripción opcional" rows={3} />
+              {entidadEditando && (
+                <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
+              )}
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>

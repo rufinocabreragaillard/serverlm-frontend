@@ -139,10 +139,6 @@ export default function PaginaUbicacionesDocs() {
   }
 
   const guardar = async () => {
-    if (!form.codigo_ubicacion.trim()) {
-      setError('El código es obligatorio')
-      return
-    }
     if (!form.nombre_ubicacion.trim()) {
       setError('El nombre es obligatorio')
       return
@@ -158,7 +154,6 @@ export default function PaginaUbicacionesDocs() {
         })
       } else {
         await ubicacionesDocsApi.crear({
-          codigo_ubicacion: form.codigo_ubicacion.toUpperCase().replace(/\s+/g, '_'),
           codigo_grupo: grupoActivo!,
           nombre_ubicacion: form.nombre_ubicacion,
           descripcion: form.descripcion || undefined,
@@ -523,13 +518,6 @@ export default function PaginaUbicacionesDocs() {
       >
         <div className="flex flex-col gap-4 min-w-[450px]">
           <Input
-            etiqueta="Código *"
-            value={form.codigo_ubicacion}
-            onChange={(e) => setForm({ ...form, codigo_ubicacion: e.target.value })}
-            placeholder="CONTRATOS_2024"
-            disabled={!!editando}
-          />
-          <Input
             etiqueta="Nombre *"
             value={form.nombre_ubicacion}
             onChange={(e) => setForm({ ...form, nombre_ubicacion: e.target.value })}
@@ -570,6 +558,9 @@ export default function PaginaUbicacionesDocs() {
               <span className="text-sm font-medium text-texto">Ubicación habilitada</span>
               <span className="text-xs text-texto-muted">(se aplica a todas las ubicaciones hijas)</span>
             </label>
+          )}
+          {editando && (
+            <Input etiqueta="Código" value={form.codigo_ubicacion} disabled readOnly />
           )}
 
           {error && (

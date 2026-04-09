@@ -122,13 +122,13 @@ export default function PaginaEntidades() {
   }
 
   const guardarEntidad = async () => {
-    if (!formEntidad.codigo_entidad || !formEntidad.nombre) { setError('Código y nombre son obligatorios'); return }
+    if (!formEntidad.nombre) { setError('El nombre es obligatorio'); return }
     setGuardando(true)
     try {
       if (entidadEditando) {
         await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined })
       } else {
-        await entidadesApi.crear({ ...formEntidad, codigo_grupo: grupoActivo || 'ADMIN' })
+        await entidadesApi.crear({ nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined, codigo_grupo: grupoActivo || 'ADMIN' })
       }
       setModalEntidad(false)
       cargar()
@@ -476,9 +476,11 @@ export default function PaginaEntidades() {
       {/* Modal entidad */}
       <Modal abierto={modalEntidad} alCerrar={() => setModalEntidad(false)} titulo={entidadEditando ? 'Editar entidad' : 'Nueva entidad'}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Codigo *" value={formEntidad.codigo_entidad} onChange={(e) => setFormEntidad({ ...formEntidad, codigo_entidad: e.target.value.toUpperCase() })} disabled={!!entidadEditando} placeholder="MUNI" />
           <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad de..." />
           <Textarea etiqueta="Descripcion" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} rows={3} />
+          {entidadEditando && (
+            <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
+          )}
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>
