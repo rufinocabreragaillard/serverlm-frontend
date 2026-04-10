@@ -413,46 +413,56 @@ export default function PaginaProcesarDocumentos() {
       })
       setCola(colaInicial)
 
-      for (let i = 0; i < colaInicial.length; i++) {
-        if (abortRef.current) break
-        const item = colaInicial[i]
-        setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'EN_PROCESO' } : c))
+      // Número de extracciones concurrentes. PDF.js usa su propio worker interno
+      // por lo que varias extracciones pueden correr en paralelo sin bloquear el
+      // hilo principal. El upload a Railway también beneficia del paralelismo.
+      const N_CONCURRENTE = 6
 
+      const procesarItemExtraer = async (item: ItemCola, idx: number) => {
+        if (abortRef.current) return
+        setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'EN_PROCESO' } : c))
         const t0 = Date.now()
         try {
           if (!item.ubicacion_documento) {
             await documentosApi.subirTexto(item.codigo_documento, {
               texto_fuente: '', archivo_no_encontrado: true,
             })
-            setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ENCONTRADO (sin ubicación)', tiempo_ms: Date.now() - t0 } : c))
+            setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ENCONTRADO (sin ubicación)', tiempo_ms: Date.now() - t0 } : c))
           } else {
-            const fileHandle = await abrirArchivoPorRuta(handleEfectivo, item.ubicacion_documento)
+            const fileHandle = await abrirArchivoPorRuta(handleEfectivo!, item.ubicacion_documento)
             if (!fileHandle) {
               await documentosApi.subirTexto(item.codigo_documento, { texto_fuente: '', archivo_no_encontrado: true })
-              setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ENCONTRADO', tiempo_ms: Date.now() - t0 } : c))
+              setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ENCONTRADO', tiempo_ms: Date.now() - t0 } : c))
             } else {
               const ext = (item.ubicacion_documento.split('.').pop() || '').toLowerCase()
               const contenido = await extraerTextoDeArchivo(fileHandle)
               if (contenido === null) {
                 await documentosApi.subirTexto(item.codigo_documento, { texto_fuente: '', formato_no_soportado: ext || 'desconocido' })
-                setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'COMPLETADO', resultado: `NO_ESCANEABLE (.${ext})`, tiempo_ms: Date.now() - t0 } : c))
+                setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: `NO_ESCANEABLE (.${ext})`, tiempo_ms: Date.now() - t0 } : c))
               } else if (!contenido.trim()) {
                 await documentosApi.subirTexto(item.codigo_documento, { texto_fuente: '', contenido_vacio: true })
-                setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ESCANEABLE (vacío)', tiempo_ms: Date.now() - t0 } : c))
+                setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ESCANEABLE (vacío)', tiempo_ms: Date.now() - t0 } : c))
               } else {
                 const res = await documentosApi.subirTexto(item.codigo_documento, {
                   texto_fuente: contenido,
                   caracteres: contenido.length,
                 })
-                setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'COMPLETADO', resultado: `METADATA (${res.caracteres} chars)`, tiempo_ms: Date.now() - t0 } : c))
+                setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: `METADATA (${res.caracteres} chars)`, tiempo_ms: Date.now() - t0 } : c))
               }
             }
           }
         } catch (e) {
           const msg = e instanceof Error ? e.message : 'Error'
-          setCola((prev) => prev.map((c, idx) => idx === i ? { ...c, estado_cola: 'ERROR', resultado: msg, tiempo_ms: Date.now() - t0 } : c))
+          setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'ERROR', resultado: msg, tiempo_ms: Date.now() - t0 } : c))
         }
         setProcesados((p) => p + 1)
+      }
+
+      // Procesar en lotes concurrentes
+      for (let i = 0; i < colaInicial.length; i += N_CONCURRENTE) {
+        if (abortRef.current) break
+        const lote = colaInicial.slice(i, i + N_CONCURRENTE)
+        await Promise.all(lote.map((item, bIdx) => procesarItemExtraer(item, i + bIdx)))
       }
 
       setEjecutando(false)
