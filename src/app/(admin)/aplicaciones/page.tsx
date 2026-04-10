@@ -226,8 +226,11 @@ export default function PaginaAplicacionesFunciones() {
     if (ta !== tb) return ta.localeCompare(tb)
     return a.nombre.localeCompare(b.nombre)
   })
-  // Funciones: ordenar por (nombre app origen, nombre función). NULL al final.
+  // Funciones: ordenar por (tipo NORMAL primero, nombre app origen, nombre función). Sin app al final.
   const funcionesFiltradas = funciones.filter((f) => f.nombre.toLowerCase().includes(busquedaFunciones.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaFunciones.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busquedaFunciones.toLowerCase())).sort((a, b) => {
+    const ta = (a.tipo || 'NORMAL') === 'RESTRINGIDA' ? 1 : 0
+    const tb = (b.tipo || 'NORMAL') === 'RESTRINGIDA' ? 1 : 0
+    if (ta !== tb) return ta - tb
     const na = nombreApp(a.codigo_aplicacion_origen); const nb = nombreApp(b.codigo_aplicacion_origen)
     const sa = na ? 0 : 1; const sb = nb ? 0 : 1
     if (sa !== sb) return sa - sb
