@@ -166,7 +166,11 @@ function TabRolesGlobales() {
       setAplicaciones(apps)
       // Orden por (nombre app origen, nombre rol). Sin app origen al final.
       const mapaApp = Object.fromEntries(apps.map((a) => [a.codigo_aplicacion, a.nombre]))
+      // Orden: tipo (RESTRINGIDO primero), app origen, nombre
       const ordenado = data.sort((a, b) => {
+        const ta = a.tipo === 'RESTRINGIDO' ? 0 : 1
+        const tb = b.tipo === 'RESTRINGIDO' ? 0 : 1
+        if (ta !== tb) return ta - tb
         const na = a.codigo_aplicacion_origen ? (mapaApp[a.codigo_aplicacion_origen] || a.codigo_aplicacion_origen) : ''
         const nb = b.codigo_aplicacion_origen ? (mapaApp[b.codigo_aplicacion_origen] || b.codigo_aplicacion_origen) : ''
         const sa = na ? 0 : 1; const sb = nb ? 0 : 1
@@ -285,11 +289,12 @@ function TabRolesGlobales() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-borde text-left text-xs uppercase text-texto-muted">
+                  <th className="py-2 pr-4">Tipo</th>
                   <th className="py-2 pr-4">App origen</th>
-                  <th className="py-2 pr-4">Código</th>
                   <th className="py-2 pr-4">Nombre</th>
                   <th className="py-2 pr-4">Alias</th>
                   <th className="py-2 pr-4">Descripción</th>
+                  <th className="py-2 pr-4">Código</th>
                   <th className="py-2 pr-4 w-24 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -300,11 +305,20 @@ function TabRolesGlobales() {
                     : '—'
                   return (
                   <tr key={r.id_rol} className="border-b border-borde/50 hover:bg-surface-hover">
+                    <td className="py-2 pr-4">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        r.tipo === 'RESTRINGIDO'
+                          ? 'bg-red-100 text-error'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {r.tipo === 'RESTRINGIDO' ? 'Restringido' : 'Normal'}
+                      </span>
+                    </td>
                     <td className="py-2 pr-4 text-xs text-texto-muted">{nombreAppOrigen}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{r.codigo_rol}</td>
                     <td className="py-2 pr-4">{r.nombre}</td>
                     <td className="py-2 pr-4 text-texto-muted">{r.alias_de_rol || '—'}</td>
                     <td className="py-2 pr-4 text-texto-muted truncate max-w-xs">{r.descripcion || '—'}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">{r.codigo_rol}</td>
                     <td className="py-2 pr-4">
                       <div className="flex gap-1 justify-end">
                         <button
