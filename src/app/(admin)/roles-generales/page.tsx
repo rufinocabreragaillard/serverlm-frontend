@@ -424,7 +424,12 @@ function TabRolesGlobales() {
                     className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
                   >
                     <option value="">— sin asignar —</option>
-                    {[...aplicaciones].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((a) => (
+                    {[...aplicaciones].sort((a, b) => {
+                      const ta = a.tipo === 'NORMAL' ? 0 : 1
+                      const tb = b.tipo === 'NORMAL' ? 0 : 1
+                      if (ta !== tb) return ta - tb
+                      return a.nombre.localeCompare(b.nombre, 'es')
+                    }).map((a) => (
                       <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
                     ))}
                   </select>

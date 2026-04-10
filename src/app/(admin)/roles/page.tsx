@@ -564,7 +564,12 @@ export default function PaginaRoles() {
                   <label className="text-sm font-medium text-texto">Aplicación origen</label>
                   <select value={formRol.codigo_aplicacion_origen} onChange={(e) => setFormRol({ ...formRol, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
                     <option value="">— sin asignar —</option>
-                    {[...todasApps].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((a) => (
+                    {[...todasApps].sort((a, b) => {
+                      const ta = a.tipo === 'NORMAL' ? 0 : 1
+                      const tb = b.tipo === 'NORMAL' ? 0 : 1
+                      if (ta !== tb) return ta - tb
+                      return a.nombre.localeCompare(b.nombre, 'es')
+                    }).map((a) => (
                       <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
                     ))}
                   </select>
@@ -748,7 +753,12 @@ export default function PaginaRoles() {
                 <label className="text-sm font-medium text-texto">Aplicación origen</label>
                 <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
                   <option value="">— sin asignar —</option>
-                  {[...todasApps].sort((a, b) => a.nombre.localeCompare(b.nombre)).map((a) => (
+                  {[...todasApps].sort((a, b) => {
+                      const ta = a.tipo === 'NORMAL' ? 0 : 1
+                      const tb = b.tipo === 'NORMAL' ? 0 : 1
+                      if (ta !== tb) return ta - tb
+                      return a.nombre.localeCompare(b.nombre, 'es')
+                    }).map((a) => (
                     <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
                   ))}
                 </select>
