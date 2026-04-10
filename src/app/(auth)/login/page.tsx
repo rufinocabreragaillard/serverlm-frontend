@@ -85,8 +85,8 @@ export default function PaginaLogin() {
           <Image
             src={tema.logo.url}
             alt={tema.logo.alt}
-            width={160}
-            height={52}
+            width={213}
+            height={69}
             className="object-contain"
             onError={(e) => {
               const t = e.target as HTMLImageElement
@@ -94,7 +94,6 @@ export default function PaginaLogin() {
             }}
           />
           <div>
-            <h2 className="text-3xl font-bold text-texto">{tema.app.nombre}</h2>
             <p className="mt-3 text-sm leading-relaxed text-gray-500">
               Aplicaciones de RAG y mucho más
             </p>
