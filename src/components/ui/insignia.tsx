@@ -9,11 +9,11 @@ interface InsigniaProps {
 
 export function Insignia({ variante = 'neutro', children, className }: InsigniaProps) {
   const variantes = {
-    primario: 'bg-primario-muy-claro text-primario border-primario/20',
+    primario: 'bg-primario-muy-claro text-texto border-primario/30',
     exito: 'bg-green-50 text-exito border-green-200',
     error: 'bg-red-50 text-error border-red-200',
     advertencia: 'bg-amber-50 text-advertencia border-amber-200',
-    neutro: 'bg-fondo text-texto-muted border-borde',
+    neutro: 'bg-surface text-texto border-borde',
     secundario: 'bg-secundario-muy-claro text-secundario border-secundario/20',
   }
 

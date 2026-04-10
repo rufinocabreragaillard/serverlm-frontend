@@ -579,7 +579,7 @@ export default function PaginaRoles() {
                   <div className="flex items-center gap-2 py-1">
                     {formRol.tipo === 'RESTRINGIDO'
                       ? <Insignia variante="advertencia">Restringido</Insignia>
-                      : <Insignia variante="primario">Normal</Insignia>}
+                      : <Insignia variante="exito">Normal</Insignia>}
                     <span className="text-xs text-texto-muted">Solo modificable desde la base de datos</span>
                   </div>
                 </div>
