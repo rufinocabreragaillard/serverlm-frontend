@@ -426,23 +426,18 @@ export default function PaginaUsuarios() {
   // Roles disponibles para asignar al usuario en el grupo activo:
   // - Roles del grupo activo + roles globales (codigo_grupo NULL)
   // - Excluyendo los que ya tiene asignados en el grupo activo
-  // - Excluyendo los roles cuya aplicación origen es RESTRINGIDA, salvo super-admin (grupo ADMIN)
-  // Roles "Administrador General" no se asignan desde la app — solo desde la BD.
+  // - Grupo RESTRINGIDO → solo roles RESTRINGIDO; Grupo NORMAL → solo roles NORMAL
   const ROLES_PROTEGIDOS = new Set(['SEG_ADMIN_GRUPO', 'ADMIN'])
   const esSuperAdmin = (usuarioActual?.grupos || []).some((g) => g.codigo_grupo === 'ADMIN')
-  const appsRestringidas = new Set(catalogoApps.filter((a) => a.tipo === 'RESTRINGIDA').map((a) => a.codigo_aplicacion))
   const mapaAppNombre = Object.fromEntries(catalogoApps.map((a) => [a.codigo_aplicacion, a.nombre]))
-  // Tipo del grupo activo: solo roles del mismo tipo se pueden asignar (super-admin es excepción)
   const tipoGrupoActivo = catalogoGrupos.find((g) => g.codigo_grupo === grupoActivo)?.tipo || 'NORMAL'
   const rolesDisponibles = roles
     .filter((r) =>
       !ROLES_PROTEGIDOS.has(r.codigo_rol) &&
       (r.codigo_grupo === grupoActivo || r.codigo_grupo == null) &&
       !rolesUsuario.some((ra) => ra.codigo_grupo === grupoActivo && ra.id_rol === r.id_rol) &&
-      // Filtro RESTRINGIDA: ocultar roles de apps restringidas a no-super-admin
-      (esSuperAdmin || !r.codigo_aplicacion_origen || !appsRestringidas.has(r.codigo_aplicacion_origen)) &&
-      // Filtro tipo: solo roles del mismo tipo que el grupo activo (super-admin puede asignar cualquier tipo)
-      (esSuperAdmin || (r.tipo || 'NORMAL') === tipoGrupoActivo)
+      // Filtro tipo: grupo RESTRINGIDO → solo roles RESTRINGIDO; grupo NORMAL → solo roles NORMAL
+      (r.tipo || 'NORMAL') === tipoGrupoActivo
     )
     // Orden: nombre app origen → nombre rol. Sin app origen al final.
     .sort((a, b) => {

@@ -325,13 +325,15 @@ export default function PaginaUsuariosSemilla() {
   }, [])
 
   // Roles disponibles para asignar (en el grupo del formulario)
+  // Grupo RESTRINGIDO → solo roles RESTRINGIDO; Grupo NORMAL → solo roles NORMAL
   const grupoForm = form.grupo_por_defecto
-  const appsRestringidas = new Set(aplicaciones.filter((a) => a.tipo === 'RESTRINGIDA').map((a) => a.codigo_aplicacion))
   const mapaAppNombre = Object.fromEntries(aplicaciones.map((a) => [a.codigo_aplicacion, a.nombre]))
+  const tipoGrupoForm = grupos.find((g) => g.codigo_grupo === grupoForm)?.tipo || 'NORMAL'
   const rolesDisponibles = rolesGrupo
     .filter((r) =>
       (r.codigo_grupo === grupoForm || r.codigo_grupo == null) &&
-      !rolesUsuario.some((ra) => ra.codigo_grupo === grupoForm && ra.id_rol === r.id_rol)
+      !rolesUsuario.some((ra) => ra.codigo_grupo === grupoForm && ra.id_rol === r.id_rol) &&
+      (r.tipo || 'NORMAL') === tipoGrupoForm
     )
     .sort((a, b) => {
       const na = a.codigo_aplicacion_origen ? (mapaAppNombre[a.codigo_aplicacion_origen] || a.codigo_aplicacion_origen) : ''
