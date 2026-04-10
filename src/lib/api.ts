@@ -145,7 +145,7 @@ api.interceptors.response.use(
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const authApi = {
-  yo: () => api.get<UsuarioContexto>('/auth/me', { timeout: 45000 }).then((r) => r.data),
+  yo: () => api.get<UsuarioContexto>('/auth/me', { timeout: 20000 }).then((r) => r.data),
   cerrarSesion: () => api.post('/auth/logout'),
   cambiarEntidad: (codigoEntidad: string) =>
     api.post<UsuarioContexto>('/auth/cambiar-entidad', { codigo_entidad: codigoEntidad }).then((r) => r.data),

@@ -55,27 +55,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { pathnameRef.current = pathname }, [pathname])
 
   const cargarContexto = useCallback(async () => {
-    try {
-      const ctx = await authApi.yo()
-      setUsuario(ctx)
-      actualizarMapaFunciones(ctx.menu)
-      return ctx
-    } catch (e: unknown) {
-      setUsuario(null)
-      actualizarMapaFunciones()
-      let msg = 'Error al cargar datos del usuario'
-      if (e instanceof Error) {
-        if (e.message === 'Network Error') {
-          msg = 'No se pudo conectar con el servidor. Verifique su conexión o intente más tarde.'
-        } else if (e.message.includes('timeout')) {
-          msg = 'El servidor tardó demasiado en responder. Intente recargar la página.'
-        } else {
-          msg = e.message
+    const MAX_INTENTOS = 3
+    const PAUSA_MS = 3000 // pausa entre reintentos mientras Railway despierta
+
+    for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+      try {
+        const ctx = await authApi.yo()
+        setUsuario(ctx)
+        actualizarMapaFunciones(ctx.menu)
+        return ctx
+      } catch (e: unknown) {
+        const esUltimoIntento = intento === MAX_INTENTOS
+        const esTimeout = e instanceof Error && (e.message.includes('timeout') || e.message === 'Network Error')
+
+        if (!esUltimoIntento && esTimeout) {
+          // Railway puede estar despertando — esperar y reintentar automáticamente
+          await new Promise((r) => setTimeout(r, PAUSA_MS))
+          continue
         }
+
+        // Último intento fallido o error no recuperable
+        setUsuario(null)
+        actualizarMapaFunciones()
+        let msg = 'Error al cargar datos del usuario'
+        if (e instanceof Error) {
+          if (e.message === 'Network Error' || e.message.includes('timeout')) {
+            msg = 'No se pudo conectar con el servidor. Intente recargar la página.'
+          } else {
+            msg = e.message
+          }
+        }
+        setError(msg)
+        return null
       }
-      setError(msg)
-      return null
     }
+    return null
   }, [])
 
   useEffect(() => {
@@ -91,8 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const ctx = await cargarContexto()
             if (isMounted) {
               setCargando(false)
+              // Si ctx es null (backend no respondió), NO redirigir a /login:
+              // la sesión Supabase sigue válida. page.tsx mostrará el error
+              // con botón Reintentar. Solo redirigir si no hay sesión Supabase.
               if (!ctx && !PUBLIC_ROUTES.includes(pathnameRef.current)) {
-                router.push('/login')
+                // No hacemos router.push('/login') — el error ya fue seteado en cargarContexto
               }
             }
           } else {

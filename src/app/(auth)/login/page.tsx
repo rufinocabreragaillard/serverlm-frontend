@@ -244,18 +244,6 @@ export default function PaginaLogin() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setModoRecuperacion(true)
-                      setErrorLocal('')
-                      setEmailRecuperacion(email)
-                    }}
-                    className="text-sm text-primario hover:text-primario-hover transition-colors text-right -mt-2"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-
                   {mensajeError && (
                     <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
                       <p className="text-sm text-error">{mensajeError}</p>
@@ -272,6 +260,19 @@ export default function PaginaLogin() {
                     Iniciar sesión
                   </Boton>
                 </form>
+
+                {/* Fuera del form para que Enter no lo active accidentalmente */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModoRecuperacion(true)
+                    setErrorLocal('')
+                    setEmailRecuperacion(email)
+                  }}
+                  className="text-sm text-primario hover:text-primario-hover transition-colors w-full text-right mt-2"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
               </>
             )}
           </div>
