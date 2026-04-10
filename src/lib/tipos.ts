@@ -549,6 +549,18 @@ export interface UbicacionDoc {
   tipo_ubicacion: 'AREA' | 'CONTENIDO'
 }
 
+// ─── Cargos ───────────────────────────────────────────────────────────────────
+
+export interface Cargo {
+  id_cargo: number
+  codigo_grupo: string
+  codigo_cargo: string
+  nombre_cargo: string
+  alias: string
+  descripcion?: string | null
+  activo: boolean
+}
+
 // ─── Utilitarios ─────────────────────────────────────────────────────────────
 
 export interface RespuestaPaginada<T> {

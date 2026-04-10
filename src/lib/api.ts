@@ -42,6 +42,7 @@ import type {
   ColaEstadoDoc,
   ChatConversacion,
   ChatConversacionDetalle,
+  Cargo,
 } from './tipos'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -1002,6 +1003,18 @@ export const chatApi = {
       callbacks.onError(e instanceof Error ? e.message : 'Error leyendo stream')
     }
   },
+}
+
+// ─── Cargos ───────────────────────────────────────────────────────────────────
+
+export const cargosApi = {
+  listar: (activo?: boolean) =>
+    api.get<Cargo[]>('/cargos', { params: activo !== undefined ? { activo } : undefined }).then((r) => r.data),
+  crear: (datos: { codigo_cargo?: string; nombre_cargo: string; alias?: string; descripcion?: string }) =>
+    api.post<Cargo>('/cargos', datos).then((r) => r.data),
+  actualizar: (id: number, datos: Partial<Pick<Cargo, 'nombre_cargo' | 'alias' | 'descripcion' | 'activo'>>) =>
+    api.put<Cargo>(`/cargos/${id}`, datos).then((r) => r.data),
+  eliminar: (id: number) => api.delete(`/cargos/${id}`),
 }
 
 export default api
