@@ -888,7 +888,7 @@ export const cargaDocumentosApi = {
     }[]
   }) =>
     api.post<{ insertados: number; actualizados: number; total: number }>(
-      '/documentos/cargar-desde-ubicaciones', datos, { timeout: 180000 }
+      '/documentos/cargar-desde-ubicaciones', datos, { timeout: 60000 }
     ).then((r) => r.data),
 }
 
