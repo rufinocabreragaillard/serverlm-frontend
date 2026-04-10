@@ -85,6 +85,8 @@ export default function PaginaUsuariosSemilla() {
   const [dropdownRolAbierto, setDropdownRolAbierto] = useState(false)
   const dropdownRolRef = useRef<HTMLDivElement>(null)
   const [asignandoRol, setAsignandoRol] = useState(false)
+  // Flag para evitar que el useEffect de grupo limpie campos al abrir modal de edición
+  const inicializandoFormRef = useRef(false)
 
   // Confirmación de eliminación
   const [confirmarEliminar, setConfirmarEliminar] = useState<Usuario | null>(null)
@@ -142,9 +144,11 @@ export default function PaginaUsuariosSemilla() {
       .then(setAppsGrupo)
       .catch(() => setAppsGrupo([]))
 
-    // Limpiar entidad/área/app si cambia el grupo
-    setForm((f) => ({ ...f, entidad_por_defecto: '', codigo_ubicacion_area_por_defecto: '', id_rol_principal: '', aplicacion_por_defecto: '' }))
-    setAreasEntidad([])
+    // Limpiar entidad/área/app si cambia el grupo (pero NO al inicializar el modal de edición)
+    if (!inicializandoFormRef.current) {
+      setForm((f) => ({ ...f, entidad_por_defecto: '', codigo_ubicacion_area_por_defecto: '', id_rol_principal: '', aplicacion_por_defecto: '' }))
+      setAreasEntidad([])
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.grupo_por_defecto])
 
@@ -157,7 +161,10 @@ export default function PaginaUsuariosSemilla() {
       .then(setAreasEntidad)
       .catch(() => setAreasEntidad([]))
       .finally(() => setCargandoAreas(false))
-    setForm((f) => ({ ...f, codigo_ubicacion_area_por_defecto: '' }))
+    // No limpiar área al inicializar el modal de edición
+    if (!inicializandoFormRef.current) {
+      setForm((f) => ({ ...f, codigo_ubicacion_area_por_defecto: '' }))
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.entidad_por_defecto])
 
@@ -176,6 +183,8 @@ export default function PaginaUsuariosSemilla() {
   }
 
   const abrirEditar = (u: Usuario) => {
+    // Evitar que el useEffect de grupo limpie los campos al inicializar
+    inicializandoFormRef.current = true
     setUsuarioEditando(u)
     setForm({
       codigo_usuario: u.codigo_usuario,
@@ -190,6 +199,8 @@ export default function PaginaUsuariosSemilla() {
       aplicacion_por_defecto: u.aplicacion_por_defecto || '',
       invitar: false,
     })
+    // El flag se baja en el siguiente tick (después de que el useEffect haya corrido)
+    setTimeout(() => { inicializandoFormRef.current = false }, 0)
     setError('')
     setTabActiva('datos')
     cargarRolesUsuario(u.codigo_usuario)
