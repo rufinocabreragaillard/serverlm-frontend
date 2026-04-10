@@ -12,10 +12,10 @@ import {
   ClipboardList,
   Database,
   AppWindow,
-  Menu,
-  X,
   MessageSquare,
   ListChecks,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
@@ -76,7 +76,6 @@ export function Sidebar() {
   const { logo, appNombreCorto } = useTema()
   const [colapsado, setColapsado] = useState(false)
 
-  // Filtrar menu por aplicacion activa
   const menuFiltrado = useMemo(() => {
     if (!usuario?.menu) return []
     const appActiva = usuario.aplicacion_activa
@@ -91,21 +90,31 @@ export function Sidebar() {
       .filter(rol => rol.funciones.length > 0)
   }, [usuario?.menu, usuario?.aplicacion_activa])
 
-  // Determinar si usar menu dinamico o fallback
   const menuDinamico = menuFiltrado.length > 0
+
+  // Clases comunes para items del menú
+  const itemBase = cn(
+    'flex items-center rounded-lg transition-colors text-sm font-medium',
+    colapsado ? 'justify-center w-10 h-10 mx-auto' : 'gap-3 px-3 py-2.5'
+  )
+  const itemActivo = 'bg-sidebar-activo text-sidebar-texto'
+  const itemInactivo = 'text-sidebar-texto-muted hover:bg-sidebar-hover hover:text-sidebar-texto'
 
   return (
     <aside
       className={cn(
-        'flex flex-col h-full transition-all duration-300',
+        'flex flex-col h-full transition-all duration-300 shrink-0',
         'bg-sidebar text-sidebar-texto',
         colapsado ? 'w-16' : 'w-60'
       )}
     >
-      {/* Logo y boton colapsar */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-white/10 min-h-[64px]">
+      {/* Cabecera: logo + botón colapsar */}
+      <div className={cn(
+        'flex items-center border-b border-white/10 min-h-[64px]',
+        colapsado ? 'justify-center px-2' : 'justify-between px-4'
+      )}>
         {!colapsado && (
-          <Link href="/dashboard" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center min-w-0">
             <Image
               src={logo.url}
               alt={logo.alt}
@@ -117,28 +126,34 @@ export function Sidebar() {
                 target.style.display = 'none'
               }}
             />
-            <span className="text-white font-bold text-lg ml-2 hidden">{appNombreCorto}</span>
+            <span className="font-bold text-lg ml-2 hidden">{appNombreCorto}</span>
           </Link>
         )}
         <button
           onClick={() => setColapsado(!colapsado)}
-          className="p-1.5 rounded-lg hover:bg-sidebar-hover text-sidebar-texto transition-colors ml-auto"
-          title={colapsado ? 'Expandir menu' : 'Colapsar menu'}
+          className="p-1.5 rounded-lg hover:bg-sidebar-hover text-sidebar-texto transition-colors shrink-0"
+          title={colapsado ? 'Expandir menú' : 'Colapsar menú'}
         >
-          {colapsado ? <Menu size={18} /> : <X size={18} />}
+          {colapsado
+            ? <PanelLeftOpen size={18} />
+            : <PanelLeftClose size={18} />
+          }
         </button>
       </div>
 
-      {/* Navegacion */}
+      {/* Navegación */}
       <nav className="flex-1 py-4 px-2 flex flex-col gap-4 overflow-y-auto">
         {menuDinamico ? (
-          /* Menu dinamico: roles como secciones, funciones como items */
           menuFiltrado.map((rol) => (
             <div key={rol.id_rol}>
               {!colapsado && (
                 <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-texto-muted">
                   {rol.alias}
                 </span>
+              )}
+              {/* Separador fino cuando está colapsado */}
+              {colapsado && (
+                <div className="w-6 mx-auto border-t border-white/10 mb-1" />
               )}
               <div className="flex flex-col gap-1 mt-1">
                 {rol.funciones.map((fn) => {
@@ -149,13 +164,8 @@ export function Sidebar() {
                     <Link
                       key={fn.codigo_funcion}
                       href={href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium',
-                        activo
-                          ? 'bg-sidebar-activo text-white'
-                          : 'text-sidebar-texto-muted hover:bg-sidebar-hover hover:text-white'
-                      )}
-                      title={colapsado ? fn.alias : undefined}
+                      className={cn(itemBase, activo ? itemActivo : itemInactivo)}
+                      title={fn.alias}
                     >
                       <Icono size={18} className="shrink-0" />
                       {!colapsado && <span>{fn.alias}</span>}
@@ -166,7 +176,6 @@ export function Sidebar() {
             </div>
           ))
         ) : (
-          /* Fallback: menu estatico hardcoded */
           navegacion.map((grupo) => {
             const itemsVisibles = grupo.items.filter((item) => !item.requiereSuperAdmin || esSuperAdmin())
             if (itemsVisibles.length === 0) return null
@@ -177,6 +186,9 @@ export function Sidebar() {
                     {grupo.titulo}
                   </span>
                 )}
+                {colapsado && (
+                  <div className="w-6 mx-auto border-t border-white/10 mb-1" />
+                )}
                 <div className="flex flex-col gap-1 mt-1">
                   {itemsVisibles.map((item) => {
                     const activo = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -185,13 +197,8 @@ export function Sidebar() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium',
-                          activo
-                            ? 'bg-sidebar-activo text-white'
-                            : 'text-sidebar-texto-muted hover:bg-sidebar-hover hover:text-white'
-                        )}
-                        title={colapsado ? item.nombre : undefined}
+                        className={cn(itemBase, activo ? itemActivo : itemInactivo)}
+                        title={item.nombre}
                       >
                         <Icono size={18} className="shrink-0" />
                         {!colapsado && <span>{item.nombre}</span>}
@@ -205,7 +212,7 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Espacio inferior */}
+      {/* Pie */}
       <div className="px-2 py-4 border-t border-white/10" />
     </aside>
   )
