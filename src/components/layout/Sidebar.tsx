@@ -74,7 +74,9 @@ export function Sidebar() {
   const pathname = usePathname()
   const { esSuperAdmin, usuario } = useAuth()
   const { logo, appNombreCorto } = useTema()
-  const [colapsado, setColapsado] = useState(false)
+  // sidebar_ancho viene de aplicaciones.sidebar_ancho — true=expandido, false=colapsado
+  const sidebarAnchoPorDefecto = usuario?.sidebar_ancho !== false
+  const [colapsado, setColapsado] = useState(!sidebarAnchoPorDefecto)
 
   const menuFiltrado = useMemo(() => {
     if (!usuario?.menu) return []

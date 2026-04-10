@@ -64,6 +64,7 @@ export interface UsuarioContexto {
   aplicacion_por_defecto?: string | null
   aplicacion_activa?: string | null
   nombre_aplicacion?: string | null
+  sidebar_ancho?: boolean
   aplicaciones_disponibles?: AplicacionResumen[]
   aplicaciones_url?: Record<string, string>
 }

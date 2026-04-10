@@ -26,7 +26,7 @@ export default function PaginaAplicaciones() {
   // ── Modal Aplicacion ──────────────────────────────────────────────────────
   const [modalApp, setModalApp] = useState(false)
   const [appEditando, setAppEditando] = useState<Aplicacion | null>(null)
-  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; descripcion: string; tipo: 'NORMAL' | 'RESTRINGIDA' }>({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL' })
+  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; descripcion: string; tipo: 'NORMAL' | 'RESTRINGIDA'; sidebar_ancho: boolean }>({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL', sidebar_ancho: true })
   const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos'>('datos')
   const [guardandoApp, setGuardandoApp] = useState(false)
   const [errorApp, setErrorApp] = useState('')
@@ -92,18 +92,18 @@ export default function PaginaAplicaciones() {
 
   // ── Aplicacion: CRUD ──────────────────────────────────────────────────────
   const abrirNuevaApp = () => {
-    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL' })
+    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL', sidebar_ancho: true })
     setErrorApp(''); setTabModalApp('datos'); setModalApp(true)
   }
   const abrirEditarApp = (a: Aplicacion) => {
-    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '', tipo: (a.tipo as 'NORMAL' | 'RESTRINGIDA') || 'NORMAL' })
+    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '', tipo: (a.tipo as 'NORMAL' | 'RESTRINGIDA') || 'NORMAL', sidebar_ancho: a.sidebar_ancho !== false })
     setErrorApp(''); setTabModalApp('datos'); cargarFuncionesApp(a.codigo_aplicacion); cargarGruposApp(a.codigo_aplicacion); setModalApp(true)
   }
   const guardarApp = async () => {
     if (!formApp.codigo_aplicacion || !formApp.nombre) { setErrorApp('Codigo y nombre son obligatorios'); return }
     setGuardandoApp(true)
     try {
-      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo }) }
+      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo, sidebar_ancho: formApp.sidebar_ancho }) }
       else { await aplicacionesApi.crear(formApp) }
       setModalApp(false); cargar()
     } catch (e) { setErrorApp(e instanceof Error ? e.message : 'Error') }
@@ -220,6 +220,10 @@ export default function PaginaAplicaciones() {
               </select>
             </div>
             <Input etiqueta="Descripcion" value={formApp.descripcion} onChange={(e) => setFormApp({ ...formApp, descripcion: e.target.value })} />
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="sidebar_ancho" checked={formApp.sidebar_ancho} onChange={(e) => setFormApp({ ...formApp, sidebar_ancho: e.target.checked })} className="w-4 h-4 rounded accent-primario cursor-pointer" />
+              <label htmlFor="sidebar_ancho" className="text-sm text-texto cursor-pointer">Sidebar expandido al iniciar <span className="text-texto-muted">(desmarcar para apps de uso único como Chat)</span></label>
+            </div>
             {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
             <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Cancelar</Boton><Boton variante="primario" onClick={guardarApp} cargando={guardandoApp}>{appEditando ? 'Guardar' : 'Crear'}</Boton></div>
           </>)}
