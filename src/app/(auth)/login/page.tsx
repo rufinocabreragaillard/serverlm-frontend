@@ -254,6 +254,7 @@ export default function PaginaLogin() {
                     type="submit"
                     variante="primario"
                     className="w-full mt-2"
+                    style={{ backgroundColor: '#1A1E2E', borderColor: '#1A1E2E' }}
                     cargando={cargando}
                     disabled={cargando}
                   >
