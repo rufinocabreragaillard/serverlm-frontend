@@ -707,7 +707,9 @@ export default function PaginaUsuariosSemilla() {
                     className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
                   {dropdownRolPpalAbierto && (
                     <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {[{ id_rol: 0, nombre: '— Sin rol —', codigo_rol: '', codigo_grupo: null, tipo: 'NORMAL' } as Rol, ...rolesGrupo]
+                      {[{ id_rol: 0, nombre: '— Sin rol —', codigo_rol: '', codigo_grupo: null, tipo: tipoGrupoForm } as Rol,
+                        // Filtrar por tipo del grupo: RESTRINGIDO → solo roles RESTRINGIDO; NORMAL → solo roles NORMAL
+                        ...rolesGrupo.filter((r) => (r.tipo || 'NORMAL') === tipoGrupoForm)]
                         .filter((r) => r.id_rol === 0 || !busquedaRolPpal || r.nombre.toLowerCase().includes(busquedaRolPpal.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRolPpal.toLowerCase()))
                         .slice(0, 21).map((r) => (
                           <button key={r.id_rol} type="button"
@@ -737,7 +739,11 @@ export default function PaginaUsuariosSemilla() {
                     className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
                   {dropdownAppFormAbierto && (
                     <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {[{ codigo_aplicacion: '', nombre: '— Sin aplicación —' } as Aplicacion, ...(appsGrupo.length > 0 ? appsGrupo : aplicaciones)]
+                      {[{ codigo_aplicacion: '', nombre: '— Sin aplicación —', tipo: tipoGrupoForm } as Aplicacion,
+                        // Filtrar apps por tipo de grupo: RESTRINGIDO → incluye RESTRINGIDA; NORMAL → solo NORMAL
+                        ...(appsGrupo.length > 0 ? appsGrupo : aplicaciones).filter((a) =>
+                          tipoGrupoForm === 'RESTRINGIDO' || (a.tipo || 'NORMAL') === 'NORMAL'
+                        )]
                         .filter((a) => !a.codigo_aplicacion || !busquedaAppForm || a.nombre.toLowerCase().includes(busquedaAppForm.toLowerCase()))
                         .slice(0, 21).map((a) => (
                           <button key={a.codigo_aplicacion || '__sin'} type="button"
