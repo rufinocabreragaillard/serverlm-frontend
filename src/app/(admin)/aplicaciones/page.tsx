@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Plus, Pencil, Trash2, X, Download, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Download, Search, ArrowUp, ArrowDown } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Aplicacion, Funcion, Grupo } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
-type FuncionApp = { codigo_funcion: string; funciones: { nombre_funcion: string } }
+type FuncionApp = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string } }
 type GrupoApp = { codigo_grupo: string; grupos_entidades: { nombre_grupo: string } }
 
 export default function PaginaAplicaciones() {
@@ -126,6 +126,27 @@ export default function PaginaAplicaciones() {
     if (!appEditando) return
     try { await aplicacionesApi.quitarFuncion(appEditando.codigo_aplicacion, c); cargarFuncionesApp(appEditando.codigo_aplicacion) }
     catch (e) { setErrorApp(e instanceof Error ? e.message : 'Error') }
+  }
+
+  const moverFuncionApp = async (index: number, direccion: 'arriba' | 'abajo') => {
+    if (!appEditando) return
+    const lista = [...funcionesApp]
+    const swap = direccion === 'arriba' ? index - 1 : index + 1
+    if (swap < 0 || swap >= lista.length) return
+    const a = lista[index].orden
+    const b = lista[swap].orden
+    lista[index].orden = b
+    lista[swap].orden = a
+    ;[lista[index], lista[swap]] = [lista[swap], lista[index]]
+    setFuncionesApp(lista)
+    try {
+      await aplicacionesApi.reordenarFunciones(
+        appEditando.codigo_aplicacion,
+        lista.map((f) => ({ codigo_funcion: f.codigo_funcion, orden: f.orden })),
+      )
+    } catch {
+      cargarFuncionesApp(appEditando.codigo_aplicacion)
+    }
   }
 
   // ── Aplicacion: grupos ────────────────────────────────────────────────────
@@ -265,9 +286,27 @@ export default function PaginaAplicaciones() {
                 </div>
                 <Boton variante="primario" onClick={asignarFuncionApp} cargando={asignandoFuncionApp} disabled={!funcionNuevaApp}><Plus size={14} />Asignar</Boton>
               </div>
-              {cargandoFuncionesApp ? <div className="flex flex-col gap-2">{[1,2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
-              : funcionesApp.length === 0 ? <p className="text-sm text-texto-muted text-center py-4">No tiene funciones asignadas</p>
-              : <div className="flex flex-col gap-2">{funcionesApp.map((fa) => (<div key={fa.codigo_funcion} className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"><div><span className="text-sm font-medium text-texto">{fa.funciones?.nombre_funcion || fa.codigo_funcion}</span><span className="ml-2 text-xs text-texto-muted">{fa.codigo_funcion}</span></div><button onClick={() => quitarFuncionApp(fa.codigo_funcion)} className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Quitar"><X size={14} /></button></div>))}</div>}
+              {cargandoFuncionesApp ? (
+                <div className="flex flex-col gap-2">{[1,2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+              ) : funcionesApp.length === 0 ? (
+                <p className="text-sm text-texto-muted text-center py-4">No tiene funciones asignadas</p>
+              ) : (
+                <ul className="divide-y divide-borde border border-borde rounded-lg overflow-hidden">
+                  {funcionesApp.map((fa, idx) => (
+                    <li key={fa.codigo_funcion} className="flex items-center gap-2 px-3 py-2 text-sm bg-surface hover:bg-fondo">
+                      <div className="flex flex-col gap-0.5 items-center">
+                        <button type="button" onClick={() => moverFuncionApp(idx, 'arriba')} disabled={idx === 0} className="text-texto-muted hover:text-primario disabled:opacity-30" title="Subir"><ArrowUp size={12} /></button>
+                        <button type="button" onClick={() => moverFuncionApp(idx, 'abajo')} disabled={idx === funcionesApp.length - 1} className="text-texto-muted hover:text-primario disabled:opacity-30" title="Bajar"><ArrowDown size={12} /></button>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{fa.funciones?.nombre_funcion || fa.codigo_funcion}</div>
+                        <div className="text-xs text-texto-muted font-mono">{fa.codigo_funcion}</div>
+                      </div>
+                      <button onClick={() => quitarFuncionApp(fa.codigo_funcion)} className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Quitar"><X size={14} /></button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Cerrar</Boton></div>
             </div>
           )}
