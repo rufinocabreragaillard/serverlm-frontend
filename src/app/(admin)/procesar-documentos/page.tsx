@@ -464,9 +464,16 @@ export default function PaginaProcesarDocumentos() {
                 await documentosApi.subirTexto(item.codigo_documento, { texto_fuente: '', contenido_vacio: true })
                 setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ESCANEABLE (vacío)', tiempo_ms: Date.now() - t0 } : c))
               } else {
+                // Truncar a 60.000 chars en el frontend para no exceder el límite
+                // de body de Railway (~1MB JSON). El backend también trunca, pero
+                // es más seguro no enviar textos muy grandes en primer lugar.
+                const MAX_CHARS_FRONTEND = 60_000
+                const textoTruncado = contenido.length > MAX_CHARS_FRONTEND
+                  ? contenido.slice(0, MAX_CHARS_FRONTEND)
+                  : contenido
                 const res = await documentosApi.subirTexto(item.codigo_documento, {
-                  texto_fuente: contenido,
-                  caracteres: contenido.length,
+                  texto_fuente: textoTruncado,
+                  caracteres: contenido.length,  // tamaño original para info
                 })
                 setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: `METADATA (${res.caracteres} chars)`, tiempo_ms: Date.now() - t0 } : c))
               }
