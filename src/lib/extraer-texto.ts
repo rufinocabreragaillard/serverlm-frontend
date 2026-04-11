@@ -56,8 +56,8 @@ async function getPdfjsLib(): Promise<PdfjsLib> {
   if (!_pdfjsPromise) {
     _pdfjsPromise = (async () => {
       const lib = await import('pdfjs-dist')
-      lib.GlobalWorkerOptions.workerSrc =
-        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${lib.version}/pdf.worker.min.mjs`
+      // Worker local en /public — evita dependencia de CDN y problemas de versión
+      lib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
       // Crear el PDFWorker una sola vez — se reutiliza en todos los getDocument()
       _pdfWorker = new lib.PDFWorker({ name: 'cab-pdf-worker' })
       return lib
