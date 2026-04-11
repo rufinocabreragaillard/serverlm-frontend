@@ -59,7 +59,7 @@ async function getPdfjsLib(): Promise<PdfjsLib> {
       // Worker local en /public — evita dependencia de CDN y problemas de versión
       lib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
       // Crear el PDFWorker una sola vez — se reutiliza en todos los getDocument()
-      _pdfWorker = new lib.PDFWorker({ name: 'cab-pdf-worker' })
+      _pdfWorker = new lib.PDFWorker({ name: undefined })
       return lib
     })()
   }
@@ -69,11 +69,28 @@ async function getPdfjsLib(): Promise<PdfjsLib> {
 /**
  * Extrae texto de un archivo PDF usando pdf.js
  */
+// Error específico para PDFs protegidos con contraseña
+export class PdfProtegidoError extends Error {
+  constructor() { super('PDF protegido con contraseña'); this.name = 'PdfProtegidoError' }
+}
+
 async function extraerTextoPDF(file: File): Promise<string> {
   const pdfjsLib = await getPdfjsLib()
 
   const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer, worker: _pdfWorker }).promise
+  // PDF.js lanza PasswordException cuando el archivo requiere contraseña.
+  // Lo capturamos aquí para relanzarlo como PdfProtegidoError (distinguible upstream).
+  let pdf
+  try {
+    pdf = await pdfjsLib.getDocument({ data: arrayBuffer, worker: _pdfWorker }).promise
+  } catch (e: unknown) {
+    const name = (e as { name?: string })?.name ?? ''
+    const msg  = e instanceof Error ? e.message : String(e)
+    if (name === 'PasswordException' || msg.toLowerCase().includes('password')) {
+      throw new PdfProtegidoError()
+    }
+    throw e
+  }
 
   const paginas: string[] = []
   for (let i = 1; i <= pdf.numPages; i++) {

@@ -13,7 +13,7 @@ import { documentosApi, ubicacionesDocsApi, colaEstadosDocsApi, estadosDocsApi, 
 import type { Proceso as ProcesoCatalogo } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Documento, ColaEstadoDoc, EstadoDoc } from '@/lib/tipos'
-import { extraerTextoDeArchivo, abrirArchivoPorRuta } from '@/lib/extraer-texto'
+import { extraerTextoDeArchivo, abrirArchivoPorRuta, PdfProtegidoError } from '@/lib/extraer-texto'
 
 import { getDirectoryHandle as idbGetHandle, setDirectoryHandle as idbSetHandle, ensureReadPermission } from '@/lib/file-handle-store'
 import { TabPipelineTodo } from './_components/tab-pipeline-todo'
@@ -474,7 +474,18 @@ export default function PaginaProcesarDocumentos() {
           }
         } catch (e) {
           const msg = e instanceof Error ? e.message : 'Error'
-          setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'ERROR', resultado: msg, tiempo_ms: Date.now() - t0 } : c))
+          // PDF protegido con contraseña: marcar como NO_ESCANEABLE en BD (no queda en CARGADO)
+          if (e instanceof PdfProtegidoError) {
+            try {
+              await documentosApi.subirTexto(item.codigo_documento, {
+                texto_fuente: '',
+                formato_no_soportado: 'pdf-protegido',
+              })
+            } catch { /* si falla el upload, al menos dejamos el error en UI */ }
+            setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ESCANEABLE (PDF protegido)', tiempo_ms: Date.now() - t0 } : c))
+          } else {
+            setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'ERROR', resultado: msg, tiempo_ms: Date.now() - t0 } : c))
+          }
         }
         setProcesados((p) => p + 1)
       }
