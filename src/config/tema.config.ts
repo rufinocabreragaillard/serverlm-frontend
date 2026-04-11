@@ -4,13 +4,13 @@
  */
 export const tema = {
   app: {
-    nombre: 'ServerLM',
-    nombreCorto: 'SeguridadApp',
+    nombre: 'Server LM',
+    nombreCorto: 'Server LM',
     version: '1.0.0',
   },
   logo: {
-    url: '/logo_ServerLM_gris.png',
-    alt: 'Logo',
+    url: '/logo_Server_LM.png',
+    alt: 'Server LM',
     ancho: 110,
     alto: 36,
   },
