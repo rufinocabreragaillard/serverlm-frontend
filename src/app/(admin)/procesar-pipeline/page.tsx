@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { FolderOpen, CheckCircle, AlertTriangle, RefreshCw, Upload } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { BarraProgresoPipeline } from '@/components/ui/barra-progreso-pipeline'
@@ -28,6 +29,7 @@ const progresosIniciales = (): Record<string, ProgresoPaso> =>
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export default function PaginaCargaDocsUsuario() {
+  const t = useTranslations('procesarPipeline')
   const { grupoActivo } = useAuth()
   const [tab, setTab] = useState<'ubicaciones' | 'documentos'>('ubicaciones')
 
@@ -193,7 +195,7 @@ export default function PaginaCargaDocsUsuario() {
       }
     }
     if (!(await ensureReadPermission(handleEfectivo))) {
-      setMensajeError('Sin permiso de lectura sobre el directorio.')
+      setMensajeError(t('sinPermisoLectura'))
       return
     }
     setMensajeError('')
@@ -240,8 +242,8 @@ export default function PaginaCargaDocsUsuario() {
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Carga de Documentos</h2>
-        <p className="text-sm text-texto-muted mt-1">Sincroniza carpetas y procesa documentos del grupo</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Tabs */}
@@ -250,13 +252,13 @@ export default function PaginaCargaDocsUsuario() {
           onClick={() => setTab('ubicaciones')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'ubicaciones' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'}`}
         >
-          <FolderOpen size={15} />Ubicaciones
+          <FolderOpen size={15} />{t('tabUbicaciones')}
         </button>
         <button
           onClick={() => setTab('documentos')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'documentos' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'}`}
         >
-          <Upload size={15} />Documentos
+          <Upload size={15} />{t('tabDocumentos')}
         </button>
       </div>
 
@@ -265,10 +267,9 @@ export default function PaginaCargaDocsUsuario() {
         <div className="flex flex-col gap-6">
           <div className="rounded-lg border border-borde bg-fondo-tarjeta p-6 flex flex-col gap-4">
             <div>
-              <p className="text-sm font-medium text-texto mb-1">Sincronizar estructura de carpetas</p>
+              <p className="text-sm font-medium text-texto mb-1">{t('sincronizarTitulo')}</p>
               <p className="text-xs text-texto-muted">
-                Selecciona el directorio raíz de tus documentos. El sistema leerá la estructura de carpetas
-                y la sincronizará automáticamente con el árbol de ubicaciones del grupo.
+                {t('sincronizarDesc')}
               </p>
             </div>
 
@@ -278,18 +279,18 @@ export default function PaginaCargaDocsUsuario() {
               disabled={sincronizando || escaneando}
             >
               {escaneando ? (
-                <><RefreshCw size={16} className="animate-spin" />Leyendo carpetas...</>
+                <><RefreshCw size={16} className="animate-spin" />{t('leyendoCarpetas')}</>
               ) : sincronizando ? (
-                <><RefreshCw size={16} className="animate-spin" />Sincronizando...</>
+                <><RefreshCw size={16} className="animate-spin" />{t('sincronizando')}</>
               ) : (
-                <><FolderOpen size={16} />Sincronizar Carpetas</>
+                <><FolderOpen size={16} />{t('sincronizarCarpetas')}</>
               )}
             </Boton>
 
             {!resultadoSync && !errorSync && carpetaRaiz && (
               <p className="text-xs text-texto-muted">
-                Se pedirá acceso al directorio. Selecciona la carpeta raíz:{' '}
-                <strong className="text-texto">{carpetaRaiz}</strong> (no subcarpetas).
+                {t('pedirAcceso')}{' '}
+                <strong className="text-texto">{carpetaRaiz}</strong> {t('noSubcarpetas')}
               </p>
             )}
 
@@ -304,11 +305,10 @@ export default function PaginaCargaDocsUsuario() {
               <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 <CheckCircle size={16} className="mt-0.5 shrink-0" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-medium">Sincronización completada</span>
+                  <span className="font-medium">{t('sincronizacionCompletada')}</span>
                   <span>
-                    {resultadoSync.insertadas} nuevas · {resultadoSync.actualizadas} actualizadas ·{' '}
-                    {resultadoSync.eliminadas} eliminadas
-                    {resultadoSync.excluidas > 0 && ` · ${resultadoSync.excluidas} excluidas`}
+                    {t('sincronizacionDetalle', { insertadas: resultadoSync.insertadas, actualizadas: resultadoSync.actualizadas, eliminadas: resultadoSync.eliminadas })}
+                    {resultadoSync.excluidas > 0 && ` ${t('excluidas', { n: resultadoSync.excluidas })}`}
                   </span>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function PaginaCargaDocsUsuario() {
           </div>
 
           <p className="text-xs text-texto-muted">
-            Tras sincronizar las carpetas, ve a la pestaña <strong>Documentos</strong> para procesar los archivos.
+            {t('irADocumentos')} <strong>{t('tabDocumentosRef')}</strong> {t('irADocumentosParaProcesar')}
           </p>
         </div>
       )}
@@ -327,10 +327,10 @@ export default function PaginaCargaDocsUsuario() {
           {/* Directorio */}
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-texto">Directorio de documentos</p>
+              <p className="text-sm font-medium text-texto">{t('directorioDocumentos')}</p>
               {!dirHandle && carpetaRaiz && (
                 <p className="text-xs text-texto-muted">
-                  Selecciona la carpeta raíz: <strong className="text-texto">{carpetaRaiz}</strong>
+                  {t('seleccionarCarpetaRaiz')} <strong className="text-texto">{carpetaRaiz}</strong>
                 </p>
               )}
             </div>
@@ -345,7 +345,7 @@ export default function PaginaCargaDocsUsuario() {
               className="flex items-center gap-2 rounded-lg border border-borde bg-fondo-tarjeta px-4 py-2 text-sm text-texto hover:border-primario transition-colors"
             >
               <FolderOpen size={16} className={dirHandle ? 'text-primario' : 'text-texto-muted'} />
-              {dirHandle ? dirHandle.name : 'Seleccionar directorio'}
+              {dirHandle ? dirHandle.name : t('seleccionarDirectorio')}
             </button>
           </div>
 
@@ -392,8 +392,8 @@ export default function PaginaCargaDocsUsuario() {
           {(ejecutando || todosListos) && (
             <p className="text-center text-sm text-texto-muted">
               {ejecutando
-                ? `Procesando... ${formatTiempo(tiempoTranscurrido)}`
-                : `Completado en ${formatTiempo(tiempoTranscurrido)}`}
+                ? t('procesando', { tiempo: formatTiempo(tiempoTranscurrido) })
+                : t('completadoEn', { tiempo: formatTiempo(tiempoTranscurrido) })}
             </p>
           )}
 
@@ -402,24 +402,24 @@ export default function PaginaCargaDocsUsuario() {
             {!ejecutando ? (
               <Boton variante="primario" className="flex-1" onClick={ejecutarPipeline}>
                 <Upload size={16} />
-                {todosListos ? 'Cargar de nuevo' : 'Cargar Documentos'}
+                {todosListos ? t('cargarDeNuevo') : t('cargarDocumentos')}
               </Boton>
             ) : (
               <Boton variante="peligro" className="flex-1" onClick={detener}>
-                Detener
+                {t('detener')}
               </Boton>
             )}
           </div>
 
           {!ejecutando && !todosListos && hayPendientes && (
             <p className="text-xs text-texto-muted text-center">
-              Los documentos se procesarán automáticamente. Puedes cerrar esta pestaña y volver más tarde.
+              {t('procesarAutomatico')}
             </p>
           )}
 
           {!ejecutando && !hayPendientes && !todosListos && (
             <p className="text-xs text-texto-muted text-center">
-              No hay documentos pendientes de procesar. Si acabas de cargar archivos, presiona <strong>Cargar Documentos</strong>.
+              {t('sinDocumentosPendientes')} <strong>{t('sinDocumentosPendientesBtn')}</strong>.
             </p>
           )}
         </div>

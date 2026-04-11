@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon, Trash2, AlertTriangle, ListOrdered, Cpu } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -46,6 +47,8 @@ interface ItemCola {
 }
 
 export default function PaginaProcesarDocumentos() {
+  const t = useTranslations('procesarDocumentos')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
 
   // Tabs
@@ -587,8 +590,8 @@ export default function PaginaProcesarDocumentos() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Procesamiento de Documentos</h2>
-        <p className="text-sm text-texto-muted mt-1">Ejecuta procesos LLM sobre documentos del grupo</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Tabs principales */}
@@ -597,13 +600,13 @@ export default function PaginaProcesarDocumentos() {
           onClick={() => setTabPrincipal('paso-a-paso')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tabPrincipal === 'paso-a-paso' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'}`}
         >
-          <ListOrdered size={15} />Paso a Paso
+          <ListOrdered size={15} />{t('tabPasoAPaso')}
         </button>
         <button
           onClick={() => setTabPrincipal('todo')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tabPrincipal === 'todo' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'}`}
         >
-          <Cpu size={15} />Todo
+          <Cpu size={15} />{t('tabTodo')}
         </button>
       </div>
 
@@ -616,13 +619,13 @@ export default function PaginaProcesarDocumentos() {
           onClick={() => setTab('procesar')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'procesar' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'}`}
         >
-          <Cpu size={15} />Procesar
+          <Cpu size={15} />{t('tabProcesar')}
         </button>
         <button
           onClick={() => setTab('cola')}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === 'cola' ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'}`}
         >
-          <ListOrdered size={15} />Cola{colaBackend.length > 0 && ` (${colaBackend.length})`}
+          <ListOrdered size={15} />{t('tabCola')}{colaBackend.length > 0 && ` (${colaBackend.length})`}
         </button>
       </div>
 
@@ -632,7 +635,7 @@ export default function PaginaProcesarDocumentos() {
         <TarjetaContenido>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Proceso</label>
+              <label className="text-sm font-medium text-texto">{t('etiquetaProceso')}</label>
               <select value={procesoSel} onChange={(e) => setProcesoSel(e.target.value)} className={selectClass} disabled={ejecutando}>
                 {procesos.map((p) => {
                   const paso = p.pasos?.[0]
@@ -648,18 +651,18 @@ export default function PaginaProcesarDocumentos() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Alcance</label>
+              <label className="text-sm font-medium text-texto">{t('etiquetaAlcance')}</label>
               <select value={alcance} onChange={(e) => setAlcance(e.target.value as Alcance)} className={selectClass} disabled={ejecutando}>
-                <option value="pendientes">Todos los pendientes</option>
-                <option value="ubicacion">Por ubicación</option>
+                <option value="pendientes">{t('todosPendientes')}</option>
+                <option value="ubicacion">{t('porUbicacion')}</option>
               </select>
             </div>
 
             {alcance === 'ubicacion' ? (
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">Ubicación</label>
+                <label className="text-sm font-medium text-texto">{t('etiquetaUbicacion')}</label>
                 <select value={ubicacionSel} onChange={(e) => setUbicacionSel(e.target.value)} className={selectClass} disabled={ejecutando}>
-                  <option value="">Todas</option>
+                  <option value="">{t('todas')}</option>
                   {ubicaciones.map((u) => (
                     <option key={u.codigo_ubicacion} value={u.codigo_ubicacion}>
                       {'—'.repeat(u.nivel || 0)} {u.nombre_ubicacion}
@@ -675,15 +678,15 @@ export default function PaginaProcesarDocumentos() {
               <>
                 <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando || escaneandoDir}>
                   {escaneandoDir ? <Loader2 size={16} className="animate-spin" /> : <FolderOpen size={16} />}
-                  {escaneandoDir ? 'Escaneando...' : dirHandle ? `📂 ${dirHandle.name}` : 'Seleccionar directorio raíz'}
+                  {escaneandoDir ? t('escaneando') : dirHandle ? `📂 ${dirHandle.name}` : t('seleccionarDirectorio')}
                 </Boton>
                 {dirHandle && !escaneandoDir && (
                   <Boton variante="contorno" tamano="sm" onClick={limpiarDirectorio} disabled={ejecutando}>
-                    Quitar
+                    {t('quitar')}
                   </Boton>
                 )}
                 <span className="text-xs text-texto-muted" title="Niveles del árbol de directorios a escanear (configurable en Parámetros → DOCUMENTOS/NIVELES_DIRECTORIO)">
-                  {nivelesDirectorio === 0 ? 'Solo raíz' : `Hasta ${nivelesDirectorio} nivel${nivelesDirectorio !== 1 ? 'es' : ''}`}
+                  {nivelesDirectorio === 0 ? t('soloRaiz') : t('hastaXNiveles', { n: nivelesDirectorio })}
                 </span>
                 {!dirHandle && (() => {
                   const raiz = ubicaciones.length > 0
@@ -701,20 +704,20 @@ export default function PaginaProcesarDocumentos() {
             )}
             {usaLLM && (
               <span className="text-xs text-texto-muted">
-                Corre en el servidor (modelo configurado por paso). Puedes cerrar la pestaña, el avance sigue.
+                {t('correrServidor')}
               </span>
             )}
             <div className="ml-auto flex items-center gap-3">
               <span className="text-sm text-texto-muted">
-                {seleccionados.size}/{documentos.length} seleccionados{archivosEnDir && ` (filtrado por directorio)`}
+                {t('xDeYSeleccionados', { x: seleccionados.size, y: documentos.length })}{archivosEnDir && ` ${t('filtradoPorDirectorio')}`}
               </span>
               <Boton variante="primario" onClick={ejecutar}
                 disabled={ejecutando || seleccionados.size === 0 || !procesoSel}>
                 {ejecutando ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                {ejecutando ? 'Procesando...' : 'Ejecutar'}
+                {ejecutando ? t('ejecutando') : t('ejecutar')}
               </Boton>
               <Boton variante="contorno" onClick={detener} disabled={!ejecutando}>
-                <Square size={14} />Detener
+                <Square size={14} />{t('detener')}
               </Boton>
             </div>
           </div>
@@ -729,7 +732,7 @@ export default function PaginaProcesarDocumentos() {
               <div className="h-full bg-primario transition-all duration-300"
                 style={{ width: `${cola.length > 0 ? (procesados / cola.length) * 100 : 0}%` }} />
             </div>
-            <p className="text-xs text-texto-muted mt-1">{procesados}/{cola.length} procesados</p>
+            <p className="text-xs text-texto-muted mt-1">{t('xDeYProcesados', { x: procesados, y: cola.length })}</p>
           </div>
           <div className="flex gap-3 text-sm">
             {okCount > 0 && <span className="text-exito flex items-center gap-1"><CheckCircle size={14} />{okCount}</span>}
@@ -743,10 +746,10 @@ export default function PaginaProcesarDocumentos() {
         <Tabla>
           <TablaCabecera>
             <tr>
-              <TablaTh className="w-10">Estado</TablaTh>
-              <TablaTh>Documento</TablaTh>
-              <TablaTh>Resultado</TablaTh>
-              <TablaTh className="w-20">Tiempo</TablaTh>
+              <TablaTh className="w-10">{t('colEstado')}</TablaTh>
+              <TablaTh>{t('colDocumento')}</TablaTh>
+              <TablaTh>{t('colResultado')}</TablaTh>
+              <TablaTh className="w-20">{t('colTiempo')}</TablaTh>
             </tr>
           </TablaCabecera>
           <TablaCuerpo>
@@ -777,15 +780,15 @@ export default function PaginaProcesarDocumentos() {
           <div className="flex items-center gap-3">
             <div className="flex gap-2">
               <Boton variante="contorno" tamano="sm" onClick={seleccionarTodos} disabled={ejecutando || docsFiltrados.length === 0}>
-                <CheckSquare size={14} />Todos
+                <CheckSquare size={14} />{t('todos')}
               </Boton>
               <Boton variante="contorno" tamano="sm" onClick={deseleccionarTodos} disabled={ejecutando || seleccionados.size === 0}>
-                <SquareIcon size={14} />Ninguno
+                <SquareIcon size={14} />{t('ninguno')}
               </Boton>
             </div>
             <div className="max-w-sm flex-1">
               <Input
-                placeholder="Filtrar y Enter (vacío = todos)..."
+                placeholder={t('buscarPlaceholder')}
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') cargarDocumentos() }}
@@ -793,28 +796,28 @@ export default function PaginaProcesarDocumentos() {
               />
             </div>
             <Boton variante="contorno" tamano="sm" onClick={cargarDocumentos} disabled={cargando}>
-              {cargando ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}Buscar
+              {cargando ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}{t('buscar')}
             </Boton>
           </div>
           <Tabla>
             <TablaCabecera>
               <tr>
                 <TablaTh className="w-10" />
-                <TablaTh>Documento</TablaTh>
-                <TablaTh>Ubicación</TablaTh>
-                <TablaTh>Estado</TablaTh>
+                <TablaTh>{t('colDocumento')}</TablaTh>
+                <TablaTh>{t('colUbicacion')}</TablaTh>
+                <TablaTh>{t('colEstado')}</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>{tc('cargando')}</TablaTd></TablaFila>
               ) : docsFiltrados.length === 0 ? (
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>
                   {!yaCargado
-                    ? 'Escribe un filtro y presiona Enter (vacío = todos) o haz clic en Buscar'
+                    ? t('escribirFiltro')
                     : documentos.length === 0
-                    ? `No hay documentos en estado ${pasoActual?.estado_origen || 'origen'}`
-                    : 'Sin resultados para la búsqueda'}
+                    ? t('sinDocumentosEnEstado', { estado: pasoActual?.estado_origen || 'origen' })
+                    : t('sinResultadosBusqueda')}
                 </TablaTd></TablaFila>
               ) : docsFiltrados.map((d) => (
                 <TablaFila key={d.codigo_documento}>
@@ -845,7 +848,7 @@ export default function PaginaProcesarDocumentos() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="max-w-sm flex-1">
               <Input
-                placeholder="Buscar por documento o estado..."
+                placeholder={t('buscarColaPlaceholder')}
                 value={busquedaCola}
                 onChange={(e) => setBusquedaCola(e.target.value)}
                 icono={<Search size={15} />}
@@ -856,18 +859,18 @@ export default function PaginaProcesarDocumentos() {
               value={filtroEstadoCola}
               onChange={(e) => setFiltroEstadoCola(e.target.value)}
             >
-              <option value="">Todos los estados</option>
-              <option value="PENDIENTE">Pendiente</option>
-              <option value="EN_PROCESO">En proceso</option>
-              <option value="COMPLETADO">Completado</option>
-              <option value="ERROR">Error</option>
+              <option value="">{t('todosEstados')}</option>
+              <option value="PENDIENTE">{t('pendiente')}</option>
+              <option value="EN_PROCESO">{t('enProceso')}</option>
+              <option value="COMPLETADO">{t('completado')}</option>
+              <option value="ERROR">{t('error')}</option>
             </select>
             <div className="flex gap-2 ml-auto">
               <Boton variante="contorno" tamano="sm" onClick={cargarCola} disabled={cargandoCola}>
-                <Loader2 size={14} className={cargandoCola ? 'animate-spin' : ''} />Refrescar
+                <Loader2 size={14} className={cargandoCola ? 'animate-spin' : ''} />{t('refrescar')}
               </Boton>
               <Boton variante="contorno" onClick={() => setConfirmCerrar(true)} disabled={completadosCola === 0}>
-                <XCircle size={16} />Cerrar cola ({completadosCola})
+                <XCircle size={16} />{t('cerrarCola', { n: completadosCola })}
               </Boton>
             </div>
           </div>
@@ -875,21 +878,21 @@ export default function PaginaProcesarDocumentos() {
           <Tabla>
             <TablaCabecera>
               <tr>
-                <TablaTh>ID</TablaTh>
-                <TablaTh>Documento</TablaTh>
-                <TablaTh>Origen</TablaTh>
-                <TablaTh>Destino</TablaTh>
-                <TablaTh>Estado</TablaTh>
-                <TablaTh>Fecha</TablaTh>
-                <TablaTh>Intentos</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
+                <TablaTh>{t('colIdCola')}</TablaTh>
+                <TablaTh>{t('colDocumento')}</TablaTh>
+                <TablaTh>{t('colOrigen')}</TablaTh>
+                <TablaTh>{t('colDestino')}</TablaTh>
+                <TablaTh>{t('colEstadoCola')}</TablaTh>
+                <TablaTh>{t('colFecha')}</TablaTh>
+                <TablaTh>{t('colIntentos')}</TablaTh>
+                <TablaTh className="text-right">{tc('acciones')}</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargandoCola ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>{tc('cargando')}</TablaTd></TablaFila>
               ) : colaFiltrada.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cola vacía</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>{t('colaVacia')}</TablaTd></TablaFila>
               ) : colaFiltrada.map((c) => {
                 const cfg = ESTADO_COLA_CONFIG[c.estado_cola] || ESTADO_COLA_CONFIG.PENDIENTE
                 const Icono = cfg.icono
@@ -914,7 +917,7 @@ export default function PaginaProcesarDocumentos() {
                         <button
                           onClick={() => setConfirmEliminar(c)}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
-                          title="Eliminar"
+                          title={tc('eliminar')}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -932,18 +935,18 @@ export default function PaginaProcesarDocumentos() {
         abierto={confirmCerrar}
         alCerrar={() => setConfirmCerrar(false)}
         alConfirmar={ejecutarCerrarCola}
-        titulo="Cerrar cola"
-        mensaje={`¿Eliminar los ${completadosCola} ítem(s) completados de la cola?`}
-        textoConfirmar="Eliminar completados"
+        titulo={t('cerrarColaTitulo')}
+        mensaje={t('cerrarColaConfirm', { n: completadosCola })}
+        textoConfirmar={t('eliminarCompletados')}
         cargando={cerrando}
       />
       <ModalConfirmar
         abierto={!!confirmEliminar}
         alCerrar={() => setConfirmEliminar(null)}
         alConfirmar={ejecutarEliminarItem}
-        titulo="Eliminar ítem de la cola"
-        mensaje={confirmEliminar ? `¿Eliminar el ítem #${confirmEliminar.id_cola}?` : ''}
-        textoConfirmar="Eliminar"
+        titulo={t('eliminarItemTitulo')}
+        mensaje={confirmEliminar ? t('eliminarItemConfirm', { id: confirmEliminar.id_cola }) : ''}
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </>)}

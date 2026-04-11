@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Download, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
@@ -17,6 +18,9 @@ type TabActiva = 'categorias' | 'tipos'
 
 export default function PaginaCategoriasCaracteristicaDocs() {
   const { grupoActivo } = useAuth()
+  const t = useTranslations('categoriasCaracteristicaDocs')
+  const tc = useTranslations('common')
+
   const [tabActiva, setTabActiva] = useState<TabActiva>('categorias')
 
   // ── Categorias ────────────────────────────────────────────────────────────
@@ -97,7 +101,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const guardarCat = async () => {
     const esGlobalCreate = !catEditando && grupoActivo === 'ADMIN'
     if (!formCat.nombre_cat_docs.trim() || (esGlobalCreate && !formCat.codigo_cat_docs.trim())) {
-      setErrorCat(esGlobalCreate ? 'Código y nombre son obligatorios para categorías globales' : 'El nombre es obligatorio')
+      setErrorCat(esGlobalCreate ? t('errorObligatorioGlobal') : t('errorNombreObligatorio'))
       return
     }
     setGuardandoCat(true)
@@ -121,7 +125,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       setModalCat(false)
       cargarCategorias()
     } catch (e) {
-      setErrorCat(e instanceof Error ? e.message : 'Error al guardar')
+      setErrorCat(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardandoCat(false)
     }
@@ -147,9 +151,9 @@ export default function PaginaCategoriasCaracteristicaDocs() {
     setModalTipo(true)
   }
 
-  const abrirEditarTipo = (t: TipoCaractDocs) => {
-    setTipoEditando(t)
-    setFormTipo({ codigo_tipo_docs: t.codigo_tipo_docs, nombre_tipo_docs: t.nombre_tipo_docs })
+  const abrirEditarTipo = (tipo: TipoCaractDocs) => {
+    setTipoEditando(tipo)
+    setFormTipo({ codigo_tipo_docs: tipo.codigo_tipo_docs, nombre_tipo_docs: tipo.nombre_tipo_docs })
     setErrorTipo('')
     setModalTipo(true)
   }
@@ -157,7 +161,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const guardarTipo = async () => {
     if (!catSeleccionada) return
     if (!formTipo.nombre_tipo_docs.trim()) {
-      setErrorTipo('El nombre es obligatorio')
+      setErrorTipo(t('errorNombreObligatorio'))
       return
     }
     setGuardandoTipo(true)
@@ -176,7 +180,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       setModalTipo(false)
       cargarTipos()
     } catch (e) {
-      setErrorTipo(e instanceof Error ? e.message : 'Error al guardar')
+      setErrorTipo(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardandoTipo(false)
     }
@@ -222,7 +226,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   // ── Selector de categoria (para Tipos) ────────────────────────────────────
   const selectorCategoria = (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-texto mb-1.5">Categoría</label>
+      <label className="block text-sm font-medium text-texto mb-1.5">{t('selectorCategoria')}</label>
       <select
         className="w-full max-w-sm rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm"
         value={catSeleccionada?.codigo_cat_docs || ''}
@@ -231,7 +235,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
           setCatSeleccionada(cat)
         }}
       >
-        <option value="">Seleccione una categoría...</option>
+        <option value="">{t('selectorPlaceholder')}</option>
         {categorias.filter((c) => c.activo).map((c) => (
           <option key={c.codigo_cat_docs} value={c.codigo_cat_docs}>{c.nombre_cat_docs}</option>
         ))}
@@ -242,26 +246,26 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Categorías de Documentos</h2>
-        <p className="text-sm text-texto-muted mt-1">Categorías y tipos Categorías y tipos del grupo activo y globales (visibles en todos los grupos)</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-borde">
         {([
-          { key: 'categorias' as const, label: 'Categorías' },
-          { key: 'tipos' as const, label: 'Tipos' },
-        ]).map((t) => (
+          { key: 'categorias' as const, label: t('tabCategorias') },
+          { key: 'tipos' as const, label: t('tabTipos') },
+        ]).map((tab) => (
           <button
-            key={t.key}
-            onClick={() => setTabActiva(t.key)}
+            key={tab.key}
+            onClick={() => setTabActiva(tab.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tabActiva === t.key
+              tabActiva === tab.key
                 ? 'border-primario text-primario'
                 : 'border-transparent text-texto-muted hover:text-texto'
             }`}
           >
-            {t.label}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -271,40 +275,40 @@ export default function PaginaCategoriasCaracteristicaDocs() {
         <>
           <div className="flex items-center gap-3">
             <div className="max-w-sm flex-1">
-              <Input placeholder="Buscar..." value={busquedaCat} onChange={(e) => setBusquedaCat(e.target.value)} icono={<Search size={15} />} />
+              <Input placeholder={t('buscarPlaceholder')} value={busquedaCat} onChange={(e) => setBusquedaCat(e.target.value)} icono={<Search size={15} />} />
             </div>
             <div className="flex gap-2 ml-auto">
               <Boton variante="contorno" tamano="sm" disabled={catsFiltradas.length === 0}
                 onClick={() => exportarExcel(catsFiltradas as unknown as Record<string, unknown>[], [
-                  { titulo: 'Código', campo: 'codigo_cat_docs' },
-                  { titulo: 'Nombre', campo: 'nombre_cat_docs' },
-                  { titulo: 'Única', campo: 'es_unica_docs', formato: (v: unknown) => (v ? 'Sí' : 'No') },
-                  { titulo: 'Editable', campo: 'editable_en_detalle_docs', formato: (v: unknown) => (v ? 'Sí' : 'No') },
-                  { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
+                  { titulo: t('colCodigo'), campo: 'codigo_cat_docs' },
+                  { titulo: t('colNombre'), campo: 'nombre_cat_docs' },
+                  { titulo: t('colUnica'), campo: 'es_unica_docs', formato: (v: unknown) => (v ? tc('si') : tc('no')) },
+                  { titulo: t('colEditable'), campo: 'editable_en_detalle_docs', formato: (v: unknown) => (v ? tc('si') : tc('no')) },
+                  { titulo: t('colEstado'), campo: 'activo', formato: (v: unknown) => (v ? tc('activo') : tc('inactivo')) },
                 ], 'categorias-docs')}>
                 <Download size={15} />Excel
               </Boton>
-              <Boton variante="primario" onClick={abrirNuevaCat}><Plus size={16} />Nueva categoría</Boton>
+              <Boton variante="primario" onClick={abrirNuevaCat}><Plus size={16} />{t('nuevaCategoria')}</Boton>
             </div>
           </div>
 
           <Tabla>
             <TablaCabecera>
               <tr>
-                <TablaTh>Orden</TablaTh>
-                <TablaTh>Nombre</TablaTh>
-                <TablaTh>Única</TablaTh>
-                <TablaTh>Editable</TablaTh>
-                <TablaTh>Estado</TablaTh>
-                <TablaTh>Código</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
+                <TablaTh>{t('colOrden')}</TablaTh>
+                <TablaTh>{t('colNombre')}</TablaTh>
+                <TablaTh>{t('colUnica')}</TablaTh>
+                <TablaTh>{t('colEditable')}</TablaTh>
+                <TablaTh>{tc('activo')}</TablaTh>
+                <TablaTh>{t('colCodigo')}</TablaTh>
+                <TablaTh className="text-right">{tc('acciones')}</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargandoCat ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>{tc('cargando')}</TablaTd></TablaFila>
               ) : catsFiltradas.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Sin categorías</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>{t('sinCategorias')}</TablaTd></TablaFila>
               ) : catsFiltradas.map((c, idx) => (
                 <TablaFila key={c.codigo_cat_docs}>
                   <TablaTd>
@@ -317,14 +321,14 @@ export default function PaginaCategoriasCaracteristicaDocs() {
                     </div>
                   </TablaTd>
                   <TablaTd className="font-medium">{c.nombre_cat_docs}</TablaTd>
-                  <TablaTd><Insignia variante={c.es_unica_docs ? 'advertencia' : 'neutro'}>{c.es_unica_docs ? 'Sí' : 'No'}</Insignia></TablaTd>
-                  <TablaTd><Insignia variante={c.editable_en_detalle_docs ? 'exito' : 'neutro'}>{c.editable_en_detalle_docs ? 'Sí' : 'No'}</Insignia></TablaTd>
-                  <TablaTd><Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+                  <TablaTd><Insignia variante={c.es_unica_docs ? 'advertencia' : 'neutro'}>{c.es_unica_docs ? tc('si') : tc('no')}</Insignia></TablaTd>
+                  <TablaTd><Insignia variante={c.editable_en_detalle_docs ? 'exito' : 'neutro'}>{c.editable_en_detalle_docs ? tc('si') : tc('no')}</Insignia></TablaTd>
+                  <TablaTd><Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? tc('activo') : tc('inactivo')}</Insignia></TablaTd>
                   <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{c.codigo_cat_docs}</code></TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                      <button onClick={() => setConfirmCat(c)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Desactivar"><Trash2 size={14} /></button>
+                      <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title={tc('editar')}><Pencil size={14} /></button>
+                      <button onClick={() => setConfirmCat(c)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title={t('desactivar')}><Trash2 size={14} /></button>
                     </div>
                   </TablaTd>
                 </TablaFila>
@@ -341,32 +345,32 @@ export default function PaginaCategoriasCaracteristicaDocs() {
           {catSeleccionada ? (
             <>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-texto-muted">Tipos de: <strong>{catSeleccionada.nombre_cat_docs}</strong></span>
-                <Boton variante="primario" tamano="sm" onClick={abrirNuevoTipo} className="ml-auto"><Plus size={14} />Nuevo tipo</Boton>
+                <span className="text-sm text-texto-muted">{t('tiposDe', { nombre: catSeleccionada.nombre_cat_docs })}</span>
+                <Boton variante="primario" tamano="sm" onClick={abrirNuevoTipo} className="ml-auto"><Plus size={14} />{t('nuevoTipo')}</Boton>
               </div>
               <Tabla>
                 <TablaCabecera>
                   <tr>
-                    <TablaTh>Nombre</TablaTh>
-                    <TablaTh>Estado</TablaTh>
-                    <TablaTh>Código</TablaTh>
-                    <TablaTh className="text-right">Acciones</TablaTh>
+                    <TablaTh>{t('colNombre')}</TablaTh>
+                    <TablaTh>{tc('activo')}</TablaTh>
+                    <TablaTh>{t('colCodigo')}</TablaTh>
+                    <TablaTh className="text-right">{tc('acciones')}</TablaTh>
                   </tr>
                 </TablaCabecera>
                 <TablaCuerpo>
                   {cargandoTipos ? (
-                    <TablaFila><TablaTd className="py-6 text-center text-texto-muted" colSpan={4 as never}>Cargando...</TablaTd></TablaFila>
+                    <TablaFila><TablaTd className="py-6 text-center text-texto-muted" colSpan={4 as never}>{tc('cargando')}</TablaTd></TablaFila>
                   ) : tipos.length === 0 ? (
-                    <TablaFila><TablaTd className="py-6 text-center text-texto-muted" colSpan={4 as never}>Sin tipos</TablaTd></TablaFila>
-                  ) : tipos.map((t) => (
-                    <TablaFila key={t.codigo_tipo_docs}>
-                      <TablaTd className="font-medium">{t.nombre_tipo_docs}</TablaTd>
-                      <TablaTd><Insignia variante={t.activo ? 'exito' : 'error'}>{t.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
-                      <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{t.codigo_tipo_docs}</code></TablaTd>
+                    <TablaFila><TablaTd className="py-6 text-center text-texto-muted" colSpan={4 as never}>{t('sinTipos')}</TablaTd></TablaFila>
+                  ) : tipos.map((tipo) => (
+                    <TablaFila key={tipo.codigo_tipo_docs}>
+                      <TablaTd className="font-medium">{tipo.nombre_tipo_docs}</TablaTd>
+                      <TablaTd><Insignia variante={tipo.activo ? 'exito' : 'error'}>{tipo.activo ? tc('activo') : tc('inactivo')}</Insignia></TablaTd>
+                      <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{tipo.codigo_tipo_docs}</code></TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"><Pencil size={14} /></button>
-                          <button onClick={() => setConfirmTipo(t)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"><Trash2 size={14} /></button>
+                          <button onClick={() => abrirEditarTipo(tipo)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"><Pencil size={14} /></button>
+                          <button onClick={() => setConfirmTipo(tipo)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"><Trash2 size={14} /></button>
                         </div>
                       </TablaTd>
                     </TablaFila>
@@ -375,7 +379,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
               </Tabla>
             </>
           ) : (
-            <p className="text-sm text-texto-muted">Seleccione una categoría para ver sus tipos.</p>
+            <p className="text-sm text-texto-muted">{t('seleccioneCategoria')}</p>
           )}
         </>
       )}
@@ -383,19 +387,19 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       {/* MODALES */}
 
       {/* Modal Categoria */}
-      <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? `Editar: ${catEditando.nombre_cat_docs}` : 'Nueva categoría '}>
+      <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? t('editarCategoriaTitulo', { nombre: catEditando.nombre_cat_docs }) : t('nuevaCategoriaTitulo')}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Nombre *" value={formCat.nombre_cat_docs}
+          <Input etiqueta={t('etiquetaNombre')} value={formCat.nombre_cat_docs}
             onChange={(e) => setFormCat({ ...formCat, nombre_cat_docs: e.target.value })}
-            placeholder="Nombre de la categoría" />
+            placeholder={t('placeholderNombre')} />
           {/* Código solo visible si super-admin crea global, o al editar (readonly) */}
           {!catEditando && grupoActivo === 'ADMIN' && (
-            <Input etiqueta="Código *" value={formCat.codigo_cat_docs}
+            <Input etiqueta={t('etiquetaCodigo')} value={formCat.codigo_cat_docs}
               onChange={(e) => setFormCat({ ...formCat, codigo_cat_docs: e.target.value.toUpperCase() })}
-              placeholder="Ej: METADATOS" />
+              placeholder={t('placeholderCodigo')} />
           )}
           <div>
-            <label className="block text-sm font-medium text-texto mb-1.5">Descripción</label>
+            <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaDescripcion')}</label>
             <textarea className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none resize-y min-h-[60px]"
               value={formCat.descripcion_cat_docs}
               onChange={(e) => setFormCat({ ...formCat, descripcion_cat_docs: e.target.value })} />
@@ -405,48 +409,48 @@ export default function PaginaCategoriasCaracteristicaDocs() {
               <input type="checkbox" checked={formCat.es_unica_docs}
                 onChange={(e) => setFormCat({ ...formCat, es_unica_docs: e.target.checked })}
                 className="rounded border-borde" />
-              Única por documento
+              {t('unicaPorDocumento')}
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={formCat.editable_en_detalle_docs}
                 onChange={(e) => setFormCat({ ...formCat, editable_en_detalle_docs: e.target.checked })}
                 className="rounded border-borde" />
-              Editable en detalle
+              {t('editableEnDetalle')}
             </label>
           </div>
           {catEditando && (
-            <Input etiqueta="Código" value={formCat.codigo_cat_docs} disabled readOnly />
+            <Input etiqueta={t('colCodigo')} value={formCat.codigo_cat_docs} disabled readOnly />
           )}
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalCat(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarCat} cargando={guardandoCat}>{catEditando ? 'Guardar' : 'Crear'}</Boton>
+            <Boton variante="contorno" onClick={() => setModalCat(false)}>{tc('cancelar')}</Boton>
+            <Boton variante="primario" onClick={guardarCat} cargando={guardandoCat}>{catEditando ? tc('guardar') : tc('crear')}</Boton>
           </div>
         </div>
       </Modal>
 
       {/* Modal Tipo */}
-      <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? `Editar: ${tipoEditando.nombre_tipo_docs}` : 'Nuevo tipo'}>
+      <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? t('editarTipoTitulo', { nombre: tipoEditando.nombre_tipo_docs }) : t('nuevoTipoTitulo')}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Nombre *" value={formTipo.nombre_tipo_docs}
+          <Input etiqueta={t('etiquetaNombreTipo')} value={formTipo.nombre_tipo_docs}
             onChange={(e) => setFormTipo({ ...formTipo, nombre_tipo_docs: e.target.value })}
-            placeholder="Nombre del tipo" />
+            placeholder={t('placeholderNombreTipo')} />
           {tipoEditando && (
-            <Input etiqueta="Código" value={formTipo.codigo_tipo_docs} disabled readOnly />
+            <Input etiqueta={t('colCodigo')} value={formTipo.codigo_tipo_docs} disabled readOnly />
           )}
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalTipo(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarTipo} cargando={guardandoTipo}>{tipoEditando ? 'Guardar' : 'Crear'}</Boton>
+            <Boton variante="contorno" onClick={() => setModalTipo(false)}>{tc('cancelar')}</Boton>
+            <Boton variante="primario" onClick={guardarTipo} cargando={guardandoTipo}>{tipoEditando ? tc('guardar') : tc('crear')}</Boton>
           </div>
         </div>
       </Modal>
 
       {/* Confirmaciones */}
       <ModalConfirmar abierto={!!confirmCat} alCerrar={() => setConfirmCat(null)} alConfirmar={eliminarCat}
-        titulo="Desactivar categoría" mensaje={confirmCat ? `¿Desactivar "${confirmCat.nombre_cat_docs}"?` : ''} textoConfirmar="Desactivar" cargando={eliminandoCat} />
+        titulo={t('desactivarCategoriaTitulo')} mensaje={confirmCat ? t('desactivarCategoriaConfirm', { nombre: confirmCat.nombre_cat_docs }) : ''} textoConfirmar={t('desactivar')} cargando={eliminandoCat} />
       <ModalConfirmar abierto={!!confirmTipo} alCerrar={() => setConfirmTipo(null)} alConfirmar={eliminarTipo}
-        titulo="Desactivar tipo" mensaje={confirmTipo ? `¿Desactivar "${confirmTipo.nombre_tipo_docs}"?` : ''} textoConfirmar="Desactivar" cargando={eliminandoTipo} />
+        titulo={t('desactivarTipoTitulo')} mensaje={confirmTipo ? t('desactivarTipoConfirm', { nombre: confirmTipo.nombre_tipo_docs }) : ''} textoConfirmar={t('desactivar')} cargando={eliminandoTipo} />
     </div>
   )
 }

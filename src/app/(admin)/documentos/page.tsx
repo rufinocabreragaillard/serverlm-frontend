@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, Download, Search, Eye, ExternalLink, FileText } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,8 @@ type TabModal = 'datos' | 'caracteristicas' | 'chunks'
 const ESTADOS_CON_CHUNKS = new Set(['CHUNKEADO', 'VECTORIZADO'])
 
 export default function PaginaDocumentos() {
+  const t = useTranslations('documentos')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -163,7 +166,7 @@ export default function PaginaDocumentos() {
 
   const guardar = async () => {
     if (!form.nombre_documento.trim()) {
-      setError('El nombre del documento es obligatorio')
+      setError(t('errorNombreObligatorio'))
       return
     }
     setGuardando(true)
@@ -191,7 +194,7 @@ export default function PaginaDocumentos() {
       setModal(false)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -205,7 +208,7 @@ export default function PaginaDocumentos() {
       setConfirmacion(null)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al desactivar')
+      setError(e instanceof Error ? e.message : tc('errorAlEliminar'))
       setConfirmacion(null)
     } finally {
       setEliminando(false)
@@ -286,15 +289,15 @@ export default function PaginaDocumentos() {
     <div className="flex flex-col gap-6 max-w-6xl">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-texto">Documentos</h2>
-        <p className="text-sm text-texto-muted mt-1">Gestion de documentos del grupo</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         <div className="max-w-sm flex-1">
           <Input
-            placeholder="Buscar por nombre o resumen..."
+            placeholder={t('buscarPlaceholder')}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             icono={<Search size={15} />}
@@ -308,13 +311,13 @@ export default function PaginaDocumentos() {
               exportarExcel(
                 filtrados as unknown as Record<string, unknown>[],
                 [
-                  { titulo: 'ID', campo: 'codigo_documento' },
-                  { titulo: 'Nombre', campo: 'nombre_documento' },
-                  { titulo: 'Ubicacion', campo: 'ubicacion_documento' },
-                  { titulo: 'Resumen', campo: 'resumen_documento' },
-                  { titulo: 'Fecha Modificación', campo: 'fecha_modificacion' },
-                  { titulo: 'Tamaño KB', campo: 'tamano_kb' },
-                  { titulo: 'Estado', campo: 'codigo_estado_doc' },
+                  { titulo: t('excelId'), campo: 'codigo_documento' },
+                  { titulo: t('excelNombre'), campo: 'nombre_documento' },
+                  { titulo: t('excelUbicacion'), campo: 'ubicacion_documento' },
+                  { titulo: t('excelResumen'), campo: 'resumen_documento' },
+                  { titulo: t('excelFechaModificacion'), campo: 'fecha_modificacion' },
+                  { titulo: t('excelTamano'), campo: 'tamano_kb' },
+                  { titulo: t('excelEstado'), campo: 'codigo_estado_doc' },
                 ],
                 'documentos'
               )
@@ -322,11 +325,11 @@ export default function PaginaDocumentos() {
             disabled={filtrados.length === 0}
           >
             <Download size={15} />
-            Excel
+            {tc('exportarExcel')}
           </Boton>
           <Boton variante="primario" onClick={abrirNuevo}>
             <Plus size={16} />
-            Nuevo documento
+            {t('nuevoDocumento')}
           </Boton>
         </div>
       </div>
@@ -335,24 +338,24 @@ export default function PaginaDocumentos() {
       <Tabla>
         <TablaCabecera>
           <tr>
-            <TablaTh>ID</TablaTh>
-            <TablaTh>Nombre</TablaTh>
-            <TablaTh>Ubicación</TablaTh>
-            <TablaTh>Estado</TablaTh>
-            <TablaTh className="text-right">Acciones</TablaTh>
+            <TablaTh>{t('colId')}</TablaTh>
+            <TablaTh>{t('colNombre')}</TablaTh>
+            <TablaTh>{t('colUbicacion')}</TablaTh>
+            <TablaTh>{t('colEstado')}</TablaTh>
+            <TablaTh className="text-right">{tc('acciones')}</TablaTh>
           </tr>
         </TablaCabecera>
         <TablaCuerpo>
           {cargando ? (
             <TablaFila>
               <TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>
-                Cargando...
+                {tc('cargando')}
               </TablaTd>
             </TablaFila>
           ) : filtrados.length === 0 ? (
             <TablaFila>
               <TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>
-                No se encontraron documentos
+                {t('sinDocumentos')}
               </TablaTd>
             </TablaFila>
           ) : (
@@ -392,7 +395,7 @@ export default function PaginaDocumentos() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
-                        title="Abrir documento original (URL)"
+                        title={t('abrirDocumentoUrl')}
                       >
                         <ExternalLink size={16} />
                       </a>
@@ -401,7 +404,7 @@ export default function PaginaDocumentos() {
                       <button
                         onClick={() => abrirDocumentoLocal(d)}
                         className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
-                        title="Abrir documento desde el directorio local seleccionado en Procesar Documentos"
+                        title={t('abrirDocumentoLocal')}
                       >
                         <FileText size={16} />
                       </button>
@@ -441,18 +444,18 @@ export default function PaginaDocumentos() {
       <Modal
         abierto={modal}
         alCerrar={() => setModal(false)}
-        titulo={editando ? `Documento: ${editando.nombre_documento}` : 'Nuevo documento'}
+        titulo={editando ? `Documento: ${editando.nombre_documento}` : t('nuevoDocumento')}
       >
         <div className="flex flex-col gap-4 w-[900px] max-w-full">
           {/* Tabs dentro del modal */}
           {editando && (
             <div className="flex gap-1 border-b border-borde -mt-2">
-              {(['datos', 'caracteristicas'] as TabModal[]).map((t) => (
-                <button key={t} onClick={() => setTabModal(t)}
+              {(['datos', 'caracteristicas'] as TabModal[]).map((tab) => (
+                <button key={tab} onClick={() => setTabModal(tab)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                    tabModal === t ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'
+                    tabModal === tab ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'
                   }`}>
-                  {t === 'datos' ? 'Datos' : 'Características'}
+                  {tab === 'datos' ? t('tabDatos') : t('tabCaracteristicas')}
                 </button>
               ))}
               {editando && ESTADOS_CON_CHUNKS.has(editando.codigo_estado_doc || '') && (
@@ -478,26 +481,26 @@ export default function PaginaDocumentos() {
                 {/* Nombre — 5 cols (3/4 del actual de 6) */}
                 <div className="col-span-12 md:col-span-5">
                   <Input
-                    etiqueta="Nombre del documento *"
+                    etiqueta={t('etiquetaNombre')}
                     value={form.nombre_documento}
                     onChange={(e) => setForm({ ...form, nombre_documento: e.target.value })}
-                    placeholder="Nombre del documento"
+                    placeholder={t('placeholderNombre')}
                   />
                 </div>
                 {/* URL — 7 cols (más ancha) */}
                 <div className="col-span-12 md:col-span-7">
                   <Input
-                    etiqueta="Ubicación (URL o ruta)"
+                    etiqueta={t('etiquetaUbicacion')}
                     value={form.ubicacion_documento}
                     onChange={(e) => setForm({ ...form, ubicacion_documento: e.target.value })}
-                    placeholder="https://ejemplo.com/documento.pdf"
+                    placeholder={t('placeholderUbicacion')}
                   />
                 </div>
 
                 {/* Fecha — 5 cols */}
                 <div className="col-span-12 md:col-span-5">
                   <Input
-                    etiqueta="Fecha de modificación"
+                    etiqueta={t('etiquetaFechaModificacion')}
                     type="datetime-local"
                     value={form.fecha_modificacion}
                     onChange={(e) => setForm({ ...form, fecha_modificacion: e.target.value })}
@@ -506,7 +509,7 @@ export default function PaginaDocumentos() {
                 {/* Tamaño — 3 cols */}
                 <div className="col-span-6 md:col-span-3">
                   <Input
-                    etiqueta="Tamaño (KB)"
+                    etiqueta={t('etiquetaTamano')}
                     type="number"
                     value={form.tamano_kb}
                     onChange={(e) => setForm({ ...form, tamano_kb: e.target.value })}
@@ -515,13 +518,13 @@ export default function PaginaDocumentos() {
                 </div>
                 {/* Estado — 4 cols */}
                 <div className="col-span-6 md:col-span-4">
-                  <label className="block text-sm font-medium text-texto mb-1.5">Estado</label>
+                  <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaEstado')}</label>
                   <select
                     className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
                     value={form.codigo_estado_doc}
                     onChange={(e) => setForm({ ...form, codigo_estado_doc: e.target.value })}
                   >
-                    <option value="">— Sin estado —</option>
+                    <option value="">{t('sinEstado')}</option>
                     {estados.filter((e) => e.activo).map((e) => (
                       <option key={e.codigo_estado_doc} value={e.codigo_estado_doc}>
                         {e.nombre_estado}
@@ -533,7 +536,7 @@ export default function PaginaDocumentos() {
                 {/* Detalle del estado — solo lectura, fila completa, oculto si vacio */}
                 {editando && editando.detalle_estado && (
                   <div className="col-span-12">
-                    <label className="block text-sm font-medium text-texto mb-1.5">Detalle del estado</label>
+                    <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaDetalleEstado')}</label>
                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 whitespace-pre-wrap">
                       {editando.detalle_estado}
                     </div>
@@ -542,12 +545,12 @@ export default function PaginaDocumentos() {
 
                 {/* Resumen — fila completa */}
                 <div className="col-span-12">
-                  <label className="block text-sm font-medium text-texto mb-1.5">Resumen</label>
+                  <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaResumen')}</label>
                   <textarea
                     className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none resize-y min-h-[100px]"
                     value={form.resumen_documento}
                     onChange={(e) => setForm({ ...form, resumen_documento: e.target.value })}
-                    placeholder="Breve descripcion del contenido del documento"
+                    placeholder={t('placeholderResumen')}
                   />
                 </div>
               </div>
@@ -560,10 +563,10 @@ export default function PaginaDocumentos() {
 
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModal(false)}>
-                  Cancelar
+                  {tc('cancelar')}
                 </Boton>
                 <Boton variante="primario" onClick={guardar} cargando={guardando}>
-                  {editando ? 'Guardar' : 'Crear'}
+                  {editando ? tc('guardar') : tc('crear')}
                 </Boton>
               </div>
             </div>
@@ -573,9 +576,9 @@ export default function PaginaDocumentos() {
           {tabModal === 'caracteristicas' && editando && (
             <div className="flex flex-col gap-3">
               {cargandoCaract ? (
-                <p className="text-sm text-texto-muted py-4 text-center">Cargando características...</p>
+                <p className="text-sm text-texto-muted py-4 text-center">{t('cargandoCaracteristicas')}</p>
               ) : categoriasConCaract.filter((cc) => cc.caracteristicas.length > 0).length === 0 ? (
-                <p className="text-sm text-texto-muted py-4 text-center">Sin características.</p>
+                <p className="text-sm text-texto-muted py-4 text-center">{t('sinCaracteristicas')}</p>
               ) : (
                 categoriasConCaract.filter((cc) => cc.caracteristicas.length > 0).map((cc) => {
                   const cat = cc.categoria
@@ -617,7 +620,7 @@ export default function PaginaDocumentos() {
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                   <input
                     className="w-full rounded-lg border border-borde bg-fondo-tarjeta pl-8 pr-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none"
-                    placeholder="Buscar en chunks... (Enter)"
+                    placeholder={t('buscarChunksPlaceholder')}
                     value={busquedaChunkInput}
                     onChange={(e) => setBusquedaChunkInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -634,7 +637,7 @@ export default function PaginaDocumentos() {
                   setPaginaChunk(1)
                   cargarChunks(editando.codigo_documento, busquedaChunkInput, 1)
                 }}>
-                  Buscar
+                  {tc('buscar').replace('...', '')}
                 </Boton>
                 {busquedaChunk && (
                   <Boton variante="contorno" onClick={() => {
@@ -643,7 +646,7 @@ export default function PaginaDocumentos() {
                     setPaginaChunk(1)
                     cargarChunks(editando.codigo_documento, '', 1)
                   }}>
-                    Limpiar
+                    {t('limpiar')}
                   </Boton>
                 )}
               </div>
@@ -655,20 +658,20 @@ export default function PaginaDocumentos() {
                   <span><b className="text-texto">{chunksData.stats.avg_chars.toLocaleString()}</b> chars promedio</span>
                   <span><b className="text-texto">{(chunksData.stats.n_chars_total / 1000).toFixed(1)}k</b> chars total</span>
                   {chunksData.stats.vectorizado
-                    ? <span className="text-green-600 font-medium">Vectorizado</span>
-                    : <span className="text-amber-600">Sin vectorizar — búsqueda solo textual</span>
+                    ? <span className="text-green-600 font-medium">{t('vectorizado')}</span>
+                    : <span className="text-amber-600">{t('sinVectorizar')}</span>
                   }
                 </div>
               )}
 
               {/* Lista de chunks */}
               {cargandoChunks ? (
-                <p className="text-sm text-texto-muted py-4 text-center">Cargando chunks...</p>
+                <p className="text-sm text-texto-muted py-4 text-center">{t('cargandoChunks')}</p>
               ) : !chunksData ? (
-                <p className="text-sm text-texto-muted py-4 text-center">Sin datos.</p>
+                <p className="text-sm text-texto-muted py-4 text-center">{t('sinChunksData')}</p>
               ) : chunksData.chunks.length === 0 ? (
                 <p className="text-sm text-texto-muted py-4 text-center">
-                  {busquedaChunk ? `Sin resultados para "${busquedaChunk}"` : 'Sin chunks generados.'}
+                  {busquedaChunk ? t('sinResultadosBusqueda', { busqueda: busquedaChunk }) : t('sinChunksGenerados')}
                 </p>
               ) : (
                 <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
@@ -740,13 +743,13 @@ export default function PaginaDocumentos() {
         abierto={!!confirmacion}
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={ejecutarEliminacion}
-        titulo="Desactivar documento"
+        titulo={t('desactivarTitulo')}
         mensaje={
           confirmacion
-            ? `Desactivar el documento "${confirmacion.nombre_documento}"?`
+            ? t('desactivarConfirm', { nombre: confirmacion.nombre_documento })
             : ''
         }
-        textoConfirmar="Desactivar"
+        textoConfirmar={t('textoDesactivar')}
         cargando={eliminando}
       />
     </div>

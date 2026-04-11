@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Save, SlidersHorizontal, Layers, Building2, User, Trash2 } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
@@ -19,6 +20,8 @@ interface ParametroRow {
 }
 
 export default function PaginaParametros() {
+  const t = useTranslations('parametros')
+  const tc = useTranslations('common')
   const { esAdmin, esSuperAdmin, usuario } = useAuth()
   const [tabActiva, setTabActiva] = useState<TabId>('grupo')
 
@@ -152,9 +155,9 @@ export default function PaginaParametros() {
       } else if (tab === 'usuario') {
         await parametrosApi.upsertUsuario(datos)
       }
-      mostrarExito('Parámetro guardado')
+      mostrarExito(t('parametroGuardado'))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardando(null)
     }
@@ -176,17 +179,17 @@ export default function PaginaParametros() {
       } else if (tabActiva === 'usuario') {
         await parametrosApi.eliminarUsuario(cat, tipo)
       }
-      mostrarExito('Parámetro eliminado')
+      mostrarExito(t('parametroEliminado'))
       recargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar')
+      setError(e instanceof Error ? e.message : tc('errorAlEliminar'))
     }
   }
 
   // ── Agregar nuevo parámetro ───────────────────────────────────────────────
   const agregarNuevo = async () => {
     if (!nuevoParam.categoria_parametro || !nuevoParam.tipo_parametro || !nuevoParam.valor_parametro) {
-      setError('Todos los campos son obligatorios')
+      setError(t('camposObligatorios'))
       return
     }
     await guardarInline(tabActiva, nuevoParam.categoria_parametro, nuevoParam.tipo_parametro, nuevoParam.valor_parametro)
@@ -196,9 +199,9 @@ export default function PaginaParametros() {
 
   // ── Tabs config ───────────────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; icon: typeof SlidersHorizontal; visible: boolean }[] = [
-    { id: 'grupo', label: 'Por Grupo', icon: Layers, visible: true },
-    { id: 'entidad', label: 'Por Entidad', icon: Building2, visible: true },
-    { id: 'usuario', label: 'Por Usuario', icon: User, visible: true },
+    { id: 'grupo', label: t('tabGrupo'), icon: Layers, visible: true },
+    { id: 'entidad', label: t('tabEntidad'), icon: Building2, visible: true },
+    { id: 'usuario', label: t('tabUsuario'), icon: User, visible: true },
   ]
 
   const visibleTabs = tabs.filter((t) => t.visible)
@@ -226,10 +229,10 @@ export default function PaginaParametros() {
   }
 
   const getDescripcion = (): string => {
-    if (tabActiva === 'generales') return 'Parámetros que afectan a todos los usuarios del sistema'
-    if (tabActiva === 'grupo') return `Parámetros del grupo "${usuario?.nombre_grupo || usuario?.grupo_activo}"`
-    if (tabActiva === 'entidad') return `Parámetros de la entidad "${usuario?.entidad_activa}"`
-    return 'Parámetros personales del usuario actual'
+    if (tabActiva === 'generales') return t('subtitulo')
+    if (tabActiva === 'grupo') return t('descGrupo', { nombre: usuario?.nombre_grupo || usuario?.grupo_activo || '' })
+    if (tabActiva === 'entidad') return t('descEntidad', { nombre: usuario?.entidad_activa || '' })
+    return t('descUsuario')
   }
 
   const puedeAgregar = tabActiva !== 'generales' || esAdmin()
@@ -246,8 +249,8 @@ export default function PaginaParametros() {
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Parámetros por Nivel</h2>
-        <p className="text-sm text-texto-muted mt-1">Configuración por grupo, entidad y usuario</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {mensajeExito && (
@@ -286,7 +289,7 @@ export default function PaginaParametros() {
       <Tarjeta>
         <TarjetaCabecera>
           <TarjetaTitulo>
-            {visibleTabs.find((t) => t.id === tabActiva)?.label || 'Parámetros'}
+            {visibleTabs.find((tab) => tab.id === tabActiva)?.label || t('titulo')}
           </TarjetaTitulo>
           <TarjetaDescripcion>{getDescripcion()}</TarjetaDescripcion>
         </TarjetaCabecera>
@@ -298,7 +301,7 @@ export default function PaginaParametros() {
               ))}
             </div>
           ) : getParams().length === 0 ? (
-            <p className="text-sm text-texto-muted text-center py-4">No hay parámetros configurados</p>
+            <p className="text-sm text-texto-muted text-center py-4">{t('sinParametros')}</p>
           ) : (
             <div className="flex flex-col gap-3">
               {getParams().map((p) => {
@@ -330,7 +333,7 @@ export default function PaginaParametros() {
                       }}
                       disabled={guardando === key}
                       className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors shrink-0"
-                      title="Guardar"
+                      title={tc('guardar')}
                     >
                       <Save size={14} />
                     </button>
@@ -338,7 +341,7 @@ export default function PaginaParametros() {
                     <button
                       onClick={() => setParamAEliminar({ cat: p.categoria_parametro, tipo: p.tipo_parametro })}
                       className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
-                      title="Eliminar parámetro"
+                      title={t('eliminarTitulo')}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -352,7 +355,7 @@ export default function PaginaParametros() {
           {puedeAgregar && (
             <div className="border-t border-borde mt-4 pt-4">
               <p className="text-xs font-semibold text-texto-muted uppercase tracking-wider mb-3">
-                Agregar parámetro
+                {t('agregarParametro')}
               </p>
               <div className="flex flex-col gap-2">
                 {/* Fila 1: Categoría y Tipo (dropdowns) */}
@@ -364,7 +367,7 @@ export default function PaginaParametros() {
                     }
                     className={selectClass}
                   >
-                    <option value="">Categoría...</option>
+                    <option value="">{t('placeholderCategoria')}</option>
                     {categorias.filter((c) => c.activo).map((c) => (
                       <option key={c.categoria_parametro} value={c.categoria_parametro}>
                         {c.nombre}
@@ -377,7 +380,7 @@ export default function PaginaParametros() {
                     disabled={!nuevoParam.categoria_parametro}
                     className={selectClass}
                   >
-                    <option value="">Tipo...</option>
+                    <option value="">{t('placeholderTipo')}</option>
                     {tiposDisponibles.map((t) => (
                       <option key={t.tipo_parametro} value={t.tipo_parametro}>
                         {t.nombre}
@@ -389,7 +392,7 @@ export default function PaginaParametros() {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Valor del parámetro"
+                    placeholder={t('placeholderValor')}
                     value={nuevoParam.valor_parametro}
                     onChange={(e) => setNuevoParam({ ...nuevoParam, valor_parametro: e.target.value })}
                     className="flex-1 rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario"
@@ -401,7 +404,7 @@ export default function PaginaParametros() {
                     cargando={guardando === 'nuevo'}
                     disabled={!nuevoParam.categoria_parametro || !nuevoParam.tipo_parametro || !nuevoParam.valor_parametro}
                   >
-                    Agregar
+                    {t('agregarParametro')}
                   </Boton>
                 </div>
               </div>
@@ -421,9 +424,9 @@ export default function PaginaParametros() {
           setEliminandoParam(false)
           setParamAEliminar(null)
         }}
-        titulo="Eliminar parámetro"
-        mensaje={`¿Estás seguro de eliminar el parámetro ${paramAEliminar?.cat} / ${paramAEliminar?.tipo}? Esta acción no se puede deshacer.`}
-        textoConfirmar="Eliminar"
+        titulo={t('eliminarTitulo')}
+        mensaje={paramAEliminar ? t('eliminarConfirm', { cat: paramAEliminar.cat, tipo: paramAEliminar.tipo }) : ''}
+        textoConfirmar={tc('eliminar')}
         cargando={eliminandoParam}
       />
     </div>

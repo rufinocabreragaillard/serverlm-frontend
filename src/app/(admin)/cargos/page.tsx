@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -34,6 +35,8 @@ const selectClass =
   'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50'
 
 export default function PaginaCargos() {
+  const t = useTranslations('cargos')
+  const tc = useTranslations('common')
   const { usuario } = useAuth()
   const grupoActivo = usuario?.grupo_activo ?? ''
 
@@ -146,7 +149,7 @@ export default function PaginaCargos() {
       setBusquedaRol('')
       setDropdownRolAbierto(false)
       await cargarRolesCargo(crud.editando.id_cargo)
-    } catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error al asignar rol') }
+    } catch (e) { setErrorRol(e instanceof Error ? e.message : t('errorAlAsignarRol')) }
     finally { setAsignandoRol(false) }
   }
 
@@ -156,7 +159,7 @@ export default function PaginaCargos() {
     try {
       await cargosApi.quitarRol(crud.editando.id_cargo, id_rol)
       await cargarRolesCargo(crud.editando.id_cargo)
-    } catch (e) { setErrorRol(e instanceof Error ? e.message : 'Error al quitar rol') }
+    } catch (e) { setErrorRol(e instanceof Error ? e.message : t('errorAlQuitarRol')) }
   }
 
   const moverRol = async (idx: number, dir: 'arriba' | 'abajo') => {
@@ -188,58 +191,58 @@ export default function PaginaCargos() {
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Cargos</h2>
-        <p className="text-sm text-texto-muted mt-1">Cargos organizacionales del grupo activo</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       <BarraHerramientas
         busqueda={crud.busqueda}
         onBusqueda={crud.setBusqueda}
-        placeholderBusqueda="Buscar por código, nombre o alias..."
+        placeholderBusqueda={t('buscarPlaceholder')}
         onNuevo={abrirNuevo}
-        textoNuevo="Nuevo cargo"
+        textoNuevo={t('nuevoCargo')}
         excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
         excelColumnas={[
-          { titulo: 'Código', campo: 'codigo_cargo' },
-          { titulo: 'Nombre', campo: 'nombre_cargo' },
-          { titulo: 'Alias', campo: 'alias' },
-          { titulo: 'Entidad', campo: 'codigo_entidad' },
-          { titulo: 'Descripción', campo: 'descripcion' },
-          { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
+          { titulo: t('colCodigo'), campo: 'codigo_cargo' },
+          { titulo: t('colNombre'), campo: 'nombre_cargo' },
+          { titulo: t('colAlias'), campo: 'alias' },
+          { titulo: t('colEntidad'), campo: 'codigo_entidad' },
+          { titulo: t('colDescripcion'), campo: 'descripcion' },
+          { titulo: tc('activo'), campo: 'activo', formato: (v: unknown) => (v ? tc('activo') : tc('inactivo')) },
         ]}
         excelNombreArchivo="cargos"
       />
 
       <TablaCrud
         columnas={[
-          columnaNombre<Cargo>('Nombre', (c) => c.nombre_cargo),
-          { titulo: 'Alias', render: (c: Cargo) => c.alias || '—' },
+          columnaNombre<Cargo>(t('colNombre'), (c) => c.nombre_cargo),
+          { titulo: t('colAlias'), render: (c: Cargo) => c.alias || '—' },
           {
-            titulo: 'Entidad',
+            titulo: t('colEntidad'),
             render: (c: Cargo) =>
               c.codigo_entidad ? (
                 <span className="text-sm">{nombreEntidad(c.codigo_entidad)}</span>
               ) : (
-                <Insignia variante="neutro">Todo el grupo</Insignia>
+                <Insignia variante="neutro">{t('todoElGrupo')}</Insignia>
               ),
           },
-          columnaDescripcion<Cargo>('Descripción', (c) => c.descripcion),
+          columnaDescripcion<Cargo>(t('colDescripcion'), (c) => c.descripcion),
           columnaEstado<Cargo>((c) => c.activo),
-          columnaCodigo<Cargo>('Código', (c) => c.codigo_cargo),
+          columnaCodigo<Cargo>(t('colCodigo'), (c) => c.codigo_cargo),
         ]}
         items={filtradosOrdenados}
         cargando={crud.cargando}
         getId={(c) => String(c.id_cargo)}
         onEditar={abrirEditar}
         onEliminar={crud.setConfirmacion}
-        textoVacio="No se encontraron cargos"
+        textoVacio={t('sinCargos')}
       />
 
       {/* ── Modal crear/editar ─────────────────────────────────────────────── */}
       <Modal
         abierto={crud.modal}
         alCerrar={crud.cerrarModal}
-        titulo={crud.editando ? `Cargo: ${crud.editando.nombre_cargo}` : 'Nuevo cargo'}
+        titulo={crud.editando ? t('editarTitulo', { nombre: crud.editando.nombre_cargo }) : t('nuevoTitulo')}
       >
         <div className="flex flex-col gap-0 min-w-[480px]">
           {/* Tabs (solo si editando) */}
@@ -255,7 +258,7 @@ export default function PaginaCargos() {
                       : 'text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {tab === 'datos' ? 'Datos' : 'Roles'}
+                  {tab === 'datos' ? t('tabDatos') : t('tabRoles')}
                 </button>
               ))}
             </div>
@@ -265,33 +268,33 @@ export default function PaginaCargos() {
           {(tabActiva === 'datos' || !crud.editando) && (
             <div className="flex flex-col gap-4">
               {crud.editando && (
-                <Input etiqueta="Código" value={crud.form.codigo_cargo} onChange={() => {}} disabled />
+                <Input etiqueta={t('etiquetaCodigo')} value={crud.form.codigo_cargo} onChange={() => {}} disabled />
               )}
 
               <Input
-                etiqueta="Nombre *"
+                etiqueta={t('etiquetaNombre')}
                 value={crud.form.nombre_cargo}
                 onChange={(e) => crud.updateForm('nombre_cargo', e.target.value)}
-                placeholder="Ej: Alcalde, Director de Finanzas"
+                placeholder={t('placeholderNombre')}
                 autoFocus
               />
 
               <Input
-                etiqueta="Alias"
+                etiqueta={t('etiquetaAlias')}
                 value={crud.form.alias}
                 onChange={(e) => crud.updateForm('alias', e.target.value)}
-                placeholder="Nombre corto (se autogenera del nombre si se deja vacío)"
+                placeholder={t('placeholderAlias')}
               />
 
               {/* Selector de entidad */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Entidad</label>
+                <label className="text-sm font-medium text-texto">{t('etiquetaEntidad')}</label>
                 <select
                   className={selectClass}
                   value={crud.form.codigo_entidad}
                   onChange={(e) => crud.updateForm('codigo_entidad', e.target.value)}
                 >
-                  <option value="">— Todo el grupo —</option>
+                  <option value="">{t('todoElGrupoOpcion')}</option>
                   {entidades.map((e) => (
                     <option key={e.codigo_entidad} value={e.codigo_entidad}>
                       {e.nombre}
@@ -299,15 +302,15 @@ export default function PaginaCargos() {
                   ))}
                 </select>
                 <p className="text-xs text-texto-muted">
-                  Deja vacío si el cargo aplica a todo el grupo.
+                  {t('descEntidad')}
                 </p>
               </div>
 
               <Textarea
-                etiqueta="Descripción"
+                etiqueta={t('etiquetaDescripcion')}
                 value={crud.form.descripcion}
                 onChange={(e) => crud.updateForm('descripcion', e.target.value)}
-                placeholder="Descripción opcional del cargo"
+                placeholder={t('placeholderDescripcion')}
                 rows={3}
               />
 
@@ -319,20 +322,20 @@ export default function PaginaCargos() {
 
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={crud.cerrarModal}>
-                  Cancelar
+                  {tc('cancelar')}
                 </Boton>
                 <Boton
                   variante="primario"
                   onClick={() => {
                     if (!crud.form.nombre_cargo.trim()) {
-                      crud.setError('El nombre del cargo es obligatorio')
+                      crud.setError(t('errorNombreObligatorio'))
                       return
                     }
                     crud.guardar()
                   }}
                   cargando={crud.guardando}
                 >
-                  {crud.editando ? 'Guardar' : 'Crear'}
+                  {crud.editando ? tc('guardar') : tc('crear')}
                 </Boton>
               </div>
             </div>
@@ -343,13 +346,13 @@ export default function PaginaCargos() {
             <div className="flex flex-col gap-4">
               {/* Selector buscable de roles */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-texto">Agregar rol</label>
+                <label className="text-sm font-medium text-texto">{t('agregarRol')}</label>
                 <div className="relative" ref={dropdownRolRef}>
                   <div className="flex items-center border border-borde rounded-lg bg-surface px-3 py-2 gap-2">
                     <Search className="w-4 h-4 text-texto-muted shrink-0" />
                     <input
                       className="flex-1 bg-transparent text-sm text-texto outline-none placeholder:text-texto-muted"
-                      placeholder="Buscar rol por nombre o código..."
+                      placeholder={t('buscarRolPlaceholder')}
                       value={busquedaRol}
                       onChange={(e) => { setBusquedaRol(e.target.value); setDropdownRolAbierto(true) }}
                       onFocus={() => setDropdownRolAbierto(true)}
@@ -366,7 +369,7 @@ export default function PaginaCargos() {
                         >
                           <span>{r.nombre}</span>
                           {r.codigo_grupo == null && (
-                            <Insignia variante="secundario">Global</Insignia>
+                            <Insignia variante="secundario">{t('global')}</Insignia>
                           )}
                         </button>
                       ))}
@@ -377,19 +380,19 @@ export default function PaginaCargos() {
 
               {/* Lista de roles asignados */}
               {cargandoRoles ? (
-                <p className="text-sm text-texto-muted">Cargando roles...</p>
+                <p className="text-sm text-texto-muted">{t('cargandoRoles')}</p>
               ) : rolesCargo.length === 0 ? (
                 <p className="text-sm text-texto-muted italic">
-                  Este cargo no tiene roles asignados.
+                  {t('sinRoles')}
                 </p>
               ) : (
                 <Tabla>
                   <TablaCabecera>
                     <tr>
-                      <TablaTh>Rol</TablaTh>
+                      <TablaTh>{t('colRol')}</TablaTh>
                       <TablaTh></TablaTh>
-                      <TablaTh alineacion="derecha">Orden</TablaTh>
-                      <TablaTh alineacion="derecha">Acción</TablaTh>
+                      <TablaTh alineacion="derecha">{t('colOrden')}</TablaTh>
+                      <TablaTh alineacion="derecha">{t('colAccion')}</TablaTh>
                     </tr>
                   </TablaCabecera>
                   <TablaCuerpo>
@@ -404,7 +407,7 @@ export default function PaginaCargos() {
                           </TablaTd>
                           <TablaTd>
                             {rc.roles?.codigo_grupo == null && (
-                              <Insignia variante="secundario">Global</Insignia>
+                              <Insignia variante="secundario">{t('global')}</Insignia>
                             )}
                           </TablaTd>
                           <TablaTd alineacion="derecha">
@@ -431,7 +434,7 @@ export default function PaginaCargos() {
                               tamano="sm"
                               onClick={() => quitarRol(rc.id_rol)}
                             >
-                              Quitar
+                              {t('quitar')}
                             </Boton>
                           </TablaTd>
                         </TablaFila>
@@ -454,13 +457,13 @@ export default function PaginaCargos() {
         abierto={!!crud.confirmacion}
         alCerrar={() => crud.setConfirmacion(null)}
         alConfirmar={crud.ejecutarEliminacion}
-        titulo="Eliminar cargo"
+        titulo={t('eliminarTitulo')}
         mensaje={
           crud.confirmacion
-            ? `¿Eliminar el cargo "${crud.confirmacion.nombre_cargo}"? Esta acción no se puede deshacer.`
+            ? t('eliminarConfirm', { nombre: crud.confirmacion.nombre_cargo })
             : ''
         }
-        textoConfirmar="Eliminar"
+        textoConfirmar={tc('eliminar')}
         variante="peligro"
         cargando={crud.eliminando}
       />

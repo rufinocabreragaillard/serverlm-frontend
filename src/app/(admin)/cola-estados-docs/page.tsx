@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Trash2, Download, Search, Play, XCircle, CheckCircle, Clock, AlertTriangle, RefreshCw } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,8 @@ const ESTADO_CONFIG: Record<string, { variante: 'exito' | 'error' | 'advertencia
 }
 
 export default function PaginaColaEstadosDocs() {
+  const t = useTranslations('colaEstadosDocs')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -178,15 +181,15 @@ export default function PaginaColaEstadosDocs() {
     <div className="flex flex-col gap-6 max-w-6xl">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-texto">Cola de Procesamiento</h2>
-        <p className="text-sm text-texto-muted mt-1">Cola de transición de estados de documentos</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="max-w-sm flex-1">
           <Input
-            placeholder="Buscar por documento o estado..."
+            placeholder={t('buscarPlaceholder')}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             icono={<Search size={15} />}
@@ -199,11 +202,11 @@ export default function PaginaColaEstadosDocs() {
           value={filtroEstado}
           onChange={(e) => setFiltroEstado(e.target.value)}
         >
-          <option value="">Todos los estados</option>
-          <option value="PENDIENTE">Pendiente</option>
-          <option value="EN_PROCESO">En proceso</option>
-          <option value="COMPLETADO">Completado</option>
-          <option value="ERROR">Error</option>
+          <option value="">{t('todosEstados')}</option>
+          <option value="PENDIENTE">{t('pendiente')}</option>
+          <option value="EN_PROCESO">{t('enProceso')}</option>
+          <option value="COMPLETADO">{t('completado')}</option>
+          <option value="ERROR">{t('error')}</option>
         </select>
 
         <div className="flex gap-2 ml-auto flex-wrap">
@@ -217,14 +220,14 @@ export default function PaginaColaEstadosDocs() {
                   nombre_documento: c.documentos?.nombre_documento || '',
                 })) as unknown as Record<string, unknown>[],
                 [
-                  { titulo: 'ID', campo: 'id_cola' },
-                  { titulo: 'Documento', campo: 'nombre_documento' },
-                  { titulo: 'Estado Origen', campo: 'codigo_estado_doc_origen' },
-                  { titulo: 'Estado Destino', campo: 'codigo_estado_doc_destino' },
-                  { titulo: 'Estado Cola', campo: 'estado_cola' },
-                  { titulo: 'Fecha Cola', campo: 'fecha_cola' },
-                  { titulo: 'Intentos', campo: 'intentos' },
-                  { titulo: 'Resultado', campo: 'resultado' },
+                  { titulo: t('excelId'), campo: 'id_cola' },
+                  { titulo: t('excelDocumento'), campo: 'nombre_documento' },
+                  { titulo: t('excelEstadoOrigen'), campo: 'codigo_estado_doc_origen' },
+                  { titulo: t('excelEstadoDestino'), campo: 'codigo_estado_doc_destino' },
+                  { titulo: t('colEstadoCola'), campo: 'estado_cola' },
+                  { titulo: t('colFecha'), campo: 'fecha_cola' },
+                  { titulo: t('colIntentos'), campo: 'intentos' },
+                  { titulo: t('excelResultado'), campo: 'resultado' },
                 ],
                 'cola-estados-docs'
               )
@@ -240,11 +243,11 @@ export default function PaginaColaEstadosDocs() {
             disabled={completados === 0}
           >
             <XCircle size={16} />
-            Cerrar cola ({completados})
+            {t('cerrarCola', { n: completados })}
           </Boton>
           <Boton variante="primario" onClick={abrirInicializar}>
             <Plus size={16} />
-            Inicializar cola
+            {t('inicializarCola')}
           </Boton>
         </div>
       </div>
@@ -253,27 +256,27 @@ export default function PaginaColaEstadosDocs() {
       <Tabla>
         <TablaCabecera>
           <tr>
-            <TablaTh>ID</TablaTh>
-            <TablaTh>Documento</TablaTh>
-            <TablaTh>Estado Origen</TablaTh>
-            <TablaTh>Estado Destino</TablaTh>
-            <TablaTh>Estado Cola</TablaTh>
-            <TablaTh>Fecha</TablaTh>
-            <TablaTh>Intentos</TablaTh>
-            <TablaTh className="text-right">Acciones</TablaTh>
+            <TablaTh>{t('colId')}</TablaTh>
+            <TablaTh>{t('colDocumento')}</TablaTh>
+            <TablaTh>{t('colEstadoOrigen')}</TablaTh>
+            <TablaTh>{t('colEstadoDestino')}</TablaTh>
+            <TablaTh>{t('colEstadoCola')}</TablaTh>
+            <TablaTh>{t('colFecha')}</TablaTh>
+            <TablaTh>{t('colIntentos')}</TablaTh>
+            <TablaTh className="text-right">{tc('acciones')}</TablaTh>
           </tr>
         </TablaCabecera>
         <TablaCuerpo>
           {cargando ? (
             <TablaFila>
               <TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>
-                Cargando...
+                {tc('cargando')}
               </TablaTd>
             </TablaFila>
           ) : filtrados.length === 0 ? (
             <TablaFila>
               <TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>
-                Cola vacía
+                {t('colaVacia')}
               </TablaTd>
             </TablaFila>
           ) : (
@@ -311,7 +314,7 @@ export default function PaginaColaEstadosDocs() {
                       <button
                         onClick={() => setConfirmEliminar(c)}
                         className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
-                        title="Eliminar"
+                        title={tc('eliminar')}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -337,20 +340,20 @@ export default function PaginaColaEstadosDocs() {
       <Modal
         abierto={modalInit}
         alCerrar={() => setModalInit(false)}
-        titulo="Inicializar Cola"
+        titulo={t('inicializarTitulo')}
       >
         <div className="flex flex-col gap-4 min-w-[550px]">
           {!resultadoInit ? (
             <>
               {/* Selector de estado destino */}
               <div>
-                <label className="block text-sm font-medium text-texto mb-1.5">Estado destino *</label>
+                <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaEstadoDestino')}</label>
                 <select
                   className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
                   value={estadoDestino}
                   onChange={(e) => setEstadoDestino(e.target.value)}
                 >
-                  <option value="">Seleccionar estado...</option>
+                  <option value="">{t('seleccionarEstado')}</option>
                   {estadosActivos.map((e) => (
                     <option key={e.codigo_estado_doc} value={e.codigo_estado_doc}>
                       {e.nombre_estado}
@@ -363,21 +366,21 @@ export default function PaginaColaEstadosDocs() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-sm font-medium text-texto">
-                    Documentos ({docsSeleccionados.size} seleccionados)
+                    {t('etiquetaDocumentos', { n: docsSeleccionados.size })}
                   </label>
                   <button onClick={seleccionarTodos} className="text-xs text-primario hover:underline">
-                    {docsSeleccionados.size === docsFiltrados.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                    {docsSeleccionados.size === docsFiltrados.length ? t('deseleccionarTodos') : t('seleccionarTodos')}
                   </button>
                 </div>
                 <Input
-                  placeholder="Buscar documentos..."
+                  placeholder={t('buscarDocumentosPlaceholder')}
                   value={busquedaDocs}
                   onChange={(e) => setBusquedaDocs(e.target.value)}
                   icono={<Search size={14} />}
                 />
                 <div className="border border-borde rounded-lg mt-2 max-h-[300px] overflow-y-auto">
                   {docsFiltrados.length === 0 ? (
-                    <p className="px-4 py-3 text-sm text-texto-muted text-center">Sin documentos</p>
+                    <p className="px-4 py-3 text-sm text-texto-muted text-center">{t('sinDocumentos')}</p>
                   ) : (
                     docsFiltrados.map((d) => (
                       <label
@@ -392,7 +395,7 @@ export default function PaginaColaEstadosDocs() {
                         />
                         <span className="flex-1">{d.nombre_documento}</span>
                         <span className="text-xs text-texto-muted">
-                          {d.codigo_estado_doc ? nombreEstado(d.codigo_estado_doc) : 'Sin estado'}
+                          {d.codigo_estado_doc ? nombreEstado(d.codigo_estado_doc) : t('sinEstado')}
                         </span>
                       </label>
                     ))
@@ -402,7 +405,7 @@ export default function PaginaColaEstadosDocs() {
 
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalInit(false)}>
-                  Cancelar
+                  {tc('cancelar')}
                 </Boton>
                 <Boton
                   variante="primario"
@@ -411,28 +414,28 @@ export default function PaginaColaEstadosDocs() {
                   disabled={!estadoDestino || docsSeleccionados.size === 0}
                 >
                   <RefreshCw size={15} />
-                  Encolar {docsSeleccionados.size} documento{docsSeleccionados.size !== 1 ? 's' : ''}
+                  {t('encolar', { n: docsSeleccionados.size })}
                 </Boton>
               </div>
             </>
           ) : (
             <>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <p className="text-lg font-medium text-green-800">Cola inicializada</p>
+                <p className="text-lg font-medium text-green-800">{t('colaInicializada')}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="border border-borde rounded-lg p-3 text-center">
                   <p className="text-2xl font-bold text-green-600">{resultadoInit.encolados}</p>
-                  <p className="text-xs text-texto-muted">Encolados</p>
+                  <p className="text-xs text-texto-muted">{t('encolados')}</p>
                 </div>
                 <div className="border border-borde rounded-lg p-3 text-center">
                   <p className="text-2xl font-bold text-texto-muted">{resultadoInit.omitidos}</p>
-                  <p className="text-xs text-texto-muted">Omitidos (ya en cola)</p>
+                  <p className="text-xs text-texto-muted">{t('omitidos')}</p>
                 </div>
               </div>
               <div className="flex justify-end pt-2">
                 <Boton variante="primario" onClick={() => setModalInit(false)}>
-                  Cerrar
+                  {tc('cerrar')}
                 </Boton>
               </div>
             </>
@@ -445,9 +448,9 @@ export default function PaginaColaEstadosDocs() {
         abierto={confirmCerrar}
         alCerrar={() => setConfirmCerrar(false)}
         alConfirmar={ejecutarCerrar}
-        titulo="Cerrar cola"
-        mensaje={`¿Eliminar los ${completados} ítem(s) completados de la cola? Esta acción no se puede deshacer.`}
-        textoConfirmar="Eliminar completados"
+        titulo={t('cerrarColaTitulo')}
+        mensaje={t('cerrarColaConfirm', { n: completados })}
+        textoConfirmar={t('eliminarCompletados')}
         cargando={cerrando}
       />
 
@@ -456,9 +459,9 @@ export default function PaginaColaEstadosDocs() {
         abierto={!!confirmEliminar}
         alCerrar={() => setConfirmEliminar(null)}
         alConfirmar={ejecutarEliminar}
-        titulo="Eliminar ítem de la cola"
-        mensaje={confirmEliminar ? `¿Eliminar el ítem #${confirmEliminar.id_cola} (${confirmEliminar.documentos?.nombre_documento || 'Doc #' + confirmEliminar.codigo_documento})?` : ''}
-        textoConfirmar="Eliminar"
+        titulo={t('eliminarItemTitulo')}
+        mensaje={confirmEliminar ? t('eliminarItemConfirm', { id: confirmEliminar.id_cola, nombre: confirmEliminar.documentos?.nombre_documento || `Doc #${confirmEliminar.codigo_documento}` }) : ''}
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </div>

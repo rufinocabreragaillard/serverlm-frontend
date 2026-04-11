@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { Download, Loader2, RefreshCw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -30,6 +31,7 @@ function fmtInt(n: number | undefined | null) {
 }
 
 export default function PaginaLLMUso() {
+  const t = useTranslations('llmUso')
   const { grupoActivo } = useAuth()
 
   const [resumen, setResumen] = useState<LLMUsoResumen | null>(null)
@@ -99,19 +101,19 @@ export default function PaginaLLMUso() {
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Uso LLM</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('titulo')}</h1>
           <p className="text-sm text-gray-600">
-            Consumo de modelos LLM del grupo <strong>{grupoActivo}</strong>.
+            {t('descripcion', { grupo: grupoActivo })}
           </p>
         </div>
         <div className="flex gap-2">
           <Boton variante="contorno" onClick={cargar}>
             <RefreshCw className="w-4 h-4 mr-1" />
-            Refrescar
+            {t('refrescar')}
           </Boton>
           <Boton variante="contorno" onClick={exportar}>
             <Download className="w-4 h-4 mr-1" />
-            Exportar
+            {t('exportar')}
           </Boton>
         </div>
       </div>
@@ -120,23 +122,23 @@ export default function PaginaLLMUso() {
       {resumen && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-xs text-gray-500 uppercase">Mes actual</div>
+            <div className="text-xs text-gray-500 uppercase">{t('mesActual')}</div>
             <div className="text-2xl font-semibold text-[#074B91] mt-1">{resumen.mes}</div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-xs text-gray-500 uppercase">Llamadas</div>
+            <div className="text-xs text-gray-500 uppercase">{t('llamadas')}</div>
             <div className="text-2xl font-semibold text-gray-900 mt-1">
               {fmtInt(resumen.total_llamadas)}
             </div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-xs text-gray-500 uppercase">Costo total</div>
+            <div className="text-xs text-gray-500 uppercase">{t('costoTotal')}</div>
             <div className="text-2xl font-semibold text-gray-900 mt-1">
               {fmtUsd(resumen.total_costo_usd)}
             </div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-xs text-gray-500 uppercase">Key casa / grupo</div>
+            <div className="text-xs text-gray-500 uppercase">{t('keyCasaGrupo')}</div>
             <div className="text-sm font-medium text-gray-900 mt-2">
               <span className="text-amber-600">{fmtUsd(resumen.costo_key_casa_usd)}</span>{' '}
               /{' '}
@@ -150,15 +152,15 @@ export default function PaginaLLMUso() {
       {resumen && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Por modelo</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('porModelo')}</h3>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-gray-500 text-xs uppercase border-b">
-                  <th className="text-left py-1">Modelo</th>
-                  <th className="text-right py-1">Llamadas</th>
-                  <th className="text-right py-1">Tokens in</th>
-                  <th className="text-right py-1">Tokens out</th>
-                  <th className="text-right py-1">Costo</th>
+                  <th className="text-left py-1">{t('colModelo')}</th>
+                  <th className="text-right py-1">{t('colLlamadas')}</th>
+                  <th className="text-right py-1">{t('colTokenIn')}</th>
+                  <th className="text-right py-1">{t('colTokenOut')}</th>
+                  <th className="text-right py-1">{t('colCosto')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,7 +176,7 @@ export default function PaginaLLMUso() {
                 {resumen.por_modelo.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-4 text-center text-gray-400">
-                      Sin datos este mes
+                      {t('sinDatosMes')}
                     </td>
                   </tr>
                 )}
@@ -183,13 +185,13 @@ export default function PaginaLLMUso() {
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Por usuario</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('porUsuario')}</h3>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-gray-500 text-xs uppercase border-b">
-                  <th className="text-left py-1">Usuario</th>
-                  <th className="text-right py-1">Llamadas</th>
-                  <th className="text-right py-1">Costo</th>
+                  <th className="text-left py-1">{t('colNombre')}</th>
+                  <th className="text-right py-1">{t('colLlamadas')}</th>
+                  <th className="text-right py-1">{t('colCosto')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -203,7 +205,7 @@ export default function PaginaLLMUso() {
                 {resumen.por_usuario.length === 0 && (
                   <tr>
                     <td colSpan={3} className="py-4 text-center text-gray-400">
-                      Sin datos este mes
+                      {t('sinDatosMes')}
                     </td>
                   </tr>
                 )}
@@ -215,40 +217,40 @@ export default function PaginaLLMUso() {
 
       {/* Filtros detalle */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Detalle de llamadas</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('detalleLlamadas')}</h3>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-3">
           <Input
             type="date"
             value={filtros.desde}
             onChange={(e) => setFiltros({ ...filtros, desde: e.target.value })}
-            placeholder="Desde"
+            placeholder={t('filterDesde')}
           />
           <Input
             type="date"
             value={filtros.hasta}
             onChange={(e) => setFiltros({ ...filtros, hasta: e.target.value })}
-            placeholder="Hasta"
+            placeholder={t('filterHasta')}
           />
           <select
             value={filtros.proveedor}
             onChange={(e) => setFiltros({ ...filtros, proveedor: e.target.value })}
             className="border border-gray-300 rounded px-2 py-1 text-sm"
           >
-            <option value="">Todos proveedores</option>
+            <option value="">{t('filterTodosProveedores')}</option>
             <option value="anthropic">Anthropic</option>
             <option value="google">Google</option>
           </select>
           <Input
-            placeholder="Modelo"
+            placeholder={t('filterModelo')}
             value={filtros.modelo}
             onChange={(e) => setFiltros({ ...filtros, modelo: e.target.value })}
           />
           <Input
-            placeholder="Usuario"
+            placeholder={t('filterUsuario')}
             value={filtros.codigo_usuario}
             onChange={(e) => setFiltros({ ...filtros, codigo_usuario: e.target.value })}
           />
-          <Boton onClick={aplicarFiltros}>Aplicar</Boton>
+          <Boton onClick={aplicarFiltros}>{t('aplicar')}</Boton>
         </div>
 
         {cargando ? (
@@ -259,16 +261,16 @@ export default function PaginaLLMUso() {
           <Tabla>
             <TablaCabecera>
               <TablaFila>
-                <TablaTh>Fecha</TablaTh>
-                <TablaTh>Proveedor</TablaTh>
-                <TablaTh>Modelo</TablaTh>
-                <TablaTh>Key</TablaTh>
-                <TablaTh>Usuario</TablaTh>
-                <TablaTh>Función</TablaTh>
-                <TablaTh className="text-right">Tok in</TablaTh>
-                <TablaTh className="text-right">Tok out</TablaTh>
-                <TablaTh className="text-right">Costo</TablaTh>
-                <TablaTh>Estado</TablaTh>
+                <TablaTh>{t('colFecha')}</TablaTh>
+                <TablaTh>{t('colProveedor')}</TablaTh>
+                <TablaTh>{t('colModelo')}</TablaTh>
+                <TablaTh>{t('colKey')}</TablaTh>
+                <TablaTh>{t('colUsuario')}</TablaTh>
+                <TablaTh>{t('colFuncion')}</TablaTh>
+                <TablaTh className="text-right">{t('colTokIn')}</TablaTh>
+                <TablaTh className="text-right">{t('colTokOut')}</TablaTh>
+                <TablaTh className="text-right">{t('colCosto')}</TablaTh>
+                <TablaTh>{t('colEstado')}</TablaTh>
               </TablaFila>
             </TablaCabecera>
             <TablaCuerpo>
@@ -303,7 +305,7 @@ export default function PaginaLLMUso() {
               {filas.length === 0 && (
                 <TablaFila>
                   <TablaTd colSpan={10} className="text-center text-gray-400 py-6">
-                    Sin llamadas registradas
+                    {t('sinLlamadas')}
                   </TablaTd>
                 </TablaFila>
               )}

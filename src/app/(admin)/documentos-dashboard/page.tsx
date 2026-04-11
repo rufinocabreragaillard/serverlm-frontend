@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { FileText, Cpu, BookOpen, Tags, FolderTree, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
 import { documentosApi, estadosDocsApi } from '@/lib/api'
 import type { Documento, EstadoDoc } from '@/lib/tipos'
 
 export default function PaginaDocumentosDashboard() {
+  const t = useTranslations('documentosDashboard')
+  const tc = useTranslations('common')
   const [documentos, setDocumentos] = useState<Documento[]>([])
   const [estados, setEstados] = useState<EstadoDoc[]>([])
   const [cargando, setCargando] = useState(true)
@@ -45,25 +48,25 @@ export default function PaginaDocumentosDashboard() {
   // Tarjetas resumen
   const tarjetas = [
     {
-      titulo: 'Total documentos',
+      titulo: t('totalDocumentos'),
       valor: total,
       icono: FileText,
       color: 'bg-primario-muy-claro text-primario',
     },
     {
-      titulo: 'Activos',
+      titulo: t('activos'),
       valor: activos,
       icono: CheckCircle,
       color: 'bg-green-50 text-exito',
     },
     {
-      titulo: 'Revisar',
+      titulo: t('revisar'),
       valor: conteoPorEstado['REVISAR'] || 0,
       icono: Clock,
       color: 'bg-acento-muy-claro text-acento',
     },
     {
-      titulo: 'Sin estado',
+      titulo: t('sinEstado'),
       valor: sinEstado,
       icono: AlertTriangle,
       color: 'bg-yellow-50 text-yellow-700',
@@ -72,17 +75,17 @@ export default function PaginaDocumentosDashboard() {
 
   // Accesos rápidos
   const accesos = [
-    { nombre: 'Procesar documentos', href: '/procesar-documentos', icono: Cpu },
-    { nombre: 'Cargar documentos', href: '/cargar-documentos', icono: FolderTree },
-    { nombre: 'Categorías de documentos', href: '/categorias-caracteristica-docs', icono: Tags },
+    { nombre: t('irProcesarDocumentos'), href: '/procesar-documentos', icono: Cpu },
+    { nombre: t('irCargarDocumentos'), href: '/cargar-documentos', icono: FolderTree },
+    { nombre: t('irCategorias'), href: '/categorias-caracteristica-docs', icono: Tags },
   ]
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Dashboard de Documentos</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-texto-muted text-sm mt-1">
-          Vista general del sistema de documentos del grupo activo
+          {t('subtitulo')}
         </p>
       </div>
 
@@ -117,7 +120,7 @@ export default function PaginaDocumentosDashboard() {
           <TarjetaContenido>
             <h3 className="text-sm font-semibold text-texto mb-4 flex items-center gap-2">
               <FileText size={15} className="text-primario" />
-              Documentos por estado
+              {t('documentosPorEstado')}
             </h3>
             {cargando ? (
               <div className="flex flex-col gap-2">
@@ -126,7 +129,7 @@ export default function PaginaDocumentosDashboard() {
                 ))}
               </div>
             ) : estadosOrdenados.length === 0 ? (
-              <p className="text-sm text-texto-muted text-center py-6">No hay estados configurados</p>
+              <p className="text-sm text-texto-muted text-center py-6">{t('sinEstadosConfigurados')}</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {estadosOrdenados.map((e) => {
@@ -157,7 +160,7 @@ export default function PaginaDocumentosDashboard() {
           <TarjetaContenido>
             <h3 className="text-sm font-semibold text-texto mb-3 flex items-center gap-2">
               <Cpu size={15} className="text-primario" />
-              Accesos rápidos
+              {t('accesosRapidos')}
             </h3>
             <div className="flex flex-col gap-2">
               {accesos.map((acc) => {

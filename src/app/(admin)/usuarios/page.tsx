@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Search, Pencil, Trash2, X, Star, Phone, PhoneOff, Download, ChevronUp, ChevronDown } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -34,6 +35,8 @@ type EntidadAsignada = {
 const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50'
 
 export default function PaginaUsuarios() {
+  const t = useTranslations('usuarios')
+  const tc = useTranslations('common')
   const { usuario: usuarioActual } = useAuth()
   const grupoActivo = usuarioActual?.grupo_activo ?? ''
   const grupoAnteriorRef = useRef(grupoActivo)
@@ -723,7 +726,7 @@ export default function PaginaUsuarios() {
 
                 <div className="col-span-2">
                   <Textarea
-                    etiqueta="Descripción"
+                    etiqueta={t('etiquetaDescripcion')}
                     value={form.descripcion}
                     onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
                     rows={3}
@@ -1110,9 +1113,9 @@ export default function PaginaUsuarios() {
         abierto={!!usuarioAEliminar}
         alCerrar={() => setUsuarioAEliminar(null)}
         alConfirmar={ejecutarEliminar}
-        titulo="Eliminar usuario"
-        mensaje={`¿Estás seguro de eliminar al usuario "${usuarioAEliminar?.nombre}"? Esta acción es irreversible y borrará en cascada todas sus relaciones (roles, entidades, grupos, parámetros).`}
-        textoConfirmar="Eliminar"
+        titulo={tc('eliminar')}
+        mensaje={tc('confirmarEliminar', { nombre: usuarioAEliminar?.nombre ?? '' })}
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </div>

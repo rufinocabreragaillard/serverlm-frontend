@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Pencil, Trash2, Download, Search, ChevronDown as ChevronIcon } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -16,6 +17,8 @@ import { useAuth } from '@/context/AuthContext'
 type TabModal = 'datos' | 'caracteristicas'
 
 export default function PaginaPersonas() {
+  const t = useTranslations('personas')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
 
   // ── Lista ─────────────────────────────────────────────────────────────────
@@ -145,7 +148,7 @@ export default function PaginaPersonas() {
 
   const guardar = async () => {
     if (!form.nombre.trim()) {
-      setError('El nombre es obligatorio')
+      setError(t('errorNombreObligatorio'))
       return
     }
     setGuardando(true)
@@ -169,7 +172,7 @@ export default function PaginaPersonas() {
       setModal(false)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -240,14 +243,14 @@ export default function PaginaPersonas() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Personas</h2>
-        <p className="text-sm text-texto-muted mt-1">Gestión de personas y sus características</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         <div className="max-w-sm flex-1">
-          <Input placeholder="Buscar por nombre o documento..." value={busqueda}
+          <Input placeholder={t('buscarPlaceholder')} value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
         </div>
         <div className="flex gap-2 ml-auto">
@@ -258,11 +261,11 @@ export default function PaginaPersonas() {
               { titulo: 'Tipo Doc', campo: 'codigo_tipo_doc' },
               { titulo: 'Documento', campo: 'documento_id' },
               { titulo: 'Entidad', campo: 'codigo_entidad' },
-              { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
+              { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? tc('activo') : tc('inactivo')) },
             ], 'personas')}>
-            <Download size={15} />Excel
+            <Download size={15} />{tc('exportarExcel')}
           </Boton>
-          <Boton variante="primario" onClick={abrirNuevo}><Plus size={16} />Nueva persona</Boton>
+          <Boton variante="primario" onClick={abrirNuevo}><Plus size={16} />{t('nuevaPersona')}</Boton>
         </div>
       </div>
 
@@ -270,30 +273,30 @@ export default function PaginaPersonas() {
       <Tabla>
         <TablaCabecera>
           <tr>
-            <TablaTh>Nombre</TablaTh>
-            <TablaTh>Tipo Doc</TablaTh>
-            <TablaTh>Documento</TablaTh>
-            <TablaTh>Entidad</TablaTh>
-            <TablaTh>Estado</TablaTh>
-            <TablaTh className="text-right">Acciones</TablaTh>
+            <TablaTh>{t('colNombre')}</TablaTh>
+            <TablaTh>{t('colTipoDoc')}</TablaTh>
+            <TablaTh>{t('colDocumento')}</TablaTh>
+            <TablaTh>{t('colEntidad')}</TablaTh>
+            <TablaTh>{t('colEstado')}</TablaTh>
+            <TablaTh className="text-right">{tc('acciones')}</TablaTh>
           </tr>
         </TablaCabecera>
         <TablaCuerpo>
           {cargando ? (
-            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando...</TablaTd></TablaFila>
+            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>{tc('cargando')}</TablaTd></TablaFila>
           ) : filtrados.length === 0 ? (
-            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>No se encontraron personas</TablaTd></TablaFila>
+            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>{t('sinPersonas')}</TablaTd></TablaFila>
           ) : filtrados.map((p) => (
             <TablaFila key={p.id_persona}>
               <TablaTd className="font-medium">{p.nombre}</TablaTd>
               <TablaTd className="text-sm text-texto-muted">{p.codigo_tipo_doc || '—'}</TablaTd>
               <TablaTd className="text-sm">{p.documento_id || '—'}</TablaTd>
               <TablaTd className="text-sm text-texto-muted">{p.codigo_entidad || '—'}</TablaTd>
-              <TablaTd><Insignia variante={p.activo ? 'exito' : 'error'}>{p.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+              <TablaTd><Insignia variante={p.activo ? 'exito' : 'error'}>{p.activo ? tc('activo') : tc('inactivo')}</Insignia></TablaTd>
               <TablaTd>
                 <div className="flex items-center justify-end gap-1">
-                  <button onClick={() => abrirEditar(p)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                  <button onClick={() => setConfirmacion(p)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Desactivar"><Trash2 size={14} /></button>
+                  <button onClick={() => abrirEditar(p)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title={tc('editar')}><Pencil size={14} /></button>
+                  <button onClick={() => setConfirmacion(p)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title={t('desactivarTitulo')}><Trash2 size={14} /></button>
                 </div>
               </TablaTd>
             </TablaFila>
@@ -303,17 +306,17 @@ export default function PaginaPersonas() {
 
       {/* ═══ Modal detalle persona ═══ */}
       <Modal abierto={modal} alCerrar={() => setModal(false)}
-        titulo={editando ? `Persona: ${editando.nombre}` : 'Nueva persona'}>
+        titulo={editando ? t('editarTitulo', { nombre: editando.nombre }) : t('nuevoTitulo')}>
         <div className="flex flex-col gap-4 min-w-[500px]">
           {/* Tabs dentro del modal */}
           {editando && (
             <div className="flex gap-1 border-b border-borde -mt-2">
-              {(['datos', 'caracteristicas'] as TabModal[]).map((t) => (
-                <button key={t} onClick={() => setTabModal(t)}
+              {(['datos', 'caracteristicas'] as TabModal[]).map((tab) => (
+                <button key={tab} onClick={() => setTabModal(tab)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                    tabModal === t ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'
+                    tabModal === tab ? 'border-primario text-primario' : 'border-transparent text-texto-muted hover:text-texto'
                   }`}>
-                  {t === 'datos' ? 'Datos' : 'Características'}
+                  {tab === 'datos' ? t('tabDatos') : t('tabCaracteristicas')}
                 </button>
               ))}
             </div>
@@ -322,19 +325,19 @@ export default function PaginaPersonas() {
           {/* ─── Tab Datos ─── */}
           {(tabModal === 'datos' || !editando) && (
             <div className="flex flex-col gap-4">
-              <Input etiqueta="Nombre *" value={form.nombre}
+              <Input etiqueta={t('etiquetaNombre')} value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                placeholder="Nombre completo de la persona" />
+                placeholder={t('placeholderNombre')} />
 
               {/* Selector buscable Tipo Documento */}
               <div>
-                <label className="block text-sm font-medium text-texto mb-1.5">Tipo de documento</label>
+                <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaTipoDoc')}</label>
                 <div ref={dropdownTipoDocRef} className="relative">
                   <div className="relative">
                     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                     <input
                       className="w-full rounded-lg border border-borde bg-fondo-tarjeta pl-9 pr-3 py-2 text-sm"
-                      placeholder={tipoDocSeleccionado ? tipoDocSeleccionado.nombre : 'Buscar tipo de documento...'}
+                      placeholder={tipoDocSeleccionado ? tipoDocSeleccionado.nombre : t('placeholderTipoDoc')}
                       value={busquedaTipoDoc}
                       onChange={(e) => { setBusquedaTipoDoc(e.target.value); setDropdownTipoDocAbierto(true) }}
                       onFocus={() => setDropdownTipoDocAbierto(true)}
@@ -343,7 +346,7 @@ export default function PaginaPersonas() {
                   {dropdownTipoDocAbierto && (
                     <div className="absolute z-50 mt-1 w-full bg-white border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       <button onClick={() => { setForm({ ...form, codigo_tipo_doc: '' }); setDropdownTipoDocAbierto(false); setBusquedaTipoDoc('') }}
-                        className="w-full px-3 py-2 text-left text-sm text-texto-muted hover:bg-fondo">— Sin tipo —</button>
+                        className="w-full px-3 py-2 text-left text-sm text-texto-muted hover:bg-fondo">{t('sinTipoDoc')}</button>
                       {tiposDocFiltrados.slice(0, 20).map((t) => (
                         <button key={t.codigo_tipo_doc}
                           onClick={() => { setForm({ ...form, codigo_tipo_doc: t.codigo_tipo_doc }); setDropdownTipoDocAbierto(false); setBusquedaTipoDoc('') }}
@@ -357,19 +360,19 @@ export default function PaginaPersonas() {
                 </div>
               </div>
 
-              <Input etiqueta="Documento ID" value={form.documento_id}
+              <Input etiqueta={t('etiquetaDocumentoId')} value={form.documento_id}
                 onChange={(e) => setForm({ ...form, documento_id: e.target.value })}
-                placeholder="Número de documento" />
+                placeholder={t('placeholderDocumentoId')} />
 
               {/* Selector buscable Entidad */}
               <div>
-                <label className="block text-sm font-medium text-texto mb-1.5">Entidad</label>
+                <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaEntidad')}</label>
                 <div ref={dropdownEntidadRef} className="relative">
                   <div className="relative">
                     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                     <input
                       className="w-full rounded-lg border border-borde bg-fondo-tarjeta pl-9 pr-3 py-2 text-sm"
-                      placeholder={entidadSeleccionada ? entidadSeleccionada.nombre : 'Buscar entidad...'}
+                      placeholder={entidadSeleccionada ? entidadSeleccionada.nombre : t('placeholderEntidad')}
                       value={busquedaEntidad}
                       onChange={(e) => { setBusquedaEntidad(e.target.value); setDropdownEntidadAbierto(true) }}
                       onFocus={() => setDropdownEntidadAbierto(true)}
@@ -378,7 +381,7 @@ export default function PaginaPersonas() {
                   {dropdownEntidadAbierto && (
                     <div className="absolute z-50 mt-1 w-full bg-white border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       <button onClick={() => { setForm({ ...form, codigo_entidad: '' }); setDropdownEntidadAbierto(false); setBusquedaEntidad('') }}
-                        className="w-full px-3 py-2 text-left text-sm text-texto-muted hover:bg-fondo">— Sin entidad —</button>
+                        className="w-full px-3 py-2 text-left text-sm text-texto-muted hover:bg-fondo">{t('sinEntidad')}</button>
                       {entidadesFiltradas.slice(0, 20).map((e) => (
                         <button key={e.codigo_entidad}
                           onClick={() => { setForm({ ...form, codigo_entidad: e.codigo_entidad }); setDropdownEntidadAbierto(false); setBusquedaEntidad('') }}
@@ -395,8 +398,8 @@ export default function PaginaPersonas() {
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
 
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModal(false)}>Cancelar</Boton>
-                <Boton variante="primario" onClick={guardar} cargando={guardando}>{editando ? 'Guardar' : 'Crear'}</Boton>
+                <Boton variante="contorno" onClick={() => setModal(false)}>{tc('cancelar')}</Boton>
+                <Boton variante="primario" onClick={guardar} cargando={guardando}>{editando ? tc('guardar') : tc('crear')}</Boton>
               </div>
             </div>
           )}
@@ -405,9 +408,9 @@ export default function PaginaPersonas() {
           {tabModal === 'caracteristicas' && editando && (
             <div className="flex flex-col gap-4">
               {cargandoCaract ? (
-                <p className="text-sm text-texto-muted py-4 text-center">Cargando características...</p>
+                <p className="text-sm text-texto-muted py-4 text-center">{t('cargandoCaracteristicas')}</p>
               ) : categoriasConCaract.length === 0 ? (
-                <p className="text-sm text-texto-muted py-4 text-center">No hay categorías visibles para su rol.</p>
+                <p className="text-sm text-texto-muted py-4 text-center">{t('sinCategoriasVisibles')}</p>
               ) : (
                 categoriasConCaract.map((cc) => {
                   const cat = cc.categoria
@@ -420,10 +423,10 @@ export default function PaginaPersonas() {
                       <div className="bg-fondo px-4 py-2 flex items-center justify-between rounded-t-lg">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">{cat.nombre_cat_pers}</span>
-                          {cat.es_unica_pers && <Insignia variante="advertencia">Única</Insignia>}
-                          {!cat.editable_en_detalle_pers && <Insignia variante="neutro">Solo lectura</Insignia>}
+                          {cat.es_unica_pers && <Insignia variante="advertencia">{t('unica')}</Insignia>}
+                          {!cat.editable_en_detalle_pers && <Insignia variante="neutro">{t('soloLectura')}</Insignia>}
                         </div>
-                        <span className="text-xs text-texto-muted">{cc.caracteristicas.length} registro(s)</span>
+                        <span className="text-xs text-texto-muted">{t('registros', { n: cc.caracteristicas.length })}</span>
                       </div>
 
                       {/* Lista de características */}
@@ -446,7 +449,7 @@ export default function PaginaPersonas() {
                         ))}
 
                         {cc.caracteristicas.length === 0 && (
-                          <p className="px-4 py-3 text-sm text-texto-muted">Sin características en esta categoría</p>
+                          <p className="px-4 py-3 text-sm text-texto-muted">{t('sinCaracteristicas')}</p>
                         )}
                       </div>
 
@@ -459,18 +462,18 @@ export default function PaginaPersonas() {
                               value={formCaract.codigo_cat_pers === cat.codigo_cat_pers ? formCaract.codigo_tipo_pers : ''}
                               onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_pers: cat.codigo_cat_pers, codigo_tipo_pers: e.target.value })}
                             >
-                              <option value="">Tipo...</option>
+                              <option value="">{t('placeholderTipo')}</option>
                               {tiposDisponibles.map((t) => (
                                 <option key={t.codigo_tipo_pers} value={t.codigo_tipo_pers}>{t.nombre_tipo_pers}</option>
                               ))}
                             </select>
                           </div>
                           <input className="flex-1 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            placeholder="Valor texto"
+                            placeholder={t('placeholderValorTexto')}
                             value={formCaract.codigo_cat_pers === cat.codigo_cat_pers ? formCaract.valor_texto_pers : ''}
                             onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_pers: cat.codigo_cat_pers, valor_texto_pers: e.target.value })} />
                           <input className="w-24 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
-                            placeholder="Número" type="number"
+                            placeholder={t('placeholderNumero')} type="number"
                             value={formCaract.codigo_cat_pers === cat.codigo_cat_pers ? formCaract.valor_numerico_pers : ''}
                             onChange={(e) => setFormCaract({ ...formCaract, codigo_cat_pers: cat.codigo_cat_pers, valor_numerico_pers: e.target.value })} />
                           <input className="w-36 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-1.5 text-sm"
@@ -496,8 +499,8 @@ export default function PaginaPersonas() {
 
       {/* Modal Confirmar */}
       <ModalConfirmar abierto={!!confirmacion} alCerrar={() => setConfirmacion(null)} alConfirmar={ejecutarEliminacion}
-        titulo="Desactivar persona" mensaje={confirmacion ? `¿Desactivar "${confirmacion.nombre}"?` : ''}
-        textoConfirmar="Desactivar" cargando={eliminando} />
+        titulo={t('desactivarTitulo')} mensaje={confirmacion ? t('desactivarConfirm', { nombre: confirmacion.nombre }) : ''}
+        textoConfirmar={t('desactivarTitulo')} cargando={eliminando} />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
@@ -11,6 +12,9 @@ import { estadosDocsApi } from '@/lib/api'
 import type { EstadoDoc } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
 export default function PaginaEstadosDocs() {
+  const t = useTranslations('estadosDocs')
+  const tc = useTranslations('common')
+
   const crud = useCrudPage<EstadoDoc, { codigo_estado_doc: string; nombre_estado: string; descripcion: string }>({
     cargarFn: estadosDocsApi.listar,
     crearFn: (f) => estadosDocsApi.crear({
@@ -34,31 +38,31 @@ export default function PaginaEstadosDocs() {
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Estados de Documentos</h2>
-        <p className="text-sm text-texto-muted mt-1">Estados globales para los documentos del sistema</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       <BarraHerramientas
         busqueda={crud.busqueda}
         onBusqueda={crud.setBusqueda}
-        placeholderBusqueda="Buscar por código o nombre..."
+        placeholderBusqueda={t('buscarPlaceholder')}
         onNuevo={crud.abrirNuevo}
-        textoNuevo="Nuevo estado"
+        textoNuevo={t('nuevoEstado')}
         excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
         excelColumnas={[
-          { titulo: 'Código', campo: 'codigo_estado_doc' },
-          { titulo: 'Nombre', campo: 'nombre_estado' },
-          { titulo: 'Descripción', campo: 'descripcion' },
-          { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
+          { titulo: t('colCodigo'), campo: 'codigo_estado_doc' },
+          { titulo: t('colNombre'), campo: 'nombre_estado' },
+          { titulo: t('colDescripcion'), campo: 'descripcion' },
+          { titulo: t('colEstado'), campo: 'activo', formato: (v: unknown) => (v ? tc('activo') : tc('inactivo')) },
         ]}
         excelNombreArchivo="estados-docs"
       />
 
       <TablaCrud
         columnas={[
-          columnaCodigo<EstadoDoc>('Código', (e) => e.codigo_estado_doc),
-          columnaNombre<EstadoDoc>('Nombre', (e) => e.nombre_estado),
-          columnaDescripcion<EstadoDoc>('Descripción', (e) => e.descripcion),
+          columnaCodigo<EstadoDoc>(t('colCodigo'), (e) => e.codigo_estado_doc),
+          columnaNombre<EstadoDoc>(t('colNombre'), (e) => e.nombre_estado),
+          columnaDescripcion<EstadoDoc>(t('colDescripcion'), (e) => e.descripcion),
           columnaEstado<EstadoDoc>((e) => e.activo),
         ]}
         items={filtradosOrdenados}
@@ -66,29 +70,29 @@ export default function PaginaEstadosDocs() {
         getId={(e) => e.codigo_estado_doc}
         onEditar={crud.abrirEditar}
         onEliminar={crud.setConfirmacion}
-        textoVacio="No se encontraron estados"
+        textoVacio={t('sinEstados')}
       />
 
-      <Modal abierto={crud.modal} alCerrar={crud.cerrarModal} titulo={crud.editando ? `Estado: ${crud.editando.nombre_estado}` : 'Nuevo estado de documento'}>
+      <Modal abierto={crud.modal} alCerrar={crud.cerrarModal} titulo={crud.editando ? t('editarTitulo', { nombre: crud.editando.nombre_estado }) : t('nuevoTitulo')}>
         <div className="flex flex-col gap-4 min-w-[400px]">
           <Input
-            etiqueta="Código *"
+            etiqueta={t('etiquetaCodigo')}
             value={crud.form.codigo_estado_doc}
             onChange={(e) => crud.updateForm('codigo_estado_doc', e.target.value)}
-            placeholder="BORRADOR, EN_REVISION, APROBADO"
+            placeholder={t('placeholderCodigo')}
             disabled={!!crud.editando}
           />
           <Input
-            etiqueta="Nombre *"
+            etiqueta={t('etiquetaNombre')}
             value={crud.form.nombre_estado}
             onChange={(e) => crud.updateForm('nombre_estado', e.target.value)}
-            placeholder="Nombre del estado"
+            placeholder={t('placeholderNombre')}
           />
           <Textarea
-            etiqueta="Descripción"
+            etiqueta={t('etiquetaDescripcion')}
             value={crud.form.descripcion}
             onChange={(e) => crud.updateForm('descripcion', e.target.value)}
-            placeholder="Descripción opcional"
+            placeholder={t('placeholderDescripcion')}
             rows={3}
           />
           {crud.error && (
@@ -97,19 +101,19 @@ export default function PaginaEstadosDocs() {
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={crud.cerrarModal}>Cancelar</Boton>
+            <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('cancelar')}</Boton>
             <Boton
               variante="primario"
               onClick={() => {
                 if (!crud.form.codigo_estado_doc.trim() || !crud.form.nombre_estado.trim()) {
-                  crud.setError('Código y nombre son obligatorios')
+                  crud.setError(t('errorCodigoNombre'))
                   return
                 }
                 crud.guardar()
               }}
               cargando={crud.guardando}
             >
-              {crud.editando ? 'Guardar' : 'Crear'}
+              {crud.editando ? tc('guardar') : tc('crear')}
             </Boton>
           </div>
         </div>
@@ -119,8 +123,8 @@ export default function PaginaEstadosDocs() {
         abierto={!!crud.confirmacion}
         alCerrar={() => crud.setConfirmacion(null)}
         alConfirmar={crud.ejecutarEliminacion}
-        titulo="Desactivar estado"
-        mensaje={crud.confirmacion ? `¿Desactivar el estado "${crud.confirmacion.nombre_estado}"?` : ''}
+        titulo={t('desactivarTitulo')}
+        mensaje={crud.confirmacion ? t('desactivarConfirm', { nombre: crud.confirmacion.nombre_estado }) : ''}
         textoConfirmar="Desactivar"
         cargando={crud.eliminando}
       />

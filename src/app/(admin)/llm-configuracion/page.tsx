@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { CheckCircle, Loader2, Pencil, Plus, Trash2, XCircle, Zap } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -26,6 +27,8 @@ import { useAuth } from '@/context/AuthContext'
 type Proveedor = 'anthropic' | 'google'
 
 export default function PaginaLLMConfiguracion() {
+  const t = useTranslations('llmConfiguracion')
+  const tc = useTranslations('common')
   const { grupoActivo, esSuperAdmin: chkSuperAdmin } = useAuth()
   const esSuperAdmin = chkSuperAdmin()
 
@@ -111,7 +114,7 @@ export default function PaginaLLMConfiguracion() {
         })
       } else {
         if (!form.api_key) {
-          setError('La API key es obligatoria.')
+          setError(t('errorApiKeyObligatoria'))
           setGuardando(false)
           return
         }
@@ -127,7 +130,7 @@ export default function PaginaLLMConfiguracion() {
       cargar()
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } }; message?: string }
-      setError(err.response?.data?.detail || err.message || 'Error al guardar.')
+      setError(err.response?.data?.detail || err.message || t('errorAlGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -157,7 +160,7 @@ export default function PaginaLLMConfiguracion() {
       setResultadoPrueba({
         key,
         ok: false,
-        mensaje: err.response?.data?.detail || 'Error al probar.',
+        mensaje: err.response?.data?.detail || t('errorAlProbar'),
         tiempo_ms: 0,
       })
     } finally {
@@ -204,10 +207,9 @@ export default function PaginaLLMConfiguracion() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Configuración LLM</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('titulo')}</h1>
           <p className="text-sm text-gray-600">
-            Credenciales de API por grupo. Si el grupo no tiene credencial activa, se usa
-            automáticamente la key casa del sistema.
+            {t('descripcion')}
           </p>
         </div>
       </div>
@@ -223,7 +225,7 @@ export default function PaginaLLMConfiguracion() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Credenciales
+            {t('tabCredenciales')}
           </button>
           {esSuperAdmin && (
             <button
@@ -234,7 +236,7 @@ export default function PaginaLLMConfiguracion() {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Precios (global)
+              {t('tabPrecios')}
             </button>
           )}
         </nav>
@@ -245,7 +247,7 @@ export default function PaginaLLMConfiguracion() {
           <div className="flex justify-end">
             <Boton onClick={abrirNuevo}>
               <Plus className="w-4 h-4 mr-1" />
-              Nueva credencial
+              {t('nuevaCredencial')}
             </Boton>
           </div>
 
@@ -255,21 +257,19 @@ export default function PaginaLLMConfiguracion() {
             </div>
           ) : credenciales.length === 0 ? (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-900">
-              No hay credenciales configuradas en este grupo. El sistema está usando la
-              <strong> key casa </strong> (fallback automático). Agrega una credencial propia
-              si quieres que este grupo pague su propio consumo.
+              {t('sinCredenciales')}
             </div>
           ) : (
             <Tabla>
               <TablaCabecera>
                 <TablaFila>
-                  <TablaTh>Proveedor</TablaTh>
-                  <TablaTh>Alias</TablaTh>
-                  <TablaTh>API Key</TablaTh>
-                  <TablaTh>Límite USD/mes</TablaTh>
-                  <TablaTh>Último uso</TablaTh>
-                  <TablaTh>Estado</TablaTh>
-                  <TablaTh className="text-right">Acciones</TablaTh>
+                  <TablaTh>{t('colProveedor')}</TablaTh>
+                  <TablaTh>{t('colAlias')}</TablaTh>
+                  <TablaTh>{t('colApiKey')}</TablaTh>
+                  <TablaTh>{t('colLimite')}</TablaTh>
+                  <TablaTh>{t('colUltimoUso')}</TablaTh>
+                  <TablaTh>{t('colEstado')}</TablaTh>
+                  <TablaTh className="text-right">{tc('acciones')}</TablaTh>
                 </TablaFila>
               </TablaCabecera>
               <TablaCuerpo>
@@ -291,9 +291,9 @@ export default function PaginaLLMConfiguracion() {
                       </TablaTd>
                       <TablaTd>
                         {c.activo ? (
-                          <Insignia variante="exito">Activo</Insignia>
+                          <Insignia variante="exito">{tc('activo')}</Insignia>
                         ) : (
-                          <Insignia variante="neutro">Inactivo</Insignia>
+                          <Insignia variante="neutro">{tc('inactivo')}</Insignia>
                         )}
                       </TablaTd>
                       <TablaTd className="text-right">
@@ -317,7 +317,7 @@ export default function PaginaLLMConfiguracion() {
                             onClick={() => probar(c)}
                             disabled={probandoKey === keyId}
                             className="p-1 hover:bg-gray-100 rounded text-blue-600"
-                            title="Probar conexión"
+                            title={t('probarConexion')}
                           >
                             {probandoKey === keyId ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -358,14 +358,14 @@ export default function PaginaLLMConfiguracion() {
             <Tabla>
               <TablaCabecera>
                 <TablaFila>
-                  <TablaTh>Proveedor</TablaTh>
-                  <TablaTh>Modelo</TablaTh>
-                  <TablaTh>Input (USD/1M)</TablaTh>
-                  <TablaTh>Output (USD/1M)</TablaTh>
-                  <TablaTh>Cache read</TablaTh>
-                  <TablaTh>Cache write</TablaTh>
-                  <TablaTh>Vigente desde</TablaTh>
-                  <TablaTh className="text-right">Acciones</TablaTh>
+                  <TablaTh>{t('colProveedor')}</TablaTh>
+                  <TablaTh>{t('colModelo')}</TablaTh>
+                  <TablaTh>{t('colPrecioInput')}</TablaTh>
+                  <TablaTh>{t('colPrecioOutput')}</TablaTh>
+                  <TablaTh>{t('colCacheRead')}</TablaTh>
+                  <TablaTh>{t('colCacheWrite')}</TablaTh>
+                  <TablaTh>{t('colVigencia')}</TablaTh>
+                  <TablaTh className="text-right">{tc('acciones')}</TablaTh>
                 </TablaFila>
               </TablaCabecera>
               <TablaCuerpo>
@@ -407,11 +407,11 @@ export default function PaginaLLMConfiguracion() {
         <Modal
           abierto={modal}
           alCerrar={() => setModal(false)}
-          titulo={editando ? 'Editar credencial' : 'Nueva credencial LLM'}
+          titulo={editando ? t('editarTitulo') : t('nuevoTitulo')}
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('etiquetaProveedor')}</label>
               <select
                 disabled={!!editando}
                 value={form.proveedor}
@@ -424,43 +424,43 @@ export default function PaginaLLMConfiguracion() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Alias</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('etiquetaAlias')}</label>
               <Input
                 value={form.alias}
                 disabled={!!editando}
                 onChange={(e) => setForm({ ...form, alias: e.target.value })}
-                placeholder="default"
+                placeholder={t('placeholderAlias')}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Identificador interno (ej: default, batch, respaldo).
+                {t('descAlias')}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                API Key {editando && '(dejar vacío para no cambiar)'}
+                {t('etiquetaApiKey', { nota: editando ? t('notaApiKey') : '' })}
               </label>
               <Input
                 type="password"
                 value={form.api_key}
                 onChange={(e) => setForm({ ...form, api_key: e.target.value })}
-                placeholder={editando ? '••••••••' : 'sk-ant-... o AIza...'}
+                placeholder={editando ? '••••••••' : t('placeholderApiKey')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Límite mensual USD (opcional)
+                {t('etiquetaLimite')}
               </label>
               <Input
                 type="number"
                 step="0.01"
                 value={form.limite_usd_mes}
                 onChange={(e) => setForm({ ...form, limite_usd_mes: e.target.value })}
-                placeholder="Sin límite"
+                placeholder={t('placeholderLimite')}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Al alcanzar este monto, el sistema cortará las llamadas con esta key.
+                {t('descLimite')}
               </p>
             </div>
 
@@ -472,7 +472,7 @@ export default function PaginaLLMConfiguracion() {
                 onChange={(e) => setForm({ ...form, activo: e.target.checked })}
               />
               <label htmlFor="activo" className="text-sm text-gray-700">
-                Activa
+                {t('etiquetaActiva')}
               </label>
             </div>
 
@@ -480,11 +480,11 @@ export default function PaginaLLMConfiguracion() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Boton variante="contorno" onClick={() => setModal(false)}>
-                Cancelar
+                {tc('cancelar')}
               </Boton>
               <Boton onClick={guardar} disabled={guardando}>
                 {guardando && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                Guardar
+                {tc('guardar')}
               </Boton>
             </div>
           </div>
@@ -496,7 +496,7 @@ export default function PaginaLLMConfiguracion() {
         <Modal
           abierto={!!editandoPrecio}
           alCerrar={() => setEditandoPrecio(null)}
-          titulo={`Precio ${editandoPrecio.proveedor}/${editandoPrecio.nombre_tecnico}`}
+          titulo={t('precioTitulo', { proveedor: editandoPrecio.proveedor, modelo: editandoPrecio.nombre_tecnico })}
         >
           <div className="space-y-3">
             {(['precio_input_1m', 'precio_output_1m', 'precio_cache_read_1m', 'precio_cache_write_1m'] as const).map(
@@ -516,9 +516,9 @@ export default function PaginaLLMConfiguracion() {
             )}
             <div className="flex justify-end gap-2 pt-2">
               <Boton variante="contorno" onClick={() => setEditandoPrecio(null)}>
-                Cancelar
+                {tc('cancelar')}
               </Boton>
-              <Boton onClick={guardarPrecio}>Guardar</Boton>
+              <Boton onClick={guardarPrecio}>{tc('guardar')}</Boton>
             </div>
           </div>
         </Modal>
@@ -526,15 +526,15 @@ export default function PaginaLLMConfiguracion() {
 
       <ModalConfirmar
         abierto={!!confirmacion}
-        titulo="Eliminar credencial"
+        titulo={t('eliminarTitulo')}
         mensaje={
           confirmacion
-            ? `¿Eliminar credencial ${confirmacion.proveedor}/${confirmacion.alias}? El grupo volverá a usar la key casa para este proveedor.`
+            ? t('eliminarConfirm', { proveedor: confirmacion.proveedor, alias: confirmacion.alias })
             : ''
         }
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={eliminar}
-        textoConfirmar="Eliminar"
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </div>

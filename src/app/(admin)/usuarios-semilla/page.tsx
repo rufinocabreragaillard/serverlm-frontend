@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Pencil, Search, Trash2, X, Star, ChevronUp, ChevronDown } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -32,6 +33,8 @@ type RolAsignado = {
 }
 
 export default function PaginaUsuariosSemilla() {
+  const t = useTranslations('usuariosSemilla')
+  const tc = useTranslations('common')
   const { usuario: usuarioActual, esSuperAdmin } = useAuth()
 
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -546,18 +549,18 @@ export default function PaginaUsuariosSemilla() {
           {/* Tabs (solo si editando) */}
           {usuarioEditando && (
             <div className="flex gap-1 border-b border-borde -mt-2">
-              {(['datos', 'roles'] as const).map((t) => (
+              {(['datos', 'roles'] as const).map((tab) => (
                 <button
-                  key={t}
+                  key={tab}
                   type="button"
-                  onClick={() => setTabActiva(t)}
+                  onClick={() => setTabActiva(tab)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                    tabActiva === t
+                    tabActiva === tab
                       ? 'border-primario text-primario'
                       : 'border-transparent text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {t === 'datos' ? 'Datos' : `Roles (${rolesUsuario.filter((ra) => ra.codigo_grupo === form.grupo_por_defecto).length})`}
+                  {tab === 'datos' ? t('tabDatos') : `${t('tabRoles')} (${rolesUsuario.filter((ra) => ra.codigo_grupo === form.grupo_por_defecto).length})`}
                 </button>
               ))}
             </div>
@@ -566,7 +569,7 @@ export default function PaginaUsuariosSemilla() {
           {tabActiva === 'datos' && (
             <>
           <p className="text-sm text-texto-muted bg-fondo border border-borde rounded-lg px-4 py-3">
-            Este formulario no filtra por grupo activo. El usuario semilla puede pertenecer a cualquier grupo del sistema.
+            {t('aviso')}
           </p>
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -715,7 +718,7 @@ export default function PaginaUsuariosSemilla() {
                           <button key={r.id_rol} type="button"
                             onClick={() => { setForm({ ...form, id_rol_principal: r.id_rol ? String(r.id_rol) : '' }); setBusquedaRolPpal(r.id_rol ? r.nombre : ''); setDropdownRolPpalAbierto(false) }}
                             className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors flex items-center gap-2">
-                            {r.id_rol === 0 ? <span className="text-texto-muted italic">Sin rol</span> : <>
+                            {r.id_rol === 0 ? <span className="text-texto-muted italic">{t('sinRol')}</span> : <>
                               <span className="font-medium">{r.nombre}</span>
                               <span className="text-texto-muted text-xs">{r.codigo_rol}</span>
                               {r.codigo_grupo == null && <span className="text-xs bg-primario/10 text-primario px-1.5 py-0.5 rounded">{tc('global')}</span>}

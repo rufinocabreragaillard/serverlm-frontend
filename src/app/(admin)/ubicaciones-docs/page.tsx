@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Download, Search, ChevronRight, ChevronDown, FolderTree, Folder, FolderOpen, FolderInput, FolderPlus, RefreshCw, ToggleLeft, ToggleRight, Shuffle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,6 +17,8 @@ import { escanearDirectorio, escanearDirectorioSinHijos, soportaDirectoryPicker,
 
 export default function PaginaUbicacionesDocs() {
   const { grupoActivo } = useAuth()
+  const t = useTranslations('ubicacionesDocs')
+  const tc = useTranslations('common')
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [ubicaciones, setUbicaciones] = useState<UbicacionDoc[]>([])
@@ -145,7 +148,7 @@ export default function PaginaUbicacionesDocs() {
 
   const guardar = async () => {
     if (!form.nombre_ubicacion.trim()) {
-      setError('El nombre es obligatorio')
+      setError(t('errorNombreObligatorio'))
       return
     }
     setGuardando(true)
@@ -170,7 +173,7 @@ export default function PaginaUbicacionesDocs() {
       setModal(false)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -184,7 +187,7 @@ export default function PaginaUbicacionesDocs() {
       setConfirmarTipo(null)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cambiar tipo')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
       setConfirmarTipo(null)
     } finally {
       setCambiandoTipo(false)
@@ -198,7 +201,7 @@ export default function PaginaUbicacionesDocs() {
       })
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cambiar estado')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     }
   }
 
@@ -209,7 +212,7 @@ export default function PaginaUbicacionesDocs() {
       const p = await ubicacionesDocsApi.previewEliminar(u.codigo_ubicacion)
       setPreviewEliminar(p)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error obteniendo preview')
+      setError(e instanceof Error ? e.message : tc('error'))
     }
   }
 
@@ -222,7 +225,7 @@ export default function PaginaUbicacionesDocs() {
       setPreviewEliminar(null)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar')
+      setError(e instanceof Error ? e.message : tc('errorAlEliminar'))
       setConfirmacion(null)
       setPreviewEliminar(null)
     } finally {
@@ -233,7 +236,7 @@ export default function PaginaUbicacionesDocs() {
   // ── Cargar Ubicaciones (escaneo + sincronización) ─────────────────────────
   const iniciarEscaneo = async () => {
     if (!soportaDirectoryPicker()) {
-      alert('Su navegador no soporta la selección de directorios. Use Chrome, Edge o Safari.')
+      alert(t('errorBrowserNoSoporta'))
       return
     }
     setEscaneando(true)
@@ -283,7 +286,7 @@ export default function PaginaUbicacionesDocs() {
 
   const cargarUbicacionIndividual = async () => {
     if (!soportaDirectoryPicker()) {
-      alert('Su navegador no soporta la selección de directorios. Use Chrome, Edge o Safari.')
+      alert(t('errorBrowserNoSoporta'))
       return
     }
     setCargandoUbicacion(true)
@@ -399,11 +402,11 @@ export default function PaginaUbicacionesDocs() {
           </Insignia>
 
           <Insignia variante={u.ubicacion_habilitada ? 'exito' : 'advertencia'}>
-            {u.ubicacion_habilitada ? 'Habilitada' : 'Inhabilitada'}
+            {u.ubicacion_habilitada ? t('habilitada') : t('inhabilitada')}
           </Insignia>
 
           <Insignia variante={u.activo ? 'exito' : 'error'}>
-            {u.activo ? 'Activo' : 'Inactivo'}
+            {u.activo ? tc('activo') : tc('inactivo')}
           </Insignia>
 
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -468,15 +471,15 @@ export default function PaginaUbicacionesDocs() {
     <div className="flex flex-col gap-6 max-w-6xl">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-texto">Ubicaciones de Documentos</h2>
-        <p className="text-sm text-texto-muted mt-1">Directorios y subdirectorios para organizar documentos</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="max-w-sm flex-1">
           <Input
-            placeholder="Buscar por nombre, código o ruta..."
+            placeholder={t('buscarPlaceholder')}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             icono={<Search size={15} />}
@@ -484,10 +487,10 @@ export default function PaginaUbicacionesDocs() {
         </div>
         <div className="flex gap-2 ml-auto flex-wrap">
           <Boton variante="contorno" tamano="sm" onClick={expandirTodos} disabled={ubicaciones.length === 0}>
-            Expandir todo
+            {t('expandirTodo')}
           </Boton>
           <Boton variante="contorno" tamano="sm" onClick={colapsarTodos} disabled={ubicaciones.length === 0}>
-            Colapsar todo
+            {t('colapsarTodo')}
           </Boton>
           <Boton
             variante="contorno"
@@ -514,15 +517,15 @@ export default function PaginaUbicacionesDocs() {
           </Boton>
           <Boton variante="contorno" onClick={cargarUbicacionIndividual} cargando={cargandoUbicacion}>
             <FolderPlus size={16} />
-            Cargar Ubicación
+            {t('cargarUbicacion')}
           </Boton>
           <Boton variante="contorno" onClick={iniciarEscaneo} cargando={escaneando}>
             <FolderInput size={16} />
-            Cargar Ubicaciones
+            {t('cargarDesdeDirectorioTitulo')}
           </Boton>
           <Boton variante="primario" onClick={() => abrirNuevo()}>
             <Plus size={16} />
-            Nueva ubicación
+            {t('nuevaUbicacion')}
           </Boton>
         </div>
       </div>
@@ -530,11 +533,11 @@ export default function PaginaUbicacionesDocs() {
       {/* Árbol jerárquico */}
       <div className="border border-borde rounded-lg bg-fondo-tarjeta">
         {cargando ? (
-          <div className="py-8 text-center text-texto-muted">Cargando...</div>
+          <div className="py-8 text-center text-texto-muted">{tc('cargando')}</div>
         ) : raices.length === 0 ? (
           <div className="py-8 text-center text-texto-muted flex flex-col items-center gap-2">
             <FolderTree size={32} className="text-texto-muted/50" />
-            <p>No se encontraron ubicaciones</p>
+            <p>{t('sinUbicaciones')}</p>
           </div>
         ) : (
           <div className="py-2">
@@ -547,37 +550,37 @@ export default function PaginaUbicacionesDocs() {
       <Modal
         abierto={modal}
         alCerrar={() => setModal(false)}
-        titulo={editando ? `Ubicación Docs.: ${editando.nombre_ubicacion}` : 'Nueva ubicación'}
+        titulo={editando ? t('editarTitulo', { nombre: editando.nombre_ubicacion }) : t('nuevoTitulo')}
       >
         <div className="flex flex-col gap-4 min-w-[450px]">
           <Input
-            etiqueta="Nombre *"
+            etiqueta={t('etiquetaNombre')}
             value={form.nombre_ubicacion}
             onChange={(e) => setForm({ ...form, nombre_ubicacion: e.target.value })}
-            placeholder="Contratos 2024"
+            placeholder={t('placeholderNombre')}
           />
           <Input
-            etiqueta="Alias"
+            etiqueta={t('etiquetaAlias')}
             value={form.alias_ubicacion}
             onChange={(e) => setForm({ ...form, alias_ubicacion: e.target.value })}
-            placeholder="Alias corto opcional"
+            placeholder={t('placeholderAlias')}
           />
           <Textarea
-            etiqueta="Descripción"
+            etiqueta={t('etiquetaDescripcion')}
             value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-            placeholder="Descripción de esta ubicación"
+            placeholder={t('placeholderDescripcion')}
             rows={3}
           />
 
           <div>
-            <label className="block text-sm font-medium text-texto mb-1.5">Ubicación superior</label>
+            <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaPadre')}</label>
             <select
               className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
               value={form.codigo_ubicacion_superior}
               onChange={(e) => setForm({ ...form, codigo_ubicacion_superior: e.target.value })}
             >
-              <option value="">— Raíz (sin padre) —</option>
+              <option value="">{t('opcionRaiz')}</option>
               {opcionesPadre(editando?.codigo_ubicacion).map((u) => (
                 <option key={u.codigo_ubicacion} value={u.codigo_ubicacion}>
                   {'  '.repeat(u.nivel)}{u.nombre_ubicacion} ({u.codigo_ubicacion})
@@ -594,12 +597,12 @@ export default function PaginaUbicacionesDocs() {
                 onChange={(e) => setForm({ ...form, ubicacion_habilitada: e.target.checked })}
                 className="w-4 h-4 rounded border-borde text-primario focus:ring-primario"
               />
-              <span className="text-sm font-medium text-texto">Ubicación habilitada</span>
-              <span className="text-xs text-texto-muted">(se aplica a todas las ubicaciones hijas)</span>
+              <span className="text-sm font-medium text-texto">{t('etiquetaHabilitada')}</span>
+              <span className="text-xs text-texto-muted">{t('habilitadaHint')}</span>
             </label>
           )}
           {editando && (
-            <Input etiqueta="Código" value={form.codigo_ubicacion} disabled readOnly />
+            <Input etiqueta={t('etiquetaCodigo')} value={form.codigo_ubicacion} disabled readOnly />
           )}
 
           {error && (
@@ -610,10 +613,10 @@ export default function PaginaUbicacionesDocs() {
 
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModal(false)}>
-              Cancelar
+              {tc('cancelar')}
             </Boton>
             <Boton variante="primario" onClick={guardar} cargando={guardando}>
-              {editando ? 'Guardar' : 'Crear'}
+              {editando ? tc('guardar') : tc('crear')}
             </Boton>
           </div>
         </div>
@@ -624,21 +627,20 @@ export default function PaginaUbicacionesDocs() {
         abierto={!!confirmacion}
         alCerrar={() => { setConfirmacion(null); setPreviewEliminar(null) }}
         alConfirmar={ejecutarEliminacion}
-        titulo="⚠️ Eliminar ubicación en cascada"
+        titulo={t('eliminarTitulo')}
         mensaje={
           confirmacion
             ? (previewEliminar
-                ? `Se eliminará DEFINITIVAMENTE "${confirmacion.nombre_ubicacion}".\n\n` +
-                  `• Carpetas a borrar: ${previewEliminar.ubicaciones}\n` +
-                  `• Documentos afectados: ${previewEliminar.documentos_afectados}\n` +
-                  `• Documentos que serán eliminados (quedan sin ubicación): ${previewEliminar.documentos_a_eliminar}\n` +
-                  `  — incluye todas sus características y resúmenes\n\n` +
-                  `Los documentos que existan en otras ubicaciones NO serán borrados; solo se quitará su relación con las carpetas eliminadas.\n\n` +
-                  `Esta acción NO se puede deshacer.`
-                : `Calculando impacto de la eliminación de "${confirmacion.nombre_ubicacion}"...`)
+                ? t('eliminarConfirm', {
+                    nombre: confirmacion.nombre_ubicacion,
+                    ubicaciones: previewEliminar.ubicaciones,
+                    documentosAfectados: previewEliminar.documentos_afectados,
+                    documentosEliminar: previewEliminar.documentos_a_eliminar,
+                  })
+                : t('calculandoImpacto', { nombre: confirmacion.nombre_ubicacion }))
             : ''
         }
-        textoConfirmar="Eliminar definitivamente"
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando || !previewEliminar}
       />
 
@@ -647,15 +649,13 @@ export default function PaginaUbicacionesDocs() {
         abierto={!!confirmarTipo}
         alCerrar={() => setConfirmarTipo(null)}
         alConfirmar={ejecutarCambioTipo}
-        titulo={`Cambiar tipo a ${confirmarTipo?.nuevoTipo || ''}`}
+        titulo={confirmarTipo ? t('cambiarTipoTitulo', { tipo: confirmarTipo.nuevoTipo }) : ''}
         mensaje={
           confirmarTipo
-            ? `¿Cambiar tipo de "${confirmarTipo.u.nombre_ubicacion}" a ${confirmarTipo.nuevoTipo}?\n\n` +
-              `Si marcas como AREA, todos sus ancestros serán marcados AREA automáticamente.\n` +
-              `Si marcas como CONTENIDO, todos sus descendientes serán marcados CONTENIDO.`
+            ? t('cambiarTipoConfirm', { nombre: confirmarTipo.u.nombre_ubicacion, nuevoTipo: confirmarTipo.nuevoTipo })
             : ''
         }
-        textoConfirmar="Cambiar tipo"
+        textoConfirmar={tc('guardar')}
         cargando={cambiandoTipo}
       />
 
@@ -663,7 +663,7 @@ export default function PaginaUbicacionesDocs() {
       <Modal
         abierto={modalCarga}
         alCerrar={cerrarModalCarga}
-        titulo="Cargar Ubicaciones desde Directorio"
+        titulo={t('cargarDesdeDirectorioTitulo')}
       >
         <div className="flex flex-col gap-4 min-w-[500px]">
           {/* Pre-sincronización: preview */}
@@ -758,7 +758,7 @@ export default function PaginaUbicacionesDocs() {
 
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={cerrarModalCarga}>
-                  Cancelar
+                  {tc('cancelar')}
                 </Boton>
                 <Boton variante="primario" onClick={ejecutarSincronizacion} cargando={sincronizando}>
                   <RefreshCw size={15} />
@@ -798,7 +798,7 @@ export default function PaginaUbicacionesDocs() {
 
               <div className="flex justify-end pt-2">
                 <Boton variante="primario" onClick={cerrarModalCarga}>
-                  Cerrar
+                  {tc('cerrar')}
                 </Boton>
               </div>
             </>

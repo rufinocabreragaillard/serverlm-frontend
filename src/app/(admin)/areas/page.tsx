@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Pencil, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
@@ -12,6 +13,8 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function PaginaAreas() {
   useAuth()
+  const t = useTranslations('areas')
+  const tc = useTranslations('common')
 
   const [areas, setAreas] = useState<UbicacionDoc[]>([])
   const [cargando, setCargando] = useState(true)
@@ -46,7 +49,7 @@ export default function PaginaAreas() {
   const guardar = async () => {
     if (!editando) return
     if (!form.nombre_ubicacion.trim()) {
-      setError('El nombre es obligatorio')
+      setError(t('errorNombreObligatorio'))
       return
     }
     setGuardando(true)
@@ -58,7 +61,7 @@ export default function PaginaAreas() {
       setModal(false)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -77,15 +80,15 @@ export default function PaginaAreas() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Áreas</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
-          Mantenedor de áreas (ubicaciones tipo AREA). Solo permite editar nombre y alias. Para crear o cambiar jerarquía use Ubicaciones de Documentos.
+          {t('subtitulo')}
         </p>
       </div>
 
       <div className="max-w-sm">
         <Input
-          placeholder="Buscar por nombre, alias, ruta o entidad..."
+          placeholder={t('buscarPlaceholder')}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           icono={<Search size={15} />}
@@ -94,19 +97,19 @@ export default function PaginaAreas() {
 
       <div className="border border-borde rounded-lg bg-fondo-tarjeta overflow-hidden">
         {cargando ? (
-          <div className="py-8 text-center text-texto-muted">Cargando...</div>
+          <div className="py-8 text-center text-texto-muted">{tc('cargando')}</div>
         ) : filtrados.length === 0 ? (
-          <div className="py-8 text-center text-texto-muted">No se encontraron áreas</div>
+          <div className="py-8 text-center text-texto-muted">{t('sinAreas')}</div>
         ) : (
           <Tabla>
             <TablaCabecera>
               <TablaFila>
-                <TablaTh>Entidad</TablaTh>
-                <TablaTh>Nombre</TablaTh>
-                <TablaTh>Alias</TablaTh>
-                <TablaTh>Ruta</TablaTh>
-                <TablaTh>Nivel</TablaTh>
-                <TablaTh className="w-24">Acciones</TablaTh>
+                <TablaTh>{t('colEntidad')}</TablaTh>
+                <TablaTh>{t('colNombre')}</TablaTh>
+                <TablaTh>{t('colAlias')}</TablaTh>
+                <TablaTh>{t('colRuta')}</TablaTh>
+                <TablaTh>{t('colNivel')}</TablaTh>
+                <TablaTh className="w-24">{tc('acciones')}</TablaTh>
               </TablaFila>
             </TablaCabecera>
             <TablaCuerpo>
@@ -136,19 +139,19 @@ export default function PaginaAreas() {
       <Modal
         abierto={modal}
         alCerrar={() => setModal(false)}
-        titulo={editando ? `Área: ${editando.nombre_ubicacion}` : 'Editar área'}
+        titulo={editando ? t('editarTitulo', { nombre: editando.nombre_ubicacion }) : t('editarTitulo', { nombre: '' })}
       >
         <div className="flex flex-col gap-4 min-w-[450px]">
           <Input
-            etiqueta="Nombre *"
+            etiqueta={t('etiquetaNombre')}
             value={form.nombre_ubicacion}
             onChange={(e) => setForm({ ...form, nombre_ubicacion: e.target.value })}
           />
           <Input
-            etiqueta="Alias"
+            etiqueta={t('etiquetaAlias')}
             value={form.alias_ubicacion}
             onChange={(e) => setForm({ ...form, alias_ubicacion: e.target.value })}
-            placeholder="Alias corto opcional"
+            placeholder={t('placeholderAlias')}
           />
 
           {error && (
@@ -159,10 +162,10 @@ export default function PaginaAreas() {
 
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModal(false)}>
-              Cancelar
+              {tc('cancelar')}
             </Boton>
             <Boton variante="primario" onClick={guardar} cargando={guardando}>
-              Guardar
+              {tc('guardar')}
             </Boton>
           </div>
         </div>

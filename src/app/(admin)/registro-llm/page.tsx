@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Download, Search, CheckCircle, XCircle, Send, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,6 +15,8 @@ import type { RegistroLLM } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
 export default function PaginaRegistroLLM() {
+  const t = useTranslations('registroLlm')
+  const tc = useTranslations('common')
   const [modelos, setModelos] = useState<RegistroLLM[]>([])
   const [cargando, setCargando] = useState(true)
   const [busqueda, setBusqueda] = useState('')
@@ -81,7 +84,7 @@ export default function PaginaRegistroLLM() {
       const res = await registroLLMApi.probar(editando.id_modelo, mensajePrueba)
       setRespuestaPrueba(res)
     } catch (e) {
-      setErrorPrueba(e instanceof Error ? e.message : 'Error al probar conexión')
+      setErrorPrueba(e instanceof Error ? e.message : t('errorAlProbar'))
     } finally {
       setProbando(false)
     }
@@ -89,7 +92,7 @@ export default function PaginaRegistroLLM() {
 
   const guardar = async () => {
     if (!form.proveedor.trim() || !form.nombre_tecnico.trim() || !form.nombre_visible.trim()) {
-      setError('Proveedor, nombre técnico y nombre visible son obligatorios')
+      setError(t('errorCamposObligatorios'))
       return
     }
     setGuardando(true)
@@ -113,7 +116,7 @@ export default function PaginaRegistroLLM() {
       setModal(false)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar')
+      setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
     } finally {
       setGuardando(false)
     }
@@ -142,13 +145,13 @@ export default function PaginaRegistroLLM() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Registro de Modelos LLM</h2>
-        <p className="text-sm text-texto-muted mt-1">Modelos de lenguaje disponibles en el sistema</p>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <div className="max-w-sm flex-1">
-          <Input placeholder="Buscar por proveedor, nombre..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
+          <Input placeholder={t('buscarPlaceholder')} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
         </div>
         <div className="flex gap-2 ml-auto">
           <Boton variante="contorno" tamano="sm" disabled={filtrados.length === 0}
@@ -161,29 +164,29 @@ export default function PaginaRegistroLLM() {
               { titulo: 'Validado', campo: 'estado_valido', formato: (v: unknown) => (v ? 'Sí' : 'No') },
               { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
             ], 'registro-llm')}>
-            <Download size={15} />Excel
+            <Download size={15} />{tc('exportarExcel')}
           </Boton>
-          <Boton variante="primario" onClick={abrirNuevo}><Plus size={16} />Nuevo modelo</Boton>
+          <Boton variante="primario" onClick={abrirNuevo}><Plus size={16} />{t('nuevoModelo')}</Boton>
         </div>
       </div>
 
       <Tabla>
         <TablaCabecera>
           <tr>
-            <TablaTh>Proveedor</TablaTh>
-            <TablaTh>Nombre Técnico</TablaTh>
-            <TablaTh>Nombre Visible</TablaTh>
-            <TablaTh>Descripción</TablaTh>
-            <TablaTh>Validado</TablaTh>
-            <TablaTh>Estado</TablaTh>
-            <TablaTh className="text-right">Acciones</TablaTh>
+            <TablaTh>{t('colProveedor')}</TablaTh>
+            <TablaTh>{t('colNombreTecnico')}</TablaTh>
+            <TablaTh>{t('colNombreVisible')}</TablaTh>
+            <TablaTh>{t('colDescripcion')}</TablaTh>
+            <TablaTh>{t('colValidado')}</TablaTh>
+            <TablaTh>{t('colEstado')}</TablaTh>
+            <TablaTh className="text-right">{tc('acciones')}</TablaTh>
           </tr>
         </TablaCabecera>
         <TablaCuerpo>
           {cargando ? (
-            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
+            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>{tc('cargando')}</TablaTd></TablaFila>
           ) : filtrados.length === 0 ? (
-            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Sin modelos registrados</TablaTd></TablaFila>
+            <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>{t('sinModelos')}</TablaTd></TablaFila>
           ) : filtrados.map((m) => (
             <TablaFila key={m.id_modelo}>
               <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{m.proveedor}</code></TablaTd>
@@ -192,11 +195,11 @@ export default function PaginaRegistroLLM() {
               <TablaTd className="text-texto-muted text-sm max-w-[200px] truncate">{m.descripcion || '—'}</TablaTd>
               <TablaTd>
                 {m.estado_valido
-                  ? <span className="inline-flex items-center gap-1 text-exito text-sm"><CheckCircle size={14} />Sí</span>
-                  : <span className="inline-flex items-center gap-1 text-texto-muted text-sm"><XCircle size={14} />No</span>
+                  ? <span className="inline-flex items-center gap-1 text-exito text-sm"><CheckCircle size={14} />{tc('si')}</span>
+                  : <span className="inline-flex items-center gap-1 text-texto-muted text-sm"><XCircle size={14} />{tc('no')}</span>
                 }
               </TablaTd>
-              <TablaTd><Insignia variante={m.activo ? 'exito' : 'error'}>{m.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
+              <TablaTd><Insignia variante={m.activo ? 'exito' : 'error'}>{m.activo ? tc('activo') : tc('inactivo')}</Insignia></TablaTd>
               <TablaTd>
                 <div className="flex items-center justify-end gap-1">
                   <button onClick={() => abrirEditar(m)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -208,32 +211,32 @@ export default function PaginaRegistroLLM() {
         </TablaCuerpo>
       </Tabla>
 
-      <Modal abierto={modal} alCerrar={() => setModal(false)} titulo={editando ? `Editar: ${editando.nombre_visible}` : 'Nuevo modelo LLM'} className="max-w-2xl">
+      <Modal abierto={modal} alCerrar={() => setModal(false)} titulo={editando ? t('editarTitulo', { nombre: editando.nombre_visible }) : t('nuevoTitulo')} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {editando && (
             <div className="flex border-b border-borde -mx-1">
-              <button onClick={() => setTabModal('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Datos</button>
-              <button onClick={() => setTabModal('probar')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'probar' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Probar conexión</button>
+              <button onClick={() => setTabModal('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabDatos')}</button>
+              <button onClick={() => setTabModal('probar')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'probar' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabProbarConexion')}</button>
             </div>
           )}
 
           {tabModal === 'datos' && (<>
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-              <Input etiqueta="Proveedor *" value={form.proveedor}
+              <Input etiqueta={t('etiquetaProveedor')} value={form.proveedor}
                 onChange={(e) => setForm({ ...form, proveedor: e.target.value })}
-                placeholder="Ej: anthropic, openai, google" />
-              <Input etiqueta="Nombre visible *" value={form.nombre_visible}
+                placeholder={t('placeholderProveedor')} />
+              <Input etiqueta={t('etiquetaNombreVisible')} value={form.nombre_visible}
                 onChange={(e) => setForm({ ...form, nombre_visible: e.target.value })}
-                placeholder="Ej: Claude Sonnet 4.6" />
+                placeholder={t('placeholderNombreVisible')} />
               <div className="col-span-2">
-                <Input etiqueta="Nombre técnico *" value={form.nombre_tecnico}
+                <Input etiqueta={t('etiquetaNombreTecnico')} value={form.nombre_tecnico}
                   onChange={(e) => setForm({ ...form, nombre_tecnico: e.target.value })}
-                  placeholder="Ej: claude-sonnet-4-6, gpt-4o, gemini-2.5-flash" />
+                  placeholder={t('placeholderNombreTecnico')} />
               </div>
               <div className="col-span-2">
-                <Textarea etiqueta="Descripción" value={form.descripcion}
+                <Textarea etiqueta={t('etiquetaDescripcion')} value={form.descripcion}
                   onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                  placeholder="Descripción del modelo, capacidades, uso recomendado..." rows={3} />
+                  placeholder={t('placeholderDescripcion')} rows={3} />
               </div>
             </div>
             {editando && (
@@ -241,13 +244,13 @@ export default function PaginaRegistroLLM() {
                 <input type="checkbox" checked={form.estado_valido}
                   onChange={(e) => setForm({ ...form, estado_valido: e.target.checked })}
                   className="rounded border-borde" />
-                Conexión validada
+                {t('conexionValidada')}
               </label>
             )}
             {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
             <div className="flex gap-3 justify-end pt-2">
-              <Boton variante="contorno" onClick={() => setModal(false)}>Cancelar</Boton>
-              <Boton variante="primario" onClick={guardar} cargando={guardando}>{editando ? 'Guardar' : 'Crear'}</Boton>
+              <Boton variante="contorno" onClick={() => setModal(false)}>{tc('cancelar')}</Boton>
+              <Boton variante="primario" onClick={guardar} cargando={guardando}>{editando ? tc('guardar') : tc('crear')}</Boton>
             </div>
           </>)}
 
@@ -259,7 +262,7 @@ export default function PaginaRegistroLLM() {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Input
-                    placeholder="Escribe un mensaje..."
+                    placeholder={t('placeholderMensaje')}
                     value={mensajePrueba}
                     onChange={(e) => setMensajePrueba(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !probando) probarConexion() }}
@@ -274,8 +277,8 @@ export default function PaginaRegistroLLM() {
                 <div className="bg-fondo rounded-lg p-4 flex flex-col gap-2">
                   <p className="text-sm text-texto whitespace-pre-wrap">{respuestaPrueba.respuesta}</p>
                   <div className="flex gap-3 text-xs text-texto-muted pt-1 border-t border-borde">
-                    <span>Modelo: {respuestaPrueba.modelo}</span>
-                    <span>Tiempo: {respuestaPrueba.tiempo_ms}ms</span>
+                    <span>{t('resultadoModelo', { modelo: respuestaPrueba.modelo })}</span>
+                    <span>{t('resultadoTiempo', { tiempo: respuestaPrueba.tiempo_ms })}</span>
                   </div>
                 </div>
               )}
@@ -287,7 +290,7 @@ export default function PaginaRegistroLLM() {
               )}
 
               <div className="flex justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModal(false)}>Cerrar</Boton>
+                <Boton variante="contorno" onClick={() => setModal(false)}>{tc('cerrar')}</Boton>
               </div>
             </div>
           )}
@@ -295,7 +298,7 @@ export default function PaginaRegistroLLM() {
       </Modal>
 
       <ModalConfirmar abierto={!!confirmacion} alCerrar={() => setConfirmacion(null)} alConfirmar={ejecutarEliminacion}
-        titulo="Desactivar modelo" mensaje={confirmacion ? `¿Desactivar "${confirmacion.nombre_visible}"?` : ''} textoConfirmar="Desactivar" cargando={eliminando} />
+        titulo={t('desactivarTitulo')} mensaje={confirmacion ? t('desactivarConfirm', { nombre: confirmacion.nombre_visible }) : ''} textoConfirmar={t('desactivarTitulo')} cargando={eliminando} />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Upload, FolderOpen, FileText, AlertTriangle, CheckCircle, Search, Folder, Loader2 } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -12,6 +13,8 @@ import { getDirectoryHandle as idbGetHandle, setDirectoryHandle as idbSetHandle,
 import type { UbicacionDoc } from '@/lib/tipos'
 
 export default function PaginaCargarDocumentos() {
+  const t = useTranslations('cargarDocumentos')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -212,9 +215,9 @@ export default function PaginaCargarDocumentos() {
     <div className="flex flex-col gap-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-texto">Cargar Documentos</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
-          Carga documentos desde un directorio local a las ubicaciones habilitadas en el sistema
+          {t('subtitulo')}
         </p>
       </div>
 
@@ -224,17 +227,17 @@ export default function PaginaCargarDocumentos() {
           <Folder size={20} className="text-primario shrink-0" />
           <div>
             <p className="text-sm font-medium text-texto">
-              {cargandoUbicaciones ? 'Cargando...' : `${ubicacionesHabilitadas.length} ubicaciones habilitadas`}
+              {cargandoUbicaciones ? tc('cargando') : t('ubicacionesHabilitadas', { n: ubicacionesHabilitadas.length })}
             </p>
             <p className="text-xs text-texto-muted">
               {!cargandoUbicaciones && ubicaciones.length > 0
-                ? `de ${ubicaciones.length} totales en el grupo`
-                : 'Configure ubicaciones en Ubicaciones Docs'}
+                ? t('deTotales', { n: ubicaciones.length })
+                : t('configUbicaciones')}
             </p>
           </div>
         </div>
         {!cargandoUbicaciones && ubicacionesHabilitadas.length > 0 && (
-          <Insignia variante="exito">{ubicacionesHabilitadas.length} activas</Insignia>
+          <Insignia variante="exito">{t('activas', { n: ubicacionesHabilitadas.length })}</Insignia>
         )}
       </div>
 
@@ -243,9 +246,9 @@ export default function PaginaCargarDocumentos() {
         <div className="border-2 border-dashed border-borde rounded-lg p-8 text-center flex flex-col items-center gap-4">
           <Upload size={48} className="text-texto-muted/50" />
           <div>
-            <p className="text-texto mb-1">Seleccione el directorio raíz para escanear</p>
+            <p className="text-texto mb-1">{t('seleccionarDirectorioTitulo')}</p>
             <p className="text-sm text-texto-muted">
-              Solo se cargarán archivos de directorios que coincidan con ubicaciones habilitadas
+              {t('seleccionarDirectorioDesc')}
             </p>
           </div>
 
@@ -256,13 +259,13 @@ export default function PaginaCargarDocumentos() {
               disabled={ubicacionesHabilitadas.length === 0 || escaneando}
             >
               {escaneando
-                ? <><Loader2 size={16} className="animate-spin" />Escaneando...</>
-                : <><FolderOpen size={16} />{dirHandle ? `📂 ${dirHandle.name}` : 'Seleccionar directorio raíz'}</>
+                ? <><Loader2 size={16} className="animate-spin" />{t('escaneando')}</>
+                : <><FolderOpen size={16} />{dirHandle ? `📂 ${dirHandle.name}` : t('seleccionarDirectorioBtn')}</>
               }
             </Boton>
             {dirHandle && !escaneando && (
               <Boton variante="contorno" onClick={() => ejecutarEscaneo(dirHandle!)}>
-                Re-escanear
+                {t('reEscanear')}
               </Boton>
             )}
           </div>
@@ -270,10 +273,10 @@ export default function PaginaCargarDocumentos() {
           {/* Hint de carpeta raíz + niveles */}
           <p className="text-xs text-texto-muted">
             {carpetaRaiz?.ruta_completa
-              ? <>Selecciona la carpeta raíz: <strong className="text-texto">{carpetaRaiz.ruta_completa.split('/').filter(Boolean)[0] ?? carpetaRaiz.ruta_completa}</strong> (no subcarpetas) · </>
+              ? <>{t('seleccionarCarpetaRaiz')} <strong className="text-texto">{carpetaRaiz.ruta_completa.split('/').filter(Boolean)[0] ?? carpetaRaiz.ruta_completa}</strong> {t('noSubcarpetas')} · </>
               : null}
-            {nivelesDirectorio === 0 ? 'Solo raíz' : `Hasta ${nivelesDirectorio} nivel${nivelesDirectorio !== 1 ? 'es' : ''}`}
-            {' '}· configurable en Parámetros → DOCUMENTOS/NIVELES_DIRECTORIO
+            {nivelesDirectorio === 0 ? t('soloRaiz') : t('hastaXNiveles', { n: nivelesDirectorio })}
+            {' '}· {t('configNiveles')}
           </p>
         </div>
       )}
@@ -288,13 +291,13 @@ export default function PaginaCargarDocumentos() {
               <div>
                 <p className="font-medium text-texto">{datosEscaneo.nombreRaiz}</p>
                 <p className="text-sm text-texto-muted">
-                  {datosEscaneo.archivos.length} archivo{datosEscaneo.archivos.length !== 1 ? 's' : ''} encontrados
-                  {' '}· {nivelesDirectorio === 0 ? 'Solo raíz' : `${nivelesDirectorio} nivel${nivelesDirectorio !== 1 ? 'es' : ''}`}
+                  {t('xArchivosEncontrados', { n: datosEscaneo.archivos.length })}
+                  {' '}· {nivelesDirectorio === 0 ? t('soloRaiz') : t('hastaXNiveles', { n: nivelesDirectorio })}
                 </p>
               </div>
             </div>
             <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={escaneando}>
-              <FolderOpen size={14} />Cambiar
+              <FolderOpen size={14} />{t('cambiar')}
             </Boton>
           </div>
 
@@ -302,17 +305,17 @@ export default function PaginaCargarDocumentos() {
           <div className="grid grid-cols-3 gap-3">
             <div className="border border-borde rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-green-600">{datosEscaneo.archivosConMatch.length}</p>
-              <p className="text-xs text-texto-muted">A cargar</p>
+              <p className="text-xs text-texto-muted">{t('aCargar')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-amber-600">{datosEscaneo.archivosEnNoHabilitadas.length}</p>
-              <p className="text-xs text-texto-muted">En inhabilitadas</p>
+              <p className="text-xs text-texto-muted">{t('enInhabilitadas')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-texto-muted">
                 {datosEscaneo.archivos.length - datosEscaneo.archivosConMatch.length - datosEscaneo.archivosEnNoHabilitadas.length}
               </p>
-              <p className="text-xs text-texto-muted">Sin ubicación en BD</p>
+              <p className="text-xs text-texto-muted">{t('sinUbicacion')}</p>
             </div>
           </div>
 
@@ -322,7 +325,7 @@ export default function PaginaCargarDocumentos() {
               <summary className="px-4 py-3 cursor-pointer flex items-center gap-2">
                 <AlertTriangle size={16} className="text-amber-600 shrink-0" />
                 <span className="text-sm font-medium text-amber-800">
-                  {datosEscaneo.carpetasSinMatch.length} carpeta{datosEscaneo.carpetasSinMatch.length !== 1 ? 's' : ''} sin ubicación en BD
+                  {t('carpetasSinMatch', { n: datosEscaneo.carpetasSinMatch.length })}
                 </span>
               </summary>
               <div className="px-4 pb-3 max-h-[150px] overflow-y-auto border-t border-amber-200 pt-2">
@@ -338,7 +341,7 @@ export default function PaginaCargarDocumentos() {
             <div className="border border-borde rounded-lg">
               <div className="px-3 py-2 border-b border-borde bg-fondo rounded-t-lg">
                 <Input
-                  placeholder="Filtrar archivos por nombre o directorio..."
+                  placeholder={t('filtrarArchivos')}
                   value={busquedaArchivos}
                   onChange={(e) => setBusquedaArchivos(e.target.value)}
                   icono={<Search size={14} />}
@@ -362,20 +365,20 @@ export default function PaginaCargarDocumentos() {
                   ))}
                   {archivosFiltrados.length > 30 && (
                     <p className="px-4 py-2 text-xs text-texto-muted text-center">
-                      ...y {archivosFiltrados.length - 30} archivo(s) más
+                      {t('yMasArchivos', { n: archivosFiltrados.length - 30 })}
                     </p>
                   )}
                   {archivosFiltrados.length === 0 && busquedaArchivos && (
                     <p className="px-4 py-3 text-sm text-texto-muted text-center">
-                      Sin resultados para &quot;{busquedaArchivos}&quot;
+                      {t('sinResultadosFiltro', { filtro: busquedaArchivos })}
                     </p>
                   )}
                 </div>
               </div>
               <div className="px-3 py-2 border-t border-borde bg-fondo rounded-b-lg text-xs text-texto-muted">
                 {busquedaArchivos
-                  ? `${archivosFiltrados.length} de ${datosEscaneo.archivosConMatch.length} archivos`
-                  : `${datosEscaneo.archivosConMatch.length} archivos a cargar`}
+                  ? t('xDenArchivos', { filtrados: archivosFiltrados.length, total: datosEscaneo.archivosConMatch.length })
+                  : t('xArchivosACargar', { n: datosEscaneo.archivosConMatch.length })}
               </div>
             </div>
           )}
@@ -383,7 +386,7 @@ export default function PaginaCargarDocumentos() {
           {/* Botones */}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={resetear}>
-              Cancelar
+              {tc('cancelar')}
             </Boton>
             <Boton
               variante="primario"
@@ -392,7 +395,7 @@ export default function PaginaCargarDocumentos() {
               disabled={datosEscaneo.archivosConMatch.length === 0}
             >
               <Upload size={15} />
-              Cargar {datosEscaneo.archivosConMatch.length} documento{datosEscaneo.archivosConMatch.length !== 1 ? 's' : ''}
+              {t('cargarNDocumentos', { n: datosEscaneo.archivosConMatch.length })}
             </Boton>
           </div>
         </div>
@@ -403,27 +406,27 @@ export default function PaginaCargarDocumentos() {
         <div className="flex flex-col gap-4">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
             <CheckCircle size={32} className="mx-auto text-green-600 mb-2" />
-            <p className="text-lg font-medium text-green-800">Carga completada</p>
+            <p className="text-lg font-medium text-green-800">{t('cargaCompletada')}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div className="border border-borde rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-green-600">{resultado.insertados}</p>
-              <p className="text-xs text-texto-muted">Nuevos</p>
+              <p className="text-xs text-texto-muted">{t('nuevos')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-primario">{resultado.actualizados}</p>
-              <p className="text-xs text-texto-muted">Actualizados</p>
+              <p className="text-xs text-texto-muted">{t('actualizados')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
               <p className="text-2xl font-bold text-texto-muted">{resultado.total}</p>
-              <p className="text-xs text-texto-muted">Total procesados</p>
+              <p className="text-xs text-texto-muted">{t('totalProcesados')}</p>
             </div>
           </div>
 
           <div className="flex justify-end pt-2">
             <Boton variante="primario" onClick={resetear}>
-              Nueva carga
+              {t('nuevaCarga')}
             </Boton>
           </div>
         </div>

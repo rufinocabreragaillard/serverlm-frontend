@@ -30,10 +30,10 @@ export default function PaginaTiposDocumentoPersona() {
       descripcion: f.descripcion || undefined,
     }),
     eliminarFn: async (id: string) => { await tiposDocumentoPersonaApi.desactivar(id) },
-    getId: (t) => t.codigo_tipo_doc,
-    camposBusqueda: (t) => [t.codigo_tipo_doc, t.nombre],
+    getId: (item) => item.codigo_tipo_doc,
+    camposBusqueda: (item) => [item.codigo_tipo_doc, item.nombre],
     formInicial: { codigo_tipo_doc: '', nombre: '', descripcion: '' },
-    itemToForm: (t) => ({ codigo_tipo_doc: t.codigo_tipo_doc, nombre: t.nombre, descripcion: t.descripcion || '' }),
+    itemToForm: (item) => ({ codigo_tipo_doc: item.codigo_tipo_doc, nombre: item.nombre, descripcion: item.descripcion || '' }),
   })
 
   const filtradosOrdenados = [...crud.filtrados].sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -53,10 +53,10 @@ export default function PaginaTiposDocumentoPersona() {
         textoNuevo={t('nuevoTipo')}
         excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
         excelColumnas={[
-          { titulo: 'Código', campo: 'codigo_tipo_doc' },
-          { titulo: 'Nombre', campo: 'nombre' },
-          { titulo: 'Descripción', campo: 'descripcion' },
-          { titulo: 'Estado', campo: 'activo', formato: (v: unknown) => (v ? 'Activo' : 'Inactivo') },
+          { titulo: t('colCodigo'), campo: 'codigo_tipo_doc' },
+          { titulo: t('colNombre'), campo: 'nombre' },
+          { titulo: t('colDescripcion'), campo: 'descripcion' },
+          { titulo: t('colEstado'), campo: 'activo', formato: (v: unknown) => (v ? tc('activo') : tc('inactivo')) },
         ]}
         excelNombreArchivo="tipos-documento-persona"
       />
@@ -102,19 +102,19 @@ export default function PaginaTiposDocumentoPersona() {
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={crud.cerrarModal}>Cancelar</Boton>
+            <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('cancelar')}</Boton>
             <Boton
               variante="primario"
               onClick={() => {
                 if (!crud.form.nombre.trim()) {
-                  crud.setError('El nombre es obligatorio')
+                  crud.setError(t('errorNombreObligatorio'))
                   return
                 }
                 crud.guardar()
               }}
               cargando={crud.guardando}
             >
-              {crud.editando ? 'Guardar' : 'Crear'}
+              {crud.editando ? tc('guardar') : tc('crear')}
             </Boton>
           </div>
         </div>
@@ -124,8 +124,8 @@ export default function PaginaTiposDocumentoPersona() {
         abierto={!!crud.confirmacion}
         alCerrar={() => crud.setConfirmacion(null)}
         alConfirmar={crud.ejecutarEliminacion}
-        titulo="Desactivar tipo de documento"
-        mensaje={crud.confirmacion ? `¿Desactivar "${crud.confirmacion.nombre}"?` : ''}
+        titulo={t('desactivarTitulo')}
+        mensaje={crud.confirmacion ? t('desactivarConfirm', { nombre: crud.confirmacion.nombre }) : ''}
         textoConfirmar="Desactivar"
         cargando={crud.eliminando}
       />
