@@ -201,6 +201,8 @@ export interface Aplicacion {
   nombre: string
   descripcion?: string
   tipo?: 'NORMAL' | 'RESTRINGIDA'
+  sidebar_ancho?: boolean
+  orden?: number
 }
 
 // ─── Parámetros ──────────────────────────────────────────────────────────────

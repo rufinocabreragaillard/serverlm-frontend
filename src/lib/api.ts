@@ -263,6 +263,8 @@ export const aplicacionesApi = {
   actualizar: (id: string, datos: Partial<Aplicacion>) =>
     api.put<Aplicacion>(`/aplicaciones/${id}`, datos).then((r) => r.data),
   eliminar: (id: string) => api.delete(`/aplicaciones/${id}`),
+  reordenar: (orden: { codigo_aplicacion: string; orden: number }[]) =>
+    api.put('/aplicaciones/reordenar', orden),
   listarFunciones: (id: string) =>
     api.get<{ codigo_funcion: string; orden: number; funciones: { nombre_funcion: string } }[]>(
       `/aplicaciones/${id}/funciones`

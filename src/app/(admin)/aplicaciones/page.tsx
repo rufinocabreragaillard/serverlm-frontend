@@ -172,12 +172,28 @@ export default function PaginaAplicaciones() {
     finally { setEliminando(false) }
   }
 
+  // ── Reordenar aplicaciones ────────────────────────────────────────────────
+  const moverApp = async (index: number, direccion: 'arriba' | 'abajo') => {
+    const lista = [...aplicaciones].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
+    const swap = direccion === 'arriba' ? index - 1 : index + 1
+    if (swap < 0 || swap >= lista.length) return
+    const ordenA = lista[index].orden ?? 0
+    const ordenB = lista[swap].orden ?? 0
+    lista[index] = { ...lista[index], orden: ordenB }
+    lista[swap] = { ...lista[swap], orden: ordenA }
+    ;[lista[index], lista[swap]] = [lista[swap], lista[index]]
+    setAplicaciones(lista)
+    try {
+      await aplicacionesApi.reordenar(lista.map((a) => ({ codigo_aplicacion: a.codigo_aplicacion, orden: a.orden ?? 0 })))
+    } catch {
+      cargar()
+    }
+  }
+
   // ── Lista filtrada ────────────────────────────────────────────────────────
-  const appsFiltradas = aplicaciones.filter((a) => a.nombre.toLowerCase().includes(busqueda.toLowerCase()) || a.codigo_aplicacion.toLowerCase().includes(busqueda.toLowerCase())).sort((a, b) => {
-    const ta = (a.tipo || 'NORMAL'); const tb = (b.tipo || 'NORMAL')
-    if (ta !== tb) return ta.localeCompare(tb)
-    return a.nombre.localeCompare(b.nombre)
-  })
+  const appsFiltradas = aplicaciones
+    .filter((a) => a.nombre.toLowerCase().includes(busqueda.toLowerCase()) || a.codigo_aplicacion.toLowerCase().includes(busqueda.toLowerCase()))
+    .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
@@ -197,12 +213,21 @@ export default function PaginaAplicaciones() {
       </div>
 
       <Tabla>
-        <TablaCabecera><tr><TablaTh>Codigo</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Descripcion</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
+        <TablaCabecera><tr><TablaTh className="w-16">Orden</TablaTh><TablaTh>Codigo</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Descripcion</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
         <TablaCuerpo>
-          {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>Cargando...</TablaTd></TablaFila>
-          ) : appsFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>No se encontraron aplicaciones</TablaTd></TablaFila>
-          ) : appsFiltradas.map((a) => (
+          {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando...</TablaTd></TablaFila>
+          ) : appsFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>No se encontraron aplicaciones</TablaTd></TablaFila>
+          ) : appsFiltradas.map((a, idx) => (
             <TablaFila key={a.codigo_aplicacion}>
+              <TablaTd>
+                <div className="flex items-center gap-1">
+                  <div className="flex flex-col">
+                    <button onClick={() => moverApp(idx, 'arriba')} disabled={idx === 0} className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Subir"><ArrowUp size={13} /></button>
+                    <button onClick={() => moverApp(idx, 'abajo')} disabled={idx === appsFiltradas.length - 1} className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30 disabled:cursor-not-allowed" title="Bajar"><ArrowDown size={13} /></button>
+                  </div>
+                  <span className="text-xs text-texto-muted w-4 text-center">{a.orden}</span>
+                </div>
+              </TablaTd>
               <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{a.codigo_aplicacion}</code></TablaTd>
               <TablaTd className="font-medium">{a.nombre}</TablaTd>
               <TablaTd><Insignia variante={a.tipo === 'RESTRINGIDA' ? 'error' : 'exito'}>{a.tipo === 'RESTRINGIDA' ? 'Restringida' : 'Normal'}</Insignia></TablaTd>
