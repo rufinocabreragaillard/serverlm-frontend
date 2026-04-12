@@ -134,6 +134,10 @@ export default function PaginaProcesarDocumentos() {
   const [confirmEliminar, setConfirmEliminar] = useState<ColaEstadoDoc | null>(null)
   const [eliminando, setEliminando] = useState(false)
 
+  // Confirmación para eliminar documento individual de la lista
+  const [confirmEliminarDoc, setConfirmEliminarDoc] = useState<Documento | null>(null)
+  const [eliminandoDoc, setEliminandoDoc] = useState(false)
+
   // Tab principal: "Paso a Paso" (control granular) | "Todo" (pipeline completo)
   const [tabPrincipal, setTabPrincipal] = useState<'paso-a-paso' | 'todo'>('paso-a-paso')
 
@@ -465,6 +469,19 @@ export default function PaginaProcesarDocumentos() {
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
     } catch (e) {
       alert(`Error al abrir: ${e instanceof Error ? e.message : e}`)
+    }
+  }
+
+  const ejecutarEliminarDoc = async () => {
+    if (!confirmEliminarDoc) return
+    setEliminandoDoc(true)
+    try {
+      await documentosApi.desactivar(confirmEliminarDoc.codigo_documento)
+      setSeleccionados((prev) => { const s = new Set(prev); s.delete(confirmEliminarDoc.codigo_documento); return s })
+      setDocumentos((prev) => prev.filter((d) => d.codigo_documento !== confirmEliminarDoc!.codigo_documento))
+      setConfirmEliminarDoc(null)
+    } finally {
+      setEliminandoDoc(false)
     }
   }
 
@@ -1080,7 +1097,7 @@ export default function PaginaProcesarDocumentos() {
                 <TablaTh>{t('colDocumento')}</TablaTh>
                 <TablaTh>{t('colUbicacion')}</TablaTh>
                 <TablaTh>{t('colEstado')}</TablaTh>
-                <TablaTh className="w-24" />
+                <TablaTh className="w-32 text-right">{tc('acciones')}</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
@@ -1132,6 +1149,12 @@ export default function PaginaProcesarDocumentos() {
                         className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
                         title="Ver detalle">
                         <Eye size={15} />
+                      </button>
+                      <button
+                        onClick={() => setConfirmEliminarDoc(d)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
+                        title="Eliminar documento">
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </TablaTd>
@@ -1248,6 +1271,15 @@ export default function PaginaProcesarDocumentos() {
         mensaje={confirmEliminar ? t('eliminarItemConfirm', { id: confirmEliminar.id_cola }) : ''}
         textoConfirmar={tc('eliminar')}
         cargando={eliminando}
+      />
+      <ModalConfirmar
+        abierto={!!confirmEliminarDoc}
+        alCerrar={() => setConfirmEliminarDoc(null)}
+        alConfirmar={ejecutarEliminarDoc}
+        titulo="Eliminar documento"
+        mensaje={confirmEliminarDoc ? `¿Eliminar "${confirmEliminarDoc.nombre_documento}"? Esta acción no se puede deshacer.` : ''}
+        textoConfirmar={tc('eliminar')}
+        cargando={eliminandoDoc}
       />
 
       {/* ── Modal detalle de documento ─────────────────────────────────── */}
