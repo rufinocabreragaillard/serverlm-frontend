@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon, Trash2, AlertTriangle, ListOrdered, Cpu } from 'lucide-react'
+import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon, Trash2, AlertTriangle, ListOrdered, Cpu, Eye, ExternalLink } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -976,13 +976,14 @@ export default function PaginaProcesarDocumentos() {
                 <TablaTh>{t('colDocumento')}</TablaTh>
                 <TablaTh>{t('colUbicacion')}</TablaTh>
                 <TablaTh>{t('colEstado')}</TablaTh>
+                <TablaTh className="w-24" />
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>{tc('cargando')}</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>{tc('cargando')}</TablaTd></TablaFila>
               ) : docsFiltrados.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>
                   {!yaCargado
                     ? t('escribirFiltro')
                     : documentos.length === 0
@@ -1004,6 +1005,31 @@ export default function PaginaProcesarDocumentos() {
                   <TablaTd className="text-xs text-texto-muted max-w-[250px] truncate">{d.ubicacion_documento || '—'}</TablaTd>
                   <TablaTd>
                     <Insignia variante="advertencia">{d.codigo_estado_doc}</Insignia>
+                  </TablaTd>
+                  <TablaTd>
+                    <div className="flex items-center justify-end gap-1">
+                      {d.ubicacion_documento && /^https?:\/\//i.test(d.ubicacion_documento) && (
+                        <a href={d.ubicacion_documento} target="_blank" rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
+                          title="Abrir URL">
+                          <ExternalLink size={15} />
+                        </a>
+                      )}
+                      {d.ubicacion_documento && !/^https?:\/\//i.test(d.ubicacion_documento) && (
+                        <button
+                          onClick={() => fetch(`http://localhost:27182/abrir`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ruta: d.ubicacion_documento }) }).catch(() => {})}
+                          className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
+                          title="Abrir archivo local">
+                          <FileText size={15} />
+                        </button>
+                      )}
+                      <a href={`/documentos?q=${encodeURIComponent(d.nombre_documento)}`}
+                        target="_blank"
+                        className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
+                        title="Ver en Documentos">
+                        <Eye size={15} />
+                      </a>
+                    </div>
                   </TablaTd>
                 </TablaFila>
               ))}
