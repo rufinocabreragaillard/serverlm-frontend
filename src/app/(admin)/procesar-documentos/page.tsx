@@ -340,19 +340,22 @@ export default function PaginaProcesarDocumentos() {
   }
 
   const docsFiltrados = documentos.filter((d) => {
-    if (archivosEnDir && !archivosEnDir.has(d.nombre_documento)) return false
+    // El filtro por archivos del filesystem solo aplica a EXTRAER (operación client-side).
+    // Para otros procesos el directorio es solo un filtro lógico de ubicación (ya aplicado
+    // en cargarDocumentos vía alcance=ubicacion / ubicacionSel).
+    if (esExtraer && archivosEnDir && !archivosEnDir.has(d.nombre_documento)) return false
     if (busqueda && !d.nombre_documento.toLowerCase().includes(busqueda.toLowerCase()) &&
         !(d.ubicacion_documento || '').toLowerCase().includes(busqueda.toLowerCase())) return false
     return true
   })
 
-  // Cuando se escanea un directorio, marcar automáticamente los documentos encontrados
+  // Cuando se escanea un directorio en modo EXTRAER, marcar automáticamente los encontrados
   useEffect(() => {
-    if (archivosEnDir) {
+    if (esExtraer && archivosEnDir) {
       const ids = documentos.filter((d) => archivosEnDir.has(d.nombre_documento)).map((d) => d.codigo_documento)
       setSeleccionados(new Set(ids))
     }
-  }, [archivosEnDir, documentos])
+  }, [esExtraer, archivosEnDir, documentos])
 
   const seleccionarTodos = () => setSeleccionados(new Set(docsFiltrados.map((d) => d.codigo_documento)))
   const deseleccionarTodos = () => setSeleccionados(new Set())
@@ -959,8 +962,11 @@ export default function PaginaProcesarDocumentos() {
               </span>
             )}
             <div className="ml-auto flex items-center gap-3">
+              {!procesoSel && documentos.length > 0 && (
+                <span className="text-xs text-amarillo-600 font-medium">Selecciona un proceso para ejecutar</span>
+              )}
               <span className="text-sm text-texto-muted">
-                {t('xDeYSeleccionados', { x: seleccionados.size, y: documentos.length })}{archivosEnDir && ` ${t('filtradoPorDirectorio')}`}
+                {t('xDeYSeleccionados', { x: seleccionados.size, y: documentos.length })}{esExtraer && archivosEnDir && ` ${t('filtradoPorDirectorio')}`}
               </span>
               <Boton variante="primario" onClick={ejecutar}
                 disabled={ejecutando || !procesoSel || ((esExtraer || esRestablecer) && seleccionados.size === 0)}>
