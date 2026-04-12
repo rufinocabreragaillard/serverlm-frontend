@@ -156,10 +156,10 @@ export default function PaginaFunciones() {
       </div>
 
       <Tabla>
-        <TablaCabecera><tr><TablaTh className="w-16">Orden</TablaTh><TablaTh>App origen</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Icono</TablaTh><TablaTh>URL</TablaTh><TablaTh>Codigo</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
+        <TablaCabecera><tr><TablaTh className="w-16">Orden</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Icono</TablaTh><TablaTh>URL</TablaTh><TablaTh>Codigo</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
         <TablaCuerpo>
-          {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>Cargando...</TablaTd></TablaFila>
-          ) : funcionesFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>No se encontraron funciones</TablaTd></TablaFila>
+          {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
+          ) : funcionesFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron funciones</TablaTd></TablaFila>
           ) : funcionesFiltradas.map((f, idx) => (
             <TablaFila key={f.codigo_funcion}>
               <TablaTd>
@@ -182,7 +182,6 @@ export default function PaginaFunciones() {
                   </button>
                 </div>
               </TablaTd>
-              <TablaTd className="text-xs text-texto-muted">{nombreApp(f.codigo_aplicacion_origen) || '—'}</TablaTd>
               <TablaTd>{f.tipo === 'RESTRINGIDA' ? <Insignia variante="error">Restringida</Insignia> : <Insignia variante="exito">Normal</Insignia>}</TablaTd>
               <TablaTd className="text-sm">{f.alias_de_funcion || '—'}</TablaTd>
               <TablaTd className="font-medium">{f.nombre}</TablaTd>
