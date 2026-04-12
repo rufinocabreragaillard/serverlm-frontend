@@ -209,28 +209,48 @@ export default function PaginaFunciones() {
             </div>
           )}
           {tabModalFuncion === 'datos' && (<>
-            <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestion de usuarios" />
-            <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
-            <div>
-              <label className="block text-sm font-medium text-texto mb-1">Aplicacion origen</label>
-              <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className={selectClass}>
-                <option value="">— sin asignar —</option>
-                {[...aplicaciones].sort((a, b) => {
-                  const ta = a.tipo === 'NORMAL' ? 0 : 1
-                  const tb = b.tipo === 'NORMAL' ? 0 : 1
-                  if (ta !== tb) return ta - tb
-                  return a.nombre.localeCompare(b.nombre, 'es')
-                }).map((a) => (
-                  <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <label className="text-sm font-medium text-texto">Nombre *</label>
+                <Input value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestion de usuarios" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-texto">Alias</label>
+                <Input value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" maxLength={40} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-texto">URL funcion</label>
+                <Input value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-texto">Icono</label>
+                <Input value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-texto">Aplicacion origen</label>
+                <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className={selectClass}>
+                  <option value="">— sin asignar —</option>
+                  {[...aplicaciones].sort((a, b) => {
+                    const ta = a.tipo === 'NORMAL' ? 0 : 1
+                    const tb = b.tipo === 'NORMAL' ? 0 : 1
+                    if (ta !== tb) return ta - tb
+                    return a.nombre.localeCompare(b.nombre, 'es')
+                  }).map((a) => (
+                    <option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>
+                  ))}
+                </select>
+              </div>
+              {funcionEditando && (
+                <div>
+                  <label className="text-sm font-medium text-texto">Codigo</label>
+                  <Input value={formFuncion.codigo_funcion} disabled readOnly />
+                </div>
+              )}
+              <div className="col-span-2">
+                <label className="text-sm font-medium text-texto">Descripcion</label>
+                <Textarea value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} rows={2} />
+              </div>
             </div>
-            <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
-            <Textarea etiqueta="Descripcion" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} rows={3} />
-            <Input etiqueta="URL funcion" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
-            {funcionEditando && (
-              <Input etiqueta="Codigo" value={formFuncion.codigo_funcion} disabled readOnly />
-            )}
             {errorFuncion && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorFuncion}</p></div>}
             <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton><Boton variante="primario" onClick={guardarFuncion} cargando={guardandoFuncion}>{funcionEditando ? 'Guardar' : 'Crear funcion'}</Boton></div>
           </>)}
