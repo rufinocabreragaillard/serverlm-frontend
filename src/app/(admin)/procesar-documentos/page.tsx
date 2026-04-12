@@ -65,6 +65,7 @@ export default function PaginaProcesarDocumentos() {
   const [nParallelEdit, setNParallelEdit] = useState<number>(10)
   const [guardandoParalel, setGuardandoParalel] = useState(false)
   const [tope, setTope] = useState<string>('')  // vacío = sin tope (procesa todo)
+  const [estadoFiltro, setEstadoFiltro] = useState<string>('')  // override de estado para la lista
   const [alcance, setAlcance] = useState<Alcance>('pendientes')
   const [ubicaciones, setUbicaciones] = useState<UbicacionOption[]>([])
   const [ubicacionSel, setUbicacionSel] = useState('')
@@ -261,7 +262,11 @@ export default function PaginaProcesarDocumentos() {
     setCargando(true)
     try {
       let todos: Documento[]
-      if (esRestablecer) {
+      const estadoOverride = estadoFiltro || null
+      if (estadoOverride) {
+        // Filtro manual de estado — ignora el proceso seleccionado
+        todos = await documentosApi.listar({ codigo_estado_doc: estadoOverride, activo: true, q: busqueda.trim() || undefined })
+      } else if (esRestablecer) {
         // Restablecer: listar documentos en NO_ESCANEABLE + NO_ENCONTRADO
         const [a, b] = await Promise.all([
           documentosApi.listar({ codigo_estado_doc: 'NO_ESCANEABLE', activo: true, q: busqueda.trim() || undefined }),
@@ -294,7 +299,7 @@ export default function PaginaProcesarDocumentos() {
     } finally {
       setCargando(false)
     }
-  }, [procesoSel, esRestablecer, pasoActual, alcance, ubicacionSel, ubicaciones, busqueda])
+  }, [procesoSel, esRestablecer, pasoActual, alcance, ubicacionSel, ubicaciones, busqueda, estadoFiltro])
 
   // Resetear lista cuando cambian filtros de proceso/alcance/ubicación.
   // Si el alcance es "pendientes" (no requiere filtro adicional), autocargamos
@@ -802,6 +807,23 @@ export default function PaginaProcesarDocumentos() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Estado (lista)</label>
+              <select
+                value={estadoFiltro}
+                onChange={(e) => { setEstadoFiltro(e.target.value); setYaCargado(false) }}
+                className={selectClass}
+                disabled={ejecutando}
+              >
+                <option value="">— según proceso —</option>
+                {estadosDocs.map((e) => (
+                  <option key={e.codigo_estado_doc} value={e.codigo_estado_doc}>
+                    {e.nombre_estado || e.codigo_estado_doc}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-col gap-1.5">
