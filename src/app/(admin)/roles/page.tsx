@@ -398,7 +398,7 @@ export default function PaginaRoles() {
           <div className="flex items-center gap-3">
             <div className="max-w-sm flex-1">
               <Input
-                placeholder="Buscar por nombre, código o alias..."
+                placeholder={t('buscarPlaceholder')}
                 value={busquedaRoles}
                 onChange={(e) => setBusquedaRoles(e.target.value)}
                 icono={<Search size={15} />}
@@ -423,27 +423,27 @@ export default function PaginaRoles() {
               <Download size={15} />
               Excel
             </Boton>
-            <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />Nuevo rol</Boton>
+            <Boton variante="primario" onClick={abrirNuevoRol}><Plus size={16} />{t('nuevoRol')}</Boton>
             </div>
           </div>
           <Tabla>
             <TablaCabecera>
               <tr>
-                <TablaTh className="w-16">Orden</TablaTh>
-                <TablaTh>App origen</TablaTh>
-                <TablaTh>Tipo</TablaTh>
-                <TablaTh>Alias</TablaTh>
-                <TablaTh>Nombre</TablaTh>
-                <TablaTh>URL inicio</TablaTh>
-                <TablaTh>Código</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
+                <TablaTh className="w-16">{t('colOrden')}</TablaTh>
+                <TablaTh>{t('colAppOrigen')}</TablaTh>
+                <TablaTh>{t('colTipo')}</TablaTh>
+                <TablaTh>{t('colAlias')}</TablaTh>
+                <TablaTh>{t('colNombre')}</TablaTh>
+                <TablaTh>{t('colUrlInicio')}</TablaTh>
+                <TablaTh>{t('colCodigo')}</TablaTh>
+                <TablaTh className="text-right">{tc('acciones')}</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>{tc('cargando')}</TablaTd></TablaFila>
               ) : rolesFiltrados.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>No se encontraron roles</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={9 as never}>{tc('sinResultados')}</TablaTd></TablaFila>
               ) : rolesFiltrados.map((r, idx) => (
                 <TablaFila key={r.id_rol}>
                   <TablaTd>
@@ -482,7 +482,7 @@ export default function PaginaRoles() {
           <div className="flex items-center gap-3">
             <div className="max-w-sm flex-1">
               <Input
-                placeholder="Buscar por nombre, código o alias..."
+                placeholder={t('buscarPlaceholder')}
                 value={busquedaFunciones}
                 onChange={(e) => setBusquedaFunciones(e.target.value)}
                 icono={<Search size={15} />}
@@ -506,27 +506,27 @@ export default function PaginaRoles() {
               <Download size={15} />
               Excel
             </Boton>
-            <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />Nueva función</Boton>
+            <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />{t('nuevaFuncion')}</Boton>
             </div>
           </div>
           <Tabla>
             <TablaCabecera>
               <tr>
-                <TablaTh>App origen</TablaTh>
-                <TablaTh>Tipo</TablaTh>
-                <TablaTh>Alias</TablaTh>
-                <TablaTh>Nombre</TablaTh>
-                <TablaTh>Icono</TablaTh>
-                <TablaTh>URL función</TablaTh>
-                <TablaTh>Código</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
+                <TablaTh>{t('colAppOrigen')}</TablaTh>
+                <TablaTh>{t('colTipo')}</TablaTh>
+                <TablaTh>{t('colAlias')}</TablaTh>
+                <TablaTh>{t('colNombre')}</TablaTh>
+                <TablaTh>{t('colIcono')}</TablaTh>
+                <TablaTh>{t('colUrl')}</TablaTh>
+                <TablaTh>{t('colCodigo')}</TablaTh>
+                <TablaTh className="text-right">{tc('acciones')}</TablaTh>
               </tr>
             </TablaCabecera>
             <TablaCuerpo>
               {cargando ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>{tc('cargando')}</TablaTd></TablaFila>
               ) : funcionesFiltradas.length === 0 ? (
-                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron funciones</TablaTd></TablaFila>
+                <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>{tc('sinResultados')}</TablaTd></TablaFila>
               ) : funcionesFiltradas.map((f) => (
                 <TablaFila key={f.codigo_funcion}>
                   <TablaTd className="text-xs text-texto-muted">{nombreApp(f.codigo_aplicacion_origen) || '—'}</TablaTd>
@@ -550,7 +550,7 @@ export default function PaginaRoles() {
       )}
 
       {/* Modal Rol */}
-      <Modal abierto={modalRol} alCerrar={() => setModalRol(false)} titulo={rolEditando ? `Editar rol: ${rolEditando.nombre}` : 'Nuevo rol'} className="max-w-2xl">
+      <Modal abierto={modalRol} alCerrar={() => setModalRol(false)} titulo={rolEditando ? t('editarRolTitulo', { nombre: rolEditando.nombre }) : t('nuevoRolTitulo')} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {/* Pestañas (solo en edición) */}
           {rolEditando && (
@@ -563,7 +563,7 @@ export default function PaginaRoles() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                Datos
+                {t('tabDatos')}
               </button>
               <button
                 onClick={() => setTabModalRol('funciones')}
@@ -573,7 +573,7 @@ export default function PaginaRoles() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                Funciones asignadas
+                {t('tabFuncionesAsignadas')}
               </button>
             </div>
           )}
@@ -582,13 +582,13 @@ export default function PaginaRoles() {
           {tabModalRol === 'datos' && (
             <>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <Input etiqueta="Nombre *" value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder="Administrador" />
-                <Input etiqueta="Alias" value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder="Admin" />
+                <Input etiqueta={t('etiquetaNombre')} value={formRol.nombre} onChange={(e) => setFormRol({ ...formRol, nombre: e.target.value })} placeholder={t('placeholderNombreRol')} />
+                <Input etiqueta={t('etiquetaAlias')} value={formRol.alias_de_rol} onChange={(e) => setFormRol({ ...formRol, alias_de_rol: e.target.value.substring(0, 40) })} placeholder={t('placeholderAliasRol')} />
                 {/* Código: visible en edición (disabled) o cuando super-admin crea global */}
                 {rolEditando ? (
-                  <Input etiqueta="Código" value={formRol.codigo_rol} disabled readOnly />
+                  <Input etiqueta={t('colCodigo')} value={formRol.codigo_rol} disabled readOnly />
                 ) : grupoActivo === 'ADMIN' ? (
-                  <Input etiqueta="Código *" value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} placeholder="ADMIN" />
+                  <Input etiqueta={t('etiquetaCodigo')} value={formRol.codigo_rol} onChange={(e) => setFormRol({ ...formRol, codigo_rol: e.target.value.toUpperCase() })} placeholder={t('placeholderCodigoRol')} />
                 ) : null}
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-texto">Aplicación origen</label>
@@ -613,8 +613,8 @@ export default function PaginaRoles() {
                     <span className="text-xs text-texto-muted">Solo modificable desde la base de datos</span>
                   </div>
                 </div>
-                <Input etiqueta="Descripción" value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} placeholder="Descripción del rol..." />
-                <Input etiqueta="URL de inicio" value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder="/admin/dashboard" />
+                <Input etiqueta={t('etiquetaDescripcion')} value={formRol.descripcion} onChange={(e) => setFormRol({ ...formRol, descripcion: e.target.value })} placeholder={t('placeholderDescripcion')} />
+                <Input etiqueta={t('etiquetaUrlInicio')} value={formRol.url_inicio} onChange={(e) => setFormRol({ ...formRol, url_inicio: e.target.value })} placeholder={t('placeholderUrlInicio')} />
               </div>
               {rolEditando && (
                 <div className="flex flex-col gap-1">
@@ -636,8 +636,8 @@ export default function PaginaRoles() {
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalRol(false)}>Cancelar</Boton>
-                <Boton variante="primario" onClick={guardarRol} cargando={guardando}>{rolEditando ? 'Guardar' : 'Crear rol'}</Boton>
+                <Boton variante="contorno" onClick={() => setModalRol(false)}>{tc('cancelar')}</Boton>
+                <Boton variante="primario" onClick={guardarRol} cargando={guardando}>{rolEditando ? tc('guardar') : t('crearRol')}</Boton>
               </div>
             </>
           )}
@@ -652,7 +652,7 @@ export default function PaginaRoles() {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                     <input
                       type="text"
-                      placeholder="Buscar función por nombre o código..."
+                      placeholder={t('buscarFuncionPlaceholder')}
                       value={busquedaFuncionRol}
                       onChange={(e) => { setBusquedaFuncionRol(e.target.value); setDropdownFuncionRolAbierto(true); setFuncionNueva('') }}
                       onFocus={() => setDropdownFuncionRolAbierto(true)}
@@ -687,7 +687,7 @@ export default function PaginaRoles() {
                   disabled={!funcionNueva}
                 >
                   <Plus size={14} />
-                  Asignar
+                  {t('asignar')}
                 </Boton>
               </div>
 
@@ -754,7 +754,7 @@ export default function PaginaRoles() {
 
               <div className="flex justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalRol(false)}>
-                  Cerrar
+                  {tc('cerrar')}
                 </Boton>
               </div>
             </div>
@@ -763,22 +763,22 @@ export default function PaginaRoles() {
       </Modal>
 
       {/* Modal Función */}
-      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? `Editar función: ${funcionEditando.nombre}` : 'Nueva función'} className="max-w-2xl">
+      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? t('editarFuncionTitulo', { nombre: funcionEditando.nombre }) : t('nuevaFuncionTitulo')} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {/* Tabs (solo en edición) */}
           {funcionEditando && (
             <div className="flex border-b border-borde -mx-1">
-              <button onClick={() => setTabModalFuncion('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Datos</button>
-              <button onClick={() => setTabModalFuncion('aplicaciones')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'aplicaciones' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Aplicaciones ({appsFuncion.length})</button>
-              <button onClick={() => setTabModalFuncion('llm')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'llm' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>LLM</button>
+              <button onClick={() => setTabModalFuncion('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabDatos')}</button>
+              <button onClick={() => setTabModalFuncion('aplicaciones')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'aplicaciones' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabApps')} ({appsFuncion.length})</button>
+              <button onClick={() => setTabModalFuncion('llm')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalFuncion === 'llm' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabLlm')}</button>
             </div>
           )}
 
           {/* Tab Datos */}
           {tabModalFuncion === 'datos' && (
             <>
-              <Input etiqueta="Nombre *" value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestión de usuarios" />
-              <Input etiqueta="Alias *" value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" />
+              <Input etiqueta={t('etiquetaNombre')} value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder={t('placeholderNombreFuncion')} />
+              <Input etiqueta={t('etiquetaAlias')} value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder={t('placeholderAliasFuncion')} />
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-texto">Aplicación origen</label>
                 <select value={formFuncion.codigo_aplicacion_origen} onChange={(e) => setFormFuncion({ ...formFuncion, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
@@ -793,16 +793,16 @@ export default function PaginaRoles() {
                   ))}
                 </select>
               </div>
-              <Input etiqueta="Icono" value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
-              <Input etiqueta="Descripción" value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
-              <Input etiqueta="URL función" value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
+              <Input etiqueta={t('etiquetaIcono')} value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder={t('placeholderIcono')} />
+              <Input etiqueta={t('etiquetaDescripcion')} value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} />
+              <Input etiqueta={t('etiquetaUrlFuncion')} value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder={t('placeholderUrlFuncion')} />
               {funcionEditando && (
                 <Input etiqueta="Código" value={formFuncion.codigo_funcion} disabled readOnly />
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton>
-                <Boton variante="primario" onClick={guardarFuncion} cargando={guardando}>{funcionEditando ? 'Guardar' : 'Crear función'}</Boton>
+                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>{tc('cancelar')}</Boton>
+                <Boton variante="primario" onClick={guardarFuncion} cargando={guardando}>{funcionEditando ? tc('guardar') : t('crearFuncion')}</Boton>
               </div>
             </>
           )}
@@ -819,7 +819,7 @@ export default function PaginaRoles() {
                     ))}
                   </select>
                 </div>
-                <Boton variante="primario" onClick={asignarAppAFuncion} cargando={asignandoApp} disabled={!appNueva}><Plus size={14} />Asignar</Boton>
+                <Boton variante="primario" onClick={asignarAppAFuncion} cargando={asignandoApp} disabled={!appNueva}><Plus size={14} />{t('asignar')}</Boton>
               </div>
               {cargandoApps ? (
                 <div className="flex flex-col gap-2">{[1, 2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
@@ -839,7 +839,7 @@ export default function PaginaRoles() {
                 </div>
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>{tc('cerrar')}</Boton></div>
             </div>
           )}
 
@@ -884,8 +884,8 @@ export default function PaginaRoles() {
               </div>
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton>
-                <Boton variante="primario" onClick={guardarFuncion} cargando={guardando}>Guardar</Boton>
+                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>{tc('cancelar')}</Boton>
+                <Boton variante="primario" onClick={guardarFuncion} cargando={guardando}>{tc('guardar')}</Boton>
               </div>
             </div>
           )}
@@ -897,13 +897,13 @@ export default function PaginaRoles() {
         abierto={!!confirmacion}
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={ejecutarEliminacion}
-        titulo={confirmacion?.tipo === 'rol' ? 'Eliminar rol' : 'Eliminar función'}
+        titulo={confirmacion?.tipo === 'rol' ? t('eliminarRol') : t('eliminarFuncion')}
         mensaje={
           confirmacion?.tipo === 'rol'
             ? `¿Estás seguro de eliminar el rol "${confirmacion.item.nombre}"? Esta acción no se puede deshacer.`
             : `¿Estás seguro de eliminar la función "${confirmacion?.item.nombre}"? Se eliminarán todas las asignaciones a roles.`
         }
-        textoConfirmar="Eliminar"
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </div>
