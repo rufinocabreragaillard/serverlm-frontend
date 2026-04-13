@@ -103,7 +103,7 @@ export default function PaginaLogin() {
               t.style.display = 'none'
             }}
           />
-          <p className="font-semibold tracking-wide text-gray-600" style={{ fontSize: '2.1rem', width: '284px', textAlign: 'center' }}>
+          <p className="font-semibold tracking-wide" style={{ fontSize: '1.45rem', color: '#5a5a5a', textAlign: 'center' }}>
             RAG Framework
           </p>
         </div>
