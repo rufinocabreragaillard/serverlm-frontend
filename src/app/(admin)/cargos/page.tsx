@@ -29,6 +29,8 @@ type FormCargo = {
   alias: string
   descripcion: string
   codigo_entidad: string
+  prompt: string
+  system_prompt: string
 }
 
 const selectClass =
@@ -60,6 +62,8 @@ export default function PaginaCargos() {
         alias: f.alias.trim() || undefined,
         descripcion: f.descripcion.trim() || undefined,
         codigo_entidad: f.codigo_entidad || undefined,
+        prompt: f.prompt.trim() || undefined,
+        system_prompt: f.system_prompt.trim() || undefined,
       }),
     actualizarFn: (id, f) =>
       cargosApi.actualizar(Number(id), {
@@ -67,22 +71,26 @@ export default function PaginaCargos() {
         alias: (f.alias ?? '').trim() || undefined,
         descripcion: (f.descripcion ?? '').trim() || undefined,
         codigo_entidad: f.codigo_entidad || undefined,
+        prompt: (f.prompt ?? '').trim() || undefined,
+        system_prompt: (f.system_prompt ?? '').trim() || undefined,
       }),
     eliminarFn: async (id: string) => { await cargosApi.eliminar(Number(id)) },
     getId: (c) => String(c.id_cargo),
     camposBusqueda: (c) => [c.codigo_cargo, c.nombre_cargo, c.alias],
-    formInicial: { codigo_cargo: '', nombre_cargo: '', alias: '', descripcion: '', codigo_entidad: '' },
+    formInicial: { codigo_cargo: '', nombre_cargo: '', alias: '', descripcion: '', codigo_entidad: '', prompt: '', system_prompt: '' },
     itemToForm: (c) => ({
       codigo_cargo: c.codigo_cargo,
       nombre_cargo: c.nombre_cargo,
       alias: c.alias ?? '',
       descripcion: c.descripcion ?? '',
       codigo_entidad: c.codigo_entidad ?? '',
+      prompt: c.prompt ?? '',
+      system_prompt: c.system_prompt ?? '',
     }),
   })
 
   // ── Tab activa en el modal ──────────────────────────────────────────────────
-  const [tabActiva, setTabActiva] = useState<'datos' | 'roles'>('datos')
+  const [tabActiva, setTabActiva] = useState<'datos' | 'roles' | 'prompt' | 'system_prompt'>('datos')
 
   // Resetear tab al abrir modal
   const abrirNuevo = () => { setTabActiva('datos'); crud.abrirNuevo() }
@@ -243,26 +251,28 @@ export default function PaginaCargos() {
         abierto={crud.modal}
         alCerrar={crud.cerrarModal}
         titulo={crud.editando ? t('editarTitulo', { nombre: crud.editando.nombre_cargo }) : t('nuevoTitulo')}
+        className="max-w-3xl"
       >
-        <div className="flex flex-col gap-0 min-w-[480px]">
-          {/* Tabs (solo si editando) */}
-          {crud.editando && (
-            <div className="flex border-b border-borde mb-4">
-              {(['datos', 'roles'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setTabActiva(tab)}
-                  className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                    tabActiva === tab
-                      ? 'border-b-2 border-primario text-primario'
-                      : 'text-texto-muted hover:text-texto'
-                  }`}
-                >
-                  {tab === 'datos' ? t('tabDatos') : t('tabRoles')}
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="flex flex-col gap-0 min-w-[520px]">
+          {/* Tabs */}
+          <div className="flex border-b border-borde mb-4">
+            {(crud.editando
+              ? (['datos', 'roles', 'prompt', 'system_prompt'] as const)
+              : (['datos', 'prompt', 'system_prompt'] as const)
+            ).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setTabActiva(tab)}
+                className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                  tabActiva === tab
+                    ? 'border-b-2 border-primario text-primario'
+                    : 'text-texto-muted hover:text-texto'
+                }`}
+              >
+                {tab === 'datos' ? t('tabDatos') : tab === 'roles' ? t('tabRoles') : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+              </button>
+            ))}
+          </div>
 
           {/* ── Tab Datos ─────────────────────────────────────────────────── */}
           {(tabActiva === 'datos' || !crud.editando) && (
@@ -338,6 +348,36 @@ export default function PaginaCargos() {
                   {crud.editando ? tc('guardar') : tc('crear')}
                 </Boton>
               </div>
+            </div>
+          )}
+
+          {/* ── Tab Prompt ────────────────────────────────────────────────── */}
+          {tabActiva === 'prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto que se inyecta en el prompt del LLM para dar contexto específico a este cargo. Se usa en clasificación de documentos y análisis.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Este cargo gestiona documentos de contratación pública..."
+                value={crud.form.prompt}
+                onChange={(e) => crud.updateForm('prompt', e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* ── Tab System Prompt ─────────────────────────────────────────── */}
+          {tabActiva === 'system_prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema que se prependen a todas las conversaciones y análisis LLM en este contexto. Define el tono, restricciones y rol del asistente.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un asistente especializado en documentación municipal..."
+                value={crud.form.system_prompt}
+                onChange={(e) => crud.updateForm('system_prompt', e.target.value)}
+              />
             </div>
           )}
 

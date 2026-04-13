@@ -14,6 +14,7 @@ import { Boton } from '@/components/ui/boton'
 import { usuariosApi, parametrosApi, aplicacionesApi } from '@/lib/api'
 import { useTranslations } from 'next-intl'
 import { locales, type Locale } from '@/i18n/config'
+import { tr } from '@/lib/traducir'
 
 function cambiarLocale(nuevoLocale: Locale) {
   document.cookie = `NEXT_LOCALE=${nuevoLocale};path=/;max-age=31536000`
@@ -27,12 +28,13 @@ export function Header({ titulo }: { titulo?: string }) {
   const { usuario, cambiarEntidad, cambiarGrupo, cambiarAplicacion, logout } = useAuth()
   const [cambiando, setCambiando] = useState(false)
 
-  // Modal Mi Cuenta (con tabs: Cuenta + Parametros)
+  // Modal Mi Cuenta (con tabs: Cuenta + Parametros + LLM)
   const [modalCuenta, setModalCuenta] = useState(false)
-  const [tabCuenta, setTabCuenta] = useState<'cuenta' | 'parametros'>('cuenta')
+  const [tabCuenta, setTabCuenta] = useState<'cuenta' | 'parametros' | 'llm'>('cuenta')
   const [formCuenta, setFormCuenta] = useState({
     nombre: '', telefono: '', id_rol_principal: '', alias: '', descripcion: '',
     aplicacion_por_defecto: '', grupo_por_defecto: '', entidad_por_defecto: '',
+    prompt: '', system_prompt: '',
   })
   const [guardandoCuenta, setGuardandoCuenta] = useState(false)
   const [errorCuenta, setErrorCuenta] = useState('')
@@ -116,6 +118,8 @@ export function Header({ titulo }: { titulo?: string }) {
       aplicacion_por_defecto: '',
       grupo_por_defecto: '',
       entidad_por_defecto: '',
+      prompt: '',
+      system_prompt: '',
     })
     setErrorCuenta('')
     setExitoCuenta('')
@@ -137,6 +141,8 @@ export function Header({ titulo }: { titulo?: string }) {
             aplicacion_por_defecto: u.aplicacion_por_defecto || '',
             grupo_por_defecto: u.grupo_por_defecto || '',
             entidad_por_defecto: u.entidad_por_defecto || '',
+            prompt: u.prompt || '',
+            system_prompt: u.system_prompt || '',
           }
           setFormCuenta(datos)
           setDatosOriginales(datos)
@@ -180,6 +186,12 @@ export function Header({ titulo }: { titulo?: string }) {
       }
       if (formCuenta.aplicacion_por_defecto !== datosOriginales.aplicacion_por_defecto) {
         cambios.aplicacion_por_defecto = formCuenta.aplicacion_por_defecto || null
+      }
+      if (formCuenta.prompt !== datosOriginales.prompt) {
+        cambios.prompt = formCuenta.prompt || undefined
+      }
+      if (formCuenta.system_prompt !== datosOriginales.system_prompt) {
+        cambios.system_prompt = formCuenta.system_prompt || undefined
       }
       await usuariosApi.actualizar(usuario.codigo_usuario, cambios)
       setExitoCuenta(t('datosActualizados'))
@@ -249,7 +261,7 @@ export function Header({ titulo }: { titulo?: string }) {
         <div className="flex items-center gap-4">
           {usuario?.nombre_aplicacion && (
             <span className="text-2xl font-bold text-gray-300">
-              {usuario.nombre_aplicacion}
+              {tr('aplicaciones', 'nombre_aplicacion', usuario.aplicacion_activa || '', usuario.nombre_aplicacion || '')}
             </span>
           )}
         </div>
@@ -415,9 +427,58 @@ export function Header({ titulo }: { titulo?: string }) {
             >
               {t('tabParametros')}
             </button>
+            <button
+              onClick={() => setTabCuenta('llm')}
+              className={cn(
+                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                tabCuenta === 'llm'
+                  ? 'border-primario text-primario'
+                  : 'border-transparent text-texto-muted hover:text-texto'
+              )}
+            >
+              Asistente LLM
+            </button>
           </div>
 
-          {tabCuenta === 'cuenta' ? (
+          {tabCuenta === 'llm' ? (
+            /* Tab Asistente LLM */
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-sm font-medium text-texto mb-1">Prompt personal</p>
+                  <p className="text-xs text-texto-muted mb-2">
+                    Texto que se inyecta en el prompt del LLM para dar contexto específico sobre ti. Se usa en clasificación de documentos y análisis.
+                  </p>
+                  <textarea
+                    className="w-full h-32 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                    placeholder="Ej: Soy el jefe del departamento de administración..."
+                    value={formCuenta.prompt}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, prompt: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-texto mb-1">System prompt personal</p>
+                  <p className="text-xs text-texto-muted mb-2">
+                    Instrucciones de sistema que se prependen a todas tus conversaciones con el asistente. Define cómo quieres que te responda.
+                  </p>
+                  <textarea
+                    className="w-full h-32 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                    placeholder="Ej: Respóndeme siempre en términos simples y con ejemplos concretos..."
+                    value={formCuenta.system_prompt}
+                    onChange={(e) => setFormCuenta({ ...formCuenta, system_prompt: e.target.value })}
+                  />
+                </div>
+              </div>
+              {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
+              {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
+              <div className="flex gap-3 justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalCuenta(false)}>{tc('cerrar')}</Boton>
+                <Boton variante="primario" onClick={guardarMiCuenta} cargando={guardandoCuenta}>
+                  <Save size={14} /> {tc('guardar')}
+                </Boton>
+              </div>
+            </div>
+          ) : tabCuenta === 'cuenta' ? (
             /* Tab Cuenta */
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -621,7 +682,7 @@ export function Header({ titulo }: { titulo?: string }) {
                   )}
                 />
                 <div>
-                  <p className="font-medium">{app.nombre}</p>
+                  <p className="font-medium">{tr('aplicaciones', 'nombre_aplicacion', app.codigo_aplicacion, app.nombre)}</p>
                   <p className="text-xs text-texto-muted">{app.codigo_aplicacion}</p>
                 </div>
               </button>

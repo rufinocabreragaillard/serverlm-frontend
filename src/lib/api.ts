@@ -484,6 +484,8 @@ export interface PasoProceso {
   id_modelo: number | null
   descripcion_paso: string | null
   activo: boolean
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface Proceso {
@@ -492,6 +494,8 @@ export interface Proceso {
   descripcion: string | null
   tipo_entidad: string
   activo: boolean
+  prompt?: string | null
+  system_prompt?: string | null
   n_parallel: number
   pasos: PasoProceso[]
 }

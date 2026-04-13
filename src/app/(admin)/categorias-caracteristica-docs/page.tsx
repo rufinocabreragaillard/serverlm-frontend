@@ -28,10 +28,12 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const [cargandoCat, setCargandoCat] = useState(true)
   const [busquedaCat, setBusquedaCat] = useState('')
   const [modalCat, setModalCat] = useState(false)
+  const [tabModalCat, setTabModalCat] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
   const [catEditando, setCatEditando] = useState<CategoriaCaractDocs | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '',
     es_unica_docs: false, editable_en_detalle_docs: true,
+    prompt: '', system_prompt: '',
   })
   const [guardandoCat, setGuardandoCat] = useState(false)
   const [errorCat, setErrorCat] = useState('')
@@ -80,7 +82,8 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   // ── CRUD Categorias ───────────────────────────────────────────────────────
   const abrirNuevaCat = () => {
     setCatEditando(null)
-    setFormCat({ codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '', es_unica_docs: false, editable_en_detalle_docs: true })
+    setFormCat({ codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '', es_unica_docs: false, editable_en_detalle_docs: true, prompt: '', system_prompt: '' })
+    setTabModalCat('datos')
     setErrorCat('')
     setModalCat(true)
   }
@@ -93,7 +96,10 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       descripcion_cat_docs: c.descripcion_cat_docs || '',
       es_unica_docs: c.es_unica_docs,
       editable_en_detalle_docs: c.editable_en_detalle_docs,
+      prompt: c.prompt || '',
+      system_prompt: c.system_prompt || '',
     })
+    setTabModalCat('datos')
     setErrorCat('')
     setModalCat(true)
   }
@@ -112,6 +118,8 @@ export default function PaginaCategoriasCaracteristicaDocs() {
           descripcion_cat_docs: formCat.descripcion_cat_docs || undefined,
           es_unica_docs: formCat.es_unica_docs,
           editable_en_detalle_docs: formCat.editable_en_detalle_docs,
+          prompt: formCat.prompt || undefined,
+          system_prompt: formCat.system_prompt || undefined,
         })
       } else {
         await categoriasCaractDocsApi.crear({
@@ -387,40 +395,93 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       {/* MODALES */}
 
       {/* Modal Categoria */}
-      <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? t('editarCategoriaTitulo', { nombre: catEditando.nombre_cat_docs }) : t('nuevaCategoriaTitulo')}>
-        <div className="flex flex-col gap-4">
-          <Input etiqueta={t('etiquetaNombre')} value={formCat.nombre_cat_docs}
-            onChange={(e) => setFormCat({ ...formCat, nombre_cat_docs: e.target.value })}
-            placeholder={t('placeholderNombre')} />
-          {/* Código solo visible si super-admin crea global, o al editar (readonly) */}
-          {!catEditando && grupoActivo === 'ADMIN' && (
-            <Input etiqueta={t('etiquetaCodigo')} value={formCat.codigo_cat_docs}
-              onChange={(e) => setFormCat({ ...formCat, codigo_cat_docs: e.target.value.toUpperCase() })}
-              placeholder={t('placeholderCodigo')} />
-          )}
-          <div>
-            <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaDescripcion')}</label>
-            <textarea className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none resize-y min-h-[60px]"
-              value={formCat.descripcion_cat_docs}
-              onChange={(e) => setFormCat({ ...formCat, descripcion_cat_docs: e.target.value })} />
+      <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? t('editarCategoriaTitulo', { nombre: catEditando.nombre_cat_docs }) : t('nuevaCategoriaTitulo')} className="max-w-3xl">
+        <div className="flex flex-col gap-4 min-w-[520px]">
+          {/* Tabs */}
+          <div className="flex border-b border-borde">
+            {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setTabModalCat(tab)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  tabModalCat === tab
+                    ? 'border-b-2 border-primario text-primario'
+                    : 'text-texto-muted hover:text-texto'
+                }`}
+              >
+                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+              </button>
+            ))}
           </div>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={formCat.es_unica_docs}
-                onChange={(e) => setFormCat({ ...formCat, es_unica_docs: e.target.checked })}
-                className="rounded border-borde" />
-              {t('unicaPorDocumento')}
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={formCat.editable_en_detalle_docs}
-                onChange={(e) => setFormCat({ ...formCat, editable_en_detalle_docs: e.target.checked })}
-                className="rounded border-borde" />
-              {t('editableEnDetalle')}
-            </label>
-          </div>
-          {catEditando && (
-            <Input etiqueta={t('colCodigo')} value={formCat.codigo_cat_docs} disabled readOnly />
+
+          {/* Tab Datos */}
+          {tabModalCat === 'datos' && (
+            <>
+              <Input etiqueta={t('etiquetaNombre')} value={formCat.nombre_cat_docs}
+                onChange={(e) => setFormCat({ ...formCat, nombre_cat_docs: e.target.value })}
+                placeholder={t('placeholderNombre')} />
+              {/* Código solo visible si super-admin crea global, o al editar (readonly) */}
+              {!catEditando && grupoActivo === 'ADMIN' && (
+                <Input etiqueta={t('etiquetaCodigo')} value={formCat.codigo_cat_docs}
+                  onChange={(e) => setFormCat({ ...formCat, codigo_cat_docs: e.target.value.toUpperCase() })}
+                  placeholder={t('placeholderCodigo')} />
+              )}
+              <div>
+                <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaDescripcion')}</label>
+                <textarea className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto placeholder:text-texto-muted focus:border-primario focus:ring-1 focus:ring-primario outline-none resize-y min-h-[60px]"
+                  value={formCat.descripcion_cat_docs}
+                  onChange={(e) => setFormCat({ ...formCat, descripcion_cat_docs: e.target.value })} />
+              </div>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={formCat.es_unica_docs}
+                    onChange={(e) => setFormCat({ ...formCat, es_unica_docs: e.target.checked })}
+                    className="rounded border-borde" />
+                  {t('unicaPorDocumento')}
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={formCat.editable_en_detalle_docs}
+                    onChange={(e) => setFormCat({ ...formCat, editable_en_detalle_docs: e.target.checked })}
+                    className="rounded border-borde" />
+                  {t('editableEnDetalle')}
+                </label>
+              </div>
+              {catEditando && (
+                <Input etiqueta={t('colCodigo')} value={formCat.codigo_cat_docs} disabled readOnly />
+              )}
+            </>
           )}
+
+          {/* Tab Prompt */}
+          {tabModalCat === 'prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto que se inyecta en el prompt del LLM al clasificar documentos con esta categoría. Da contexto para mejorar la precisión del análisis.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Esta categoría clasifica documentos según su tipo legal..."
+                value={formCat.prompt}
+                onChange={(e) => setFormCat({ ...formCat, prompt: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Tab System Prompt */}
+          {tabModalCat === 'system_prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema para el LLM al procesar documentos con esta categoría. Define el rol y restricciones del asistente para esta clasificación.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un experto en documentación legal municipal..."
+                value={formCat.system_prompt}
+                onChange={(e) => setFormCat({ ...formCat, system_prompt: e.target.value })}
+              />
+            </div>
+          )}
+
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalCat(false)}>{tc('cancelar')}</Boton>

@@ -10,6 +10,8 @@ export interface Grupo {
   nombre: string
   descripcion?: string
   tipo?: 'NORMAL' | 'RESTRINGIDO'
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 // ─── Autenticación ───────────────────────────────────────────────────────────
@@ -27,6 +29,7 @@ export interface FuncionMenu {
   url: string | null
   orden: number
   aplicaciones?: string[]
+  system_prompt?: string | null
 }
 
 export interface RolMenu {
@@ -68,6 +71,7 @@ export interface UsuarioContexto {
   sidebar_ancho?: boolean
   aplicaciones_disponibles?: AplicacionResumen[]
   aplicaciones_url?: Record<string, string>
+  traducciones?: Record<string, string> | null
 }
 
 export interface LoginRequest {
@@ -90,6 +94,8 @@ export interface Entidad {
   descripcion?: string
   activo: boolean
   fecha_creacion?: string
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface Area {
@@ -122,6 +128,8 @@ export interface Usuario {
   aplicacion_por_defecto?: string
   fecha_creacion?: string
   ultimo_acceso?: string
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface CrearUsuarioRequest {
@@ -464,6 +472,8 @@ export interface CategoriaCaractDocs {
   orden?: number
   id_modelo?: number | null
   activo: boolean
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface TipoCaractDocs {
@@ -550,6 +560,8 @@ export interface UbicacionDoc {
   activo: boolean
   ubicacion_habilitada: boolean
   tipo_ubicacion: 'AREA' | 'CONTENIDO'
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 // ─── Cargos ───────────────────────────────────────────────────────────────────
@@ -563,6 +575,8 @@ export interface Cargo {
   descripcion?: string | null
   activo: boolean
   codigo_entidad?: string | null
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface RolCargo {

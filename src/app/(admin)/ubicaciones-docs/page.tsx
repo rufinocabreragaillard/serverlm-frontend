@@ -29,6 +29,7 @@ export default function PaginaUbicacionesDocs() {
   // ── Modal CRUD ────────────────────────────────────────────────────────────
   const [modal, setModal] = useState(false)
   const [editando, setEditando] = useState<UbicacionDoc | null>(null)
+  const [tabModal, setTabModal] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
   const [form, setForm] = useState({
     codigo_ubicacion: '',
     nombre_ubicacion: '',
@@ -36,6 +37,8 @@ export default function PaginaUbicacionesDocs() {
     descripcion: '',
     codigo_ubicacion_superior: '',
     ubicacion_habilitada: true,
+    prompt: '',
+    system_prompt: '',
   })
   const [confirmarTipo, setConfirmarTipo] = useState<{ u: UbicacionDoc; nuevoTipo: 'AREA' | 'CONTENIDO' } | null>(null)
   const [cambiandoTipo, setCambiandoTipo] = useState(false)
@@ -127,7 +130,10 @@ export default function PaginaUbicacionesDocs() {
       descripcion: '',
       codigo_ubicacion_superior: padre || '',
       ubicacion_habilitada: true,
+      prompt: '',
+      system_prompt: '',
     })
+    setTabModal('datos')
     setError('')
     setModal(true)
   }
@@ -141,7 +147,10 @@ export default function PaginaUbicacionesDocs() {
       descripcion: u.descripcion || '',
       codigo_ubicacion_superior: u.codigo_ubicacion_superior || '',
       ubicacion_habilitada: u.ubicacion_habilitada,
+      prompt: u.prompt || '',
+      system_prompt: u.system_prompt || '',
     })
+    setTabModal('datos')
     setError('')
     setModal(true)
   }
@@ -160,6 +169,10 @@ export default function PaginaUbicacionesDocs() {
           descripcion: form.descripcion || undefined,
           codigo_ubicacion_superior: form.codigo_ubicacion_superior || undefined,
           ubicacion_habilitada: form.ubicacion_habilitada,
+          ...(editando.tipo_ubicacion === 'AREA' ? {
+            prompt: form.prompt || undefined,
+            system_prompt: form.system_prompt || undefined,
+          } : {}),
         })
       } else {
         await ubicacionesDocsApi.crear({
@@ -551,58 +564,113 @@ export default function PaginaUbicacionesDocs() {
         abierto={modal}
         alCerrar={() => setModal(false)}
         titulo={editando ? t('editarTitulo', { nombre: editando.nombre_ubicacion }) : t('nuevoTitulo')}
+        className={editando?.tipo_ubicacion === 'AREA' ? 'max-w-3xl' : undefined}
       >
         <div className="flex flex-col gap-4 min-w-[450px]">
-          <Input
-            etiqueta={t('etiquetaNombre')}
-            value={form.nombre_ubicacion}
-            onChange={(e) => setForm({ ...form, nombre_ubicacion: e.target.value })}
-            placeholder={t('placeholderNombre')}
-          />
-          <Input
-            etiqueta={t('etiquetaAlias')}
-            value={form.alias_ubicacion}
-            onChange={(e) => setForm({ ...form, alias_ubicacion: e.target.value })}
-            placeholder={t('placeholderAlias')}
-          />
-          <Textarea
-            etiqueta={t('etiquetaDescripcion')}
-            value={form.descripcion}
-            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-            placeholder={t('placeholderDescripcion')}
-            rows={3}
-          />
-
-          <div>
-            <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaPadre')}</label>
-            <select
-              className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
-              value={form.codigo_ubicacion_superior}
-              onChange={(e) => setForm({ ...form, codigo_ubicacion_superior: e.target.value })}
-            >
-              <option value="">{t('opcionRaiz')}</option>
-              {opcionesPadre(editando?.codigo_ubicacion).map((u) => (
-                <option key={u.codigo_ubicacion} value={u.codigo_ubicacion}>
-                  {'  '.repeat(u.nivel)}{u.nombre_ubicacion} ({u.codigo_ubicacion})
-                </option>
+          {/* Tabs solo cuando se edita un AREA */}
+          {editando?.tipo_ubicacion === 'AREA' && (
+            <div className="flex border-b border-borde">
+              {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setTabModal(tab)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    tabModal === tab
+                      ? 'border-b-2 border-primario text-primario'
+                      : 'text-texto-muted hover:text-texto'
+                  }`}
+                >
+                  {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+                </button>
               ))}
-            </select>
-          </div>
-
-          {editando && (
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.ubicacion_habilitada}
-                onChange={(e) => setForm({ ...form, ubicacion_habilitada: e.target.checked })}
-                className="w-4 h-4 rounded border-borde text-primario focus:ring-primario"
-              />
-              <span className="text-sm font-medium text-texto">{t('etiquetaHabilitada')}</span>
-              <span className="text-xs text-texto-muted">{t('habilitadaHint')}</span>
-            </label>
+            </div>
           )}
-          {editando && (
-            <Input etiqueta={t('etiquetaCodigo')} value={form.codigo_ubicacion} disabled readOnly />
+
+          {/* Tab Datos (siempre visible cuando no hay tabs, o cuando tab es datos) */}
+          {tabModal === 'datos' && (
+            <>
+              <Input
+                etiqueta={t('etiquetaNombre')}
+                value={form.nombre_ubicacion}
+                onChange={(e) => setForm({ ...form, nombre_ubicacion: e.target.value })}
+                placeholder={t('placeholderNombre')}
+              />
+              <Input
+                etiqueta={t('etiquetaAlias')}
+                value={form.alias_ubicacion}
+                onChange={(e) => setForm({ ...form, alias_ubicacion: e.target.value })}
+                placeholder={t('placeholderAlias')}
+              />
+              <Textarea
+                etiqueta={t('etiquetaDescripcion')}
+                value={form.descripcion}
+                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                placeholder={t('placeholderDescripcion')}
+                rows={3}
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-texto mb-1.5">{t('etiquetaPadre')}</label>
+                <select
+                  className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
+                  value={form.codigo_ubicacion_superior}
+                  onChange={(e) => setForm({ ...form, codigo_ubicacion_superior: e.target.value })}
+                >
+                  <option value="">{t('opcionRaiz')}</option>
+                  {opcionesPadre(editando?.codigo_ubicacion).map((u) => (
+                    <option key={u.codigo_ubicacion} value={u.codigo_ubicacion}>
+                      {'  '.repeat(u.nivel)}{u.nombre_ubicacion} ({u.codigo_ubicacion})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {editando && (
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.ubicacion_habilitada}
+                    onChange={(e) => setForm({ ...form, ubicacion_habilitada: e.target.checked })}
+                    className="w-4 h-4 rounded border-borde text-primario focus:ring-primario"
+                  />
+                  <span className="text-sm font-medium text-texto">{t('etiquetaHabilitada')}</span>
+                  <span className="text-xs text-texto-muted">{t('habilitadaHint')}</span>
+                </label>
+              )}
+              {editando && (
+                <Input etiqueta={t('etiquetaCodigo')} value={form.codigo_ubicacion} disabled readOnly />
+              )}
+            </>
+          )}
+
+          {/* Tab Prompt (solo para AREAs en edición) */}
+          {tabModal === 'prompt' && editando?.tipo_ubicacion === 'AREA' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto que se inyecta en el prompt del LLM para dar contexto específico a esta área. Se usa en clasificación de documentos y análisis.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Esta área gestiona documentos de contratación pública..."
+                value={form.prompt}
+                onChange={(e) => setForm({ ...form, prompt: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Tab System Prompt (solo para AREAs en edición) */}
+          {tabModal === 'system_prompt' && editando?.tipo_ubicacion === 'AREA' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema que se prependen a todas las conversaciones y análisis LLM en esta área. Define el tono, restricciones y rol del asistente.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un asistente especializado en documentación de esta área..."
+                value={form.system_prompt}
+                onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
+              />
+            </div>
           )}
 
           {error && (

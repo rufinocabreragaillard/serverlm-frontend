@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { useEffect, useState, useRef, useCallback, KeyboardEvent } from 'react'
-import { Plus, Trash2, Send, ShieldCheck, Pencil, Check, X } from 'lucide-react'
+import { Plus, Trash2, Send, ShieldCheck, Pencil, Check, X, ScrollText } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Boton } from '@/components/ui/boton'
@@ -14,7 +14,7 @@ import type { ChatConversacion, ChatMensaje } from '@/lib/tipos'
 const CODIGO_FUNCION = 'CHAT_SEGURIDAD'
 
 export default function PaginaChatSeguridad() {
-  const { grupoActivo } = useAuth()
+  const { grupoActivo, usuario } = useAuth()
   const t = useTranslations('chat')
   const tc = useTranslations('common')
 
@@ -43,6 +43,14 @@ export default function PaginaChatSeguridad() {
   // Confirmación de eliminación
   const [convAEliminar, setConvAEliminar] = useState<ChatConversacion | null>(null)
   const [eliminando, setEliminando] = useState(false)
+
+  // Preview de system prompt (solo super-admin)
+  const [mostrarPreviewPrompt, setMostrarPreviewPrompt] = useState(false)
+  const esSuperAdmin = grupoActivo === 'ADMIN'
+  const systemPromptPreview = usuario?.menu
+    ?.flatMap((r) => r.funciones)
+    .find((f) => f.url === '/chat-seguridad')
+    ?.system_prompt ?? null
 
   // Refs para auto-scroll
   const mensajesEndRef = useRef<HTMLDivElement>(null)
@@ -318,6 +326,15 @@ export default function PaginaChatSeguridad() {
                   {nombreModelo}
                 </span>
               )}
+              {esSuperAdmin && (
+                <button
+                  onClick={() => setMostrarPreviewPrompt((v) => !v)}
+                  className={`p-1 rounded hover:bg-fondo ml-1 shrink-0 ${mostrarPreviewPrompt ? 'text-primario' : 'text-texto-muted'}`}
+                  title="Ver system prompt activo"
+                >
+                  <ScrollText size={14} />
+                </button>
+              )}
             </div>
 
             {/* Mensajes */}
@@ -356,6 +373,19 @@ export default function PaginaChatSeguridad() {
             {errorConv && (
               <div className="px-4 py-2 text-sm text-error bg-red-50 border-t border-red-200">
                 {errorConv}
+              </div>
+            )}
+
+            {/* Preview system prompt (solo super-admin) */}
+            {mostrarPreviewPrompt && (
+              <div className="px-3 pt-3">
+                <div className="border border-borde rounded-lg p-3 bg-surface text-xs font-mono text-texto-muted whitespace-pre-wrap max-h-48 overflow-y-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-texto">System Prompt activo</span>
+                    <button onClick={() => setMostrarPreviewPrompt(false)} className="text-texto-muted hover:text-texto">✕</button>
+                  </div>
+                  {systemPromptPreview || '(sin system prompt configurado)'}
+                </div>
               </div>
             )}
 

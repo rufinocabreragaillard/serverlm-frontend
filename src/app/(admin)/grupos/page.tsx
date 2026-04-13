@@ -33,7 +33,8 @@ export default function PaginaGrupos() {
 
   const [modalGrupo, setModalGrupo] = useState(false)
   const [grupoEditando, setGrupoEditando] = useState<Grupo | null>(null)
-  const [formGrupo, setFormGrupo] = useState({ codigo_grupo: '', nombre: '', descripcion: '', tipo: 'NORMAL' as 'NORMAL' | 'RESTRINGIDO' })
+  const [formGrupo, setFormGrupo] = useState({ codigo_grupo: '', nombre: '', descripcion: '', tipo: 'NORMAL' as 'NORMAL' | 'RESTRINGIDO', prompt: '', system_prompt: '' })
+  const [tabModalGrupo, setTabModalGrupo] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -97,14 +98,16 @@ export default function PaginaGrupos() {
 
   const abrirNuevoGrupo = () => {
     setGrupoEditando(null)
-    setFormGrupo({ codigo_grupo: '', nombre: '', descripcion: '', tipo: 'NORMAL' })
+    setFormGrupo({ codigo_grupo: '', nombre: '', descripcion: '', tipo: 'NORMAL', prompt: '', system_prompt: '' })
+    setTabModalGrupo('datos')
     setError('')
     setModalGrupo(true)
   }
 
   const abrirEditarGrupo = (g: Grupo) => {
     setGrupoEditando(g)
-    setFormGrupo({ codigo_grupo: g.codigo_grupo, nombre: g.nombre, descripcion: g.descripcion || '', tipo: g.tipo || 'NORMAL' })
+    setFormGrupo({ codigo_grupo: g.codigo_grupo, nombre: g.nombre, descripcion: g.descripcion || '', tipo: g.tipo || 'NORMAL', prompt: g.prompt || '', system_prompt: g.system_prompt || '' })
+    setTabModalGrupo('datos')
     setError('')
     setModalGrupo(true)
   }
@@ -114,7 +117,7 @@ export default function PaginaGrupos() {
     setGuardando(true)
     try {
       if (grupoEditando) {
-        await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
+        await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined, prompt: formGrupo.prompt || undefined, system_prompt: formGrupo.system_prompt || undefined })
       } else {
         await gruposApi.crear({ nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
       }
@@ -593,22 +596,75 @@ export default function PaginaGrupos() {
       </div>
 
       {/* Modal grupo */}
-      <Modal abierto={modalGrupo} alCerrar={() => setModalGrupo(false)} titulo={grupoEditando ? 'Editar grupo' : 'Nuevo grupo'}>
-        <div className="flex flex-col gap-4">
-          <Input etiqueta="Nombre *" value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder="Corporacion Municipal" />
-          <Textarea etiqueta="Descripción" value={formGrupo.descripcion} onChange={(e) => setFormGrupo({ ...formGrupo, descripcion: e.target.value })} rows={3} />
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">Tipo</label>
-            <div className="flex items-center gap-2 py-1">
-              {formGrupo.tipo === 'RESTRINGIDO'
-                ? <Insignia variante="error">Restringido</Insignia>
-                : <Insignia variante="exito">Normal</Insignia>}
-              <span className="text-xs text-texto-muted">Solo modificable desde la base de datos</span>
-            </div>
+      <Modal abierto={modalGrupo} alCerrar={() => setModalGrupo(false)} titulo={grupoEditando ? 'Editar grupo' : 'Nuevo grupo'} className="max-w-3xl">
+        <div className="flex flex-col gap-4 min-w-[520px]">
+          {/* Tabs */}
+          <div className="flex border-b border-borde">
+            {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setTabModalGrupo(tab)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  tabModalGrupo === tab
+                    ? 'border-b-2 border-primario text-primario'
+                    : 'text-texto-muted hover:text-texto'
+                }`}
+              >
+                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+              </button>
+            ))}
           </div>
-          {grupoEditando && (
-            <Input etiqueta="Código" value={formGrupo.codigo_grupo} disabled readOnly />
+
+          {/* Tab Datos */}
+          {tabModalGrupo === 'datos' && (
+            <>
+              <Input etiqueta="Nombre *" value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder="Corporacion Municipal" />
+              <Textarea etiqueta="Descripción" value={formGrupo.descripcion} onChange={(e) => setFormGrupo({ ...formGrupo, descripcion: e.target.value })} rows={3} />
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">Tipo</label>
+                <div className="flex items-center gap-2 py-1">
+                  {formGrupo.tipo === 'RESTRINGIDO'
+                    ? <Insignia variante="error">Restringido</Insignia>
+                    : <Insignia variante="exito">Normal</Insignia>}
+                  <span className="text-xs text-texto-muted">Solo modificable desde la base de datos</span>
+                </div>
+              </div>
+              {grupoEditando && (
+                <Input etiqueta="Código" value={formGrupo.codigo_grupo} disabled readOnly />
+              )}
+            </>
           )}
+
+          {/* Tab Prompt */}
+          {tabModalGrupo === 'prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto que se inyecta en el prompt del LLM para dar contexto específico a este grupo. Se usa en clasificación de documentos y análisis.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Este grupo gestiona documentos de contratación pública..."
+                value={formGrupo.prompt}
+                onChange={(e) => setFormGrupo({ ...formGrupo, prompt: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Tab System Prompt */}
+          {tabModalGrupo === 'system_prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema que se prependen a todas las conversaciones y análisis LLM en este grupo. Define el tono, restricciones y rol del asistente.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un asistente especializado en documentación municipal..."
+                value={formGrupo.system_prompt}
+                onChange={(e) => setFormGrupo({ ...formGrupo, system_prompt: e.target.value })}
+              />
+            </div>
+          )}
+
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Cancelar</Boton>

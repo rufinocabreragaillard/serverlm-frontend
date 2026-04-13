@@ -27,7 +27,8 @@ export default function PaginaEntidades() {
   const [modalEntidad, setModalEntidad] = useState(false)
   const [modalArea, setModalArea] = useState(false)
   const [entidadEditando, setEntidadEditando] = useState<Entidad | null>(null)
-  const [formEntidad, setFormEntidad] = useState({ codigo_entidad: '', nombre: '', descripcion: '' })
+  const [formEntidad, setFormEntidad] = useState({ codigo_entidad: '', nombre: '', descripcion: '', prompt: '', system_prompt: '' })
+  const [tabModalEntidad, setTabModalEntidad] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
   const [formArea, setFormArea] = useState({ codigo_area: '', nombre: '', descripcion: '', codigo_area_superior: '' })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -65,14 +66,16 @@ export default function PaginaEntidades() {
 
   const abrirNuevaEntidad = () => {
     setEntidadEditando(null)
-    setFormEntidad({ codigo_entidad: '', nombre: '', descripcion: '' })
+    setFormEntidad({ codigo_entidad: '', nombre: '', descripcion: '', prompt: '', system_prompt: '' })
+    setTabModalEntidad('datos')
     setError('')
     setModalEntidad(true)
   }
 
   const abrirEditarEntidad = (e: Entidad) => {
     setEntidadEditando(e)
-    setFormEntidad({ codigo_entidad: e.codigo_entidad, nombre: e.nombre, descripcion: e.descripcion || '' })
+    setFormEntidad({ codigo_entidad: e.codigo_entidad, nombre: e.nombre, descripcion: e.descripcion || '', prompt: e.prompt || '', system_prompt: e.system_prompt || '' })
+    setTabModalEntidad('datos')
     setError('')
     setModalEntidad(true)
   }
@@ -82,7 +85,7 @@ export default function PaginaEntidades() {
     setGuardando(true)
     try {
       if (entidadEditando) {
-        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined })
+        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined, prompt: formEntidad.prompt || undefined, system_prompt: formEntidad.system_prompt || undefined })
       } else {
         await entidadesApi.crear({ nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined, codigo_grupo: grupoActivo || 'ADMIN' })
       }
@@ -299,13 +302,66 @@ export default function PaginaEntidades() {
       </>)}
 
       {/* Modal entidad */}
-      <Modal abierto={modalEntidad} alCerrar={() => setModalEntidad(false)} titulo={entidadEditando ? 'Editar entidad' : 'Nueva entidad'}>
-        <div className="flex flex-col gap-4">
-          <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad de..." />
-          <Textarea etiqueta="Descripcion" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} rows={3} />
-          {entidadEditando && (
-            <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
+      <Modal abierto={modalEntidad} alCerrar={() => setModalEntidad(false)} titulo={entidadEditando ? 'Editar entidad' : 'Nueva entidad'} className="max-w-3xl">
+        <div className="flex flex-col gap-4 min-w-[520px]">
+          {/* Tabs */}
+          <div className="flex border-b border-borde">
+            {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setTabModalEntidad(tab)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  tabModalEntidad === tab
+                    ? 'border-b-2 border-primario text-primario'
+                    : 'text-texto-muted hover:text-texto'
+                }`}
+              >
+                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Datos */}
+          {tabModalEntidad === 'datos' && (
+            <>
+              <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad de..." />
+              <Textarea etiqueta="Descripcion" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} rows={3} />
+              {entidadEditando && (
+                <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
+              )}
+            </>
           )}
+
+          {/* Tab Prompt */}
+          {tabModalEntidad === 'prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto que se inyecta en el prompt del LLM para dar contexto específico a esta entidad. Se usa en clasificación de documentos y análisis.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Esta entidad gestiona documentos de contratación pública..."
+                value={formEntidad.prompt}
+                onChange={(e) => setFormEntidad({ ...formEntidad, prompt: e.target.value })}
+              />
+            </div>
+          )}
+
+          {/* Tab System Prompt */}
+          {tabModalEntidad === 'system_prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema que se prependen a todas las conversaciones y análisis LLM en esta entidad. Define el tono, restricciones y rol del asistente.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un asistente especializado en documentación municipal..."
+                value={formEntidad.system_prompt}
+                onChange={(e) => setFormEntidad({ ...formEntidad, system_prompt: e.target.value })}
+              />
+            </div>
+          )}
+
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>
