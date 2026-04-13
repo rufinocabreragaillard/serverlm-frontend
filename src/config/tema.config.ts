@@ -9,7 +9,7 @@ export const tema = {
     version: '1.0.0',
   },
   logo: {
-    url: '/logo_serverlm_A.png',
+    url: '/logo_serverlm.png',
     alt: 'Server LM',
     ancho: 284,
     alto: 92,
