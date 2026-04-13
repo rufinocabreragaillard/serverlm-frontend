@@ -13,10 +13,13 @@ import { aplicacionesApi, funcionesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Aplicacion, Funcion } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { useTranslations } from 'next-intl'
 
 type AppDeFuncion = { codigo_aplicacion: string; aplicaciones?: { nombre_aplicacion: string } }
 
 export default function PaginaFunciones() {
+  const t = useTranslations('funciones')
+  const tc = useTranslations('common')
   const { grupoActivo, aplicacionActiva } = useAuth()
   const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([])
   const [funciones, setFunciones] = useState<Funcion[]>([])
@@ -141,22 +144,22 @@ export default function PaginaFunciones() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Funciones</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">Gestiona las funciones del sistema y sus relaciones con aplicaciones</p>
       </div>
 
       <div className="flex items-center gap-3">
         <div className="max-w-sm flex-1">
-          <Input placeholder="Buscar por nombre, codigo o alias..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
+          <Input placeholder={t('buscarPlaceholder')} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
         </div>
         <div className="flex gap-2 ml-auto">
           <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(funcionesFiltradas as unknown as Record<string, unknown>[], [{ titulo: 'Codigo', campo: 'codigo_funcion' }, { titulo: 'Alias', campo: 'alias_de_funcion' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Tipo', campo: 'tipo' }, { titulo: 'Icono', campo: 'icono_de_funcion' }, { titulo: 'URL', campo: 'url_funcion' }], `funciones_${grupoActivo || 'todos'}`)} disabled={funcionesFiltradas.length === 0}><Download size={15} />Excel</Boton>
-          <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />Nueva funcion</Boton>
+          <Boton variante="primario" onClick={abrirNuevaFuncion}><Plus size={16} />{t('nuevaFuncion')}</Boton>
         </div>
       </div>
 
       <Tabla>
-        <TablaCabecera><tr><TablaTh className="w-14">Orden</TablaTh><TablaTh className="w-28">Tipo</TablaTh><TablaTh className="w-32">Alias</TablaTh><TablaTh>Nombre</TablaTh><TablaTh className="w-28">Icono</TablaTh><TablaTh className="w-40">URL</TablaTh><TablaTh className="w-40">Codigo</TablaTh><TablaTh className="text-right w-20">Acciones</TablaTh></tr></TablaCabecera>
+        <TablaCabecera><tr><TablaTh className="w-14">{t('colOrden')}</TablaTh><TablaTh className="w-28">{t('colTipo')}</TablaTh><TablaTh className="w-32">{t('colAlias')}</TablaTh><TablaTh>{t('colNombre')}</TablaTh><TablaTh className="w-28">{t('colIcono')}</TablaTh><TablaTh className="w-40">{t('colUrl')}</TablaTh><TablaTh className="w-40">{t('colCodigo')}</TablaTh><TablaTh className="text-right w-20">{tc('acciones')}</TablaTh></tr></TablaCabecera>
         <TablaCuerpo>
           {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>Cargando...</TablaTd></TablaFila>
           ) : funcionesFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={8 as never}>No se encontraron funciones</TablaTd></TablaFila>
@@ -211,20 +214,20 @@ export default function PaginaFunciones() {
           {tabModalFuncion === 'datos' && (<>
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               <div>
-                <label className="text-sm font-medium text-texto">Nombre *</label>
-                <Input value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder="Gestion de usuarios" />
+                <label className="text-sm font-medium text-texto">{t('etiquetaNombre')}</label>
+                <Input value={formFuncion.nombre} onChange={(e) => setFormFuncion({ ...formFuncion, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
               </div>
               <div>
-                <label className="text-sm font-medium text-texto">Alias</label>
-                <Input value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder="Usuarios" maxLength={40} />
+                <label className="text-sm font-medium text-texto">{t('etiquetaAlias')}</label>
+                <Input value={formFuncion.alias_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, alias_de_funcion: e.target.value.substring(0, 40) })} placeholder={t('placeholderAlias')} maxLength={40} />
               </div>
               <div>
-                <label className="text-sm font-medium text-texto">URL funcion</label>
-                <Input value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder="/usuarios" />
+                <label className="text-sm font-medium text-texto">{t('etiquetaUrl')}</label>
+                <Input value={formFuncion.url_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, url_funcion: e.target.value })} placeholder={t('placeholderUrl')} />
               </div>
               <div>
-                <label className="text-sm font-medium text-texto">Icono</label>
-                <Input value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder="Users, Shield, Settings..." />
+                <label className="text-sm font-medium text-texto">{t('etiquetaIcono')}</label>
+                <Input value={formFuncion.icono_de_funcion} onChange={(e) => setFormFuncion({ ...formFuncion, icono_de_funcion: e.target.value })} placeholder={t('placeholderIcono')} />
               </div>
               <div>
                 <label className="text-sm font-medium text-texto">Aplicacion origen</label>
@@ -252,15 +255,15 @@ export default function PaginaFunciones() {
               </div>
             </div>
             {errorFuncion && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorFuncion}</p></div>}
-            <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cancelar</Boton><Boton variante="primario" onClick={guardarFuncion} cargando={guardandoFuncion}>{funcionEditando ? 'Guardar' : 'Crear funcion'}</Boton></div>
+            <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>{tc('cancelar')}</Boton><Boton variante="primario" onClick={guardarFuncion} cargando={guardandoFuncion}>{funcionEditando ? tc('guardar') : t('crearFuncion')}</Boton></div>
           </>)}
           {tabModalFuncion === 'aplicaciones' && funcionEditando && (
             <div className="flex flex-col gap-4">
-              <div className="flex gap-2"><div className="flex-1"><select value={appNuevaFuncion} onChange={(e) => setAppNuevaFuncion(e.target.value)} className={selectClass}><option value="">Seleccionar aplicacion...</option>{appsDisponiblesFuncion.map((a) => (<option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>))}</select></div><Boton variante="primario" onClick={asignarAppAFuncion} cargando={asignandoAppFuncion} disabled={!appNuevaFuncion}><Plus size={14} />Asignar</Boton></div>
+              <div className="flex gap-2"><div className="flex-1"><select value={appNuevaFuncion} onChange={(e) => setAppNuevaFuncion(e.target.value)} className={selectClass}><option value="">{t('buscarAppPlaceholder')}</option>{appsDisponiblesFuncion.map((a) => (<option key={a.codigo_aplicacion} value={a.codigo_aplicacion}>{a.nombre} ({a.codigo_aplicacion})</option>))}</select></div><Boton variante="primario" onClick={asignarAppAFuncion} cargando={asignandoAppFuncion} disabled={!appNuevaFuncion}><Plus size={14} />{t('asignarApp')}</Boton></div>
               {cargandoAppsFuncion ? <div className="flex flex-col gap-2">{[1,2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
               : appsDeFuncion.length === 0 ? <p className="text-sm text-texto-muted text-center py-4">No tiene aplicaciones asignadas</p>
               : <div className="flex flex-col gap-2">{appsDeFuncion.map((af) => (<div key={af.codigo_aplicacion} className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface"><div><span className="text-sm font-medium text-texto">{af.aplicaciones?.nombre_aplicacion || af.codigo_aplicacion}</span><span className="ml-2 text-xs text-texto-muted">{af.codigo_aplicacion}</span></div><button onClick={() => quitarAppDeFuncion(af.codigo_aplicacion)} className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Quitar"><X size={14} /></button></div>))}</div>}
-              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>{tc('cerrar')}</Boton></div>
             </div>
           )}
         </div>
@@ -271,9 +274,9 @@ export default function PaginaFunciones() {
         abierto={!!confirmacion}
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={ejecutarEliminacion}
-        titulo="Eliminar funcion"
+        titulo={t('eliminarFuncion')}
         mensaje={confirmacion ? `¿Estas seguro de eliminar la funcion "${confirmacion.nombre}"? Se eliminaran todas las asignaciones.` : ''}
-        textoConfirmar="Eliminar"
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </div>

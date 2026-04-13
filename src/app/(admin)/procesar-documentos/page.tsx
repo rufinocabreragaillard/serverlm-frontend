@@ -65,6 +65,8 @@ export default function PaginaProcesarDocumentos() {
 
   // Config
   const [procesos, setProcesos] = useState<ProcesoCatalogo[]>([])
+  const [errorCargaInicial, setErrorCargaInicial] = useState(false)
+  const [cargandoInicial, setCargandoInicial] = useState(true)
   const [procesoSel, setProcesoSel] = useState<string>('')   // codigo_proceso del catálogo o PROCESO_RESTABLECER
   const [nParallelEdit, setNParallelEdit] = useState<number>(10)
   const [guardandoParalel, setGuardandoParalel] = useState(false)
@@ -207,10 +209,12 @@ export default function PaginaProcesarDocumentos() {
   }
 
   // Cargar procesos (catálogo), ubicaciones y parámetro de niveles
-  useEffect(() => {
-    const init = async () => {
+  const cargarDatosIniciales = useCallback(async () => {
+    setCargandoInicial(true)
+    setErrorCargaInicial(false)
+    try {
       const [procsRaw, u, nivelParam, estados] = await Promise.all([
-        procesosApi.listar('DOCUMENTOS').catch(() => []),
+        procesosApi.listar('DOCUMENTOS'),
         ubicacionesDocsApi.listar().catch(() => []),
         parametrosApi.obtenerValor('DOCUMENTOS', 'NIVELES_DIRECTORIO').catch(() => null),
         estadosDocsApi.listar().catch(() => []),
@@ -222,7 +226,7 @@ export default function PaginaProcesarDocumentos() {
       }
       // Solo procesos con al menos un paso y que no sean CARGAR (CARGAR se
       // dispara automáticamente desde el módulo Cargar Docs, no desde aquí).
-      const procs = (procsRaw || []).filter((p) => p.pasos && p.pasos.length > 0 && p.codigo_proceso !== 'CARGAR')
+      const procs = (procsRaw || []).filter((p: ProcesoCatalogo) => p.pasos && p.pasos.length > 0 && p.codigo_proceso !== 'CARGAR')
       setProcesos(procs)
 
       // Si venimos del dashboard con ?estado=XXX, seleccionar el proceso cuyo
@@ -232,22 +236,28 @@ export default function PaginaProcesarDocumentos() {
         if (TERMINALES.includes(estadoDesdeUrl)) {
           setProcesoSel(PROCESO_RESTABLECER)
         } else {
-          const match = procs.find((p) => p.pasos?.[0]?.estado_origen === estadoDesdeUrl)
+          const match = procs.find((p: ProcesoCatalogo) => p.pasos?.[0]?.estado_origen === estadoDesdeUrl)
           if (match) setProcesoSel(match.codigo_proceso)
           else if (procs.length > 0) setProcesoSel(procs[0].codigo_proceso)
         }
       }
-      // No default: el selector parte en blanco para usar la pantalla como visor
 
       setUbicaciones(
         (u as UbicacionOption[])
           .filter((x: UbicacionOption) => (x as UbicacionOption & { activo?: boolean }).activo !== false)
           .sort((a: UbicacionOption, b: UbicacionOption) => (a.ruta_completa || '').localeCompare(b.ruta_completa || ''))
       )
+    } catch {
+      setErrorCargaInicial(true)
+    } finally {
+      setCargandoInicial(false)
     }
-    init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    cargarDatosIniciales()
+  }, [cargarDatosIniciales])
 
   // Restaurar dirHandle persistido al entrar
   useEffect(() => {
@@ -838,13 +848,24 @@ export default function PaginaProcesarDocumentos() {
       </div>
 
       {tab === 'procesar' && (<>
+      {/* Error carga inicial */}
+      {errorCargaInicial && (
+        <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-error">
+          <AlertTriangle size={16} className="shrink-0" />
+          <span>No se pudieron cargar los procesos del sistema. El servidor puede estar iniciando.</span>
+          <Boton variante="contorno" tamano="sm" onClick={cargarDatosIniciales} disabled={cargandoInicial}>
+            {cargandoInicial ? <Loader2 size={14} className="animate-spin" /> : null}
+            Reintentar
+          </Boton>
+        </div>
+      )}
       {/* Configuración */}
       <Tarjeta>
         <TarjetaContenido>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1.5 min-w-0">
               <label className="text-sm font-medium text-texto">{t('etiquetaProceso')}</label>
-              <select value={procesoSel} onChange={(e) => setProcesoSel(e.target.value)} className={selectClass} disabled={ejecutando}>
+              <select value={procesoSel} onChange={(e) => setProcesoSel(e.target.value)} className={selectClass} disabled={ejecutando || cargandoInicial}>
                 <option value="">— Solo ver documentos —</option>
                 {procesos.map((p) => {
                   const paso = p.pasos?.[0]

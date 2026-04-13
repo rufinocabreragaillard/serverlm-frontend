@@ -12,11 +12,14 @@ import { aplicacionesApi, funcionesApi, gruposApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Aplicacion, Funcion, Grupo } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { useTranslations } from 'next-intl'
 
 type FuncionApp = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string } }
 type GrupoApp = { codigo_grupo: string; grupos_entidades: { nombre_grupo: string } }
 
 export default function PaginaAplicaciones() {
+  const t = useTranslations('aplicaciones')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
   const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([])
   const [funciones, setFunciones] = useState<Funcion[]>([])
@@ -201,22 +204,22 @@ export default function PaginaAplicaciones() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Aplicaciones</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">Gestiona las aplicaciones del sistema, sus funciones y grupos</p>
       </div>
 
       <div className="flex items-center gap-3">
         <div className="max-w-sm flex-1">
-          <Input placeholder="Buscar por nombre o codigo..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
+          <Input placeholder={t('buscarPlaceholder')} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} icono={<Search size={15} />} />
         </div>
         <div className="flex gap-2 ml-auto">
           <Boton variante="contorno" tamano="sm" onClick={() => exportarExcel(appsFiltradas as unknown as Record<string, unknown>[], [{ titulo: 'Codigo', campo: 'codigo_aplicacion' }, { titulo: 'Nombre', campo: 'nombre' }, { titulo: 'Tipo', campo: 'tipo' }, { titulo: 'Descripcion', campo: 'descripcion' }], 'aplicaciones')} disabled={appsFiltradas.length === 0}><Download size={15} />Excel</Boton>
-          <Boton variante="primario" onClick={abrirNuevaApp}><Plus size={16} />Nueva aplicacion</Boton>
+          <Boton variante="primario" onClick={abrirNuevaApp}><Plus size={16} />{t('nuevaApp')}</Boton>
         </div>
       </div>
 
       <Tabla>
-        <TablaCabecera><tr><TablaTh className="w-16">Orden</TablaTh><TablaTh>Codigo</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Descripcion</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr></TablaCabecera>
+        <TablaCabecera><tr><TablaTh className="w-16">{t('colOrden')}</TablaTh><TablaTh>{t('colCodigo')}</TablaTh><TablaTh>{t('colNombre')}</TablaTh><TablaTh>{t('colTipo')}</TablaTh><TablaTh>{t('colDescripcion')}</TablaTh><TablaTh className="text-right">{tc('acciones')}</TablaTh></tr></TablaCabecera>
         <TablaCuerpo>
           {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando...</TablaTd></TablaFila>
           ) : appsFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>No se encontraron aplicaciones</TablaTd></TablaFila>
@@ -253,14 +256,14 @@ export default function PaginaAplicaciones() {
             <div className="flex border-b border-borde -mx-1">
               {(['datos', 'funciones', 'grupos'] as const).map((tab) => (
                 <button key={tab} onClick={() => setTabModalApp(tab)} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalApp === tab ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>
-                  {tab === 'datos' ? 'Datos' : tab === 'funciones' ? `Funciones (${funcionesApp.length})` : `Grupos (${gruposApp.length})`}
+                  {tab === 'datos' ? 'Datos' : tab === 'funciones' ? `${t('tabFunciones')} (${funcionesApp.length})` : `${t('tabGrupos')} (${gruposApp.length})`}
                 </button>
               ))}
             </div>
           )}
           {tabModalApp === 'datos' && (<>
-            <Input etiqueta="Codigo *" value={formApp.codigo_aplicacion} onChange={(e) => setFormApp({ ...formApp, codigo_aplicacion: e.target.value.toUpperCase() })} disabled={!!appEditando} placeholder="SEGURIDAD" />
-            <Input etiqueta="Nombre *" value={formApp.nombre} onChange={(e) => setFormApp({ ...formApp, nombre: e.target.value })} placeholder="Sistema de Seguridad" />
+            <Input etiqueta={t('etiquetaCodigo')} value={formApp.codigo_aplicacion} onChange={(e) => setFormApp({ ...formApp, codigo_aplicacion: e.target.value.toUpperCase() })} disabled={!!appEditando} placeholder={t('placeholderCodigo')} />
+            <Input etiqueta={t('etiquetaNombre')} value={formApp.nombre} onChange={(e) => setFormApp({ ...formApp, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
             <div>
               <label className="block text-sm font-medium text-texto mb-1">Tipo *</label>
               <select value={formApp.tipo} onChange={(e) => setFormApp({ ...formApp, tipo: e.target.value as 'NORMAL' | 'RESTRINGIDA' })} className={selectClass}>
@@ -274,7 +277,7 @@ export default function PaginaAplicaciones() {
               <label htmlFor="sidebar_ancho" className="text-sm text-texto cursor-pointer">Sidebar expandido al iniciar <span className="text-texto-muted">(desmarcar para apps de uso único como Chat)</span></label>
             </div>
             {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-            <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Cancelar</Boton><Boton variante="primario" onClick={guardarApp} cargando={guardandoApp}>{appEditando ? 'Guardar' : 'Crear'}</Boton></div>
+            <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>{tc('cancelar')}</Boton><Boton variante="primario" onClick={guardarApp} cargando={guardandoApp}>{appEditando ? tc('guardar') : t('crearApp')}</Boton></div>
           </>)}
           {tabModalApp === 'funciones' && appEditando && (
             <div className="flex flex-col gap-4">
@@ -285,7 +288,7 @@ export default function PaginaAplicaciones() {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                     <input
                       type="text"
-                      placeholder="Buscar funcion por nombre o codigo..."
+                      placeholder={t('buscarFuncionPlaceholder')}
                       value={busquedaFuncionApp}
                       onChange={(e) => { setBusquedaFuncionApp(e.target.value); setDropdownFuncionAppAbierto(true); setFuncionNuevaApp('') }}
                       onFocus={() => setDropdownFuncionAppAbierto(true)}
@@ -313,7 +316,7 @@ export default function PaginaAplicaciones() {
                     </div>
                   )}
                 </div>
-                <Boton variante="primario" onClick={asignarFuncionApp} cargando={asignandoFuncionApp} disabled={!funcionNuevaApp}><Plus size={14} />Asignar</Boton>
+                <Boton variante="primario" onClick={asignarFuncionApp} cargando={asignandoFuncionApp} disabled={!funcionNuevaApp}><Plus size={14} />{t('asignarFuncion')}</Boton>
               </div>
               {cargandoFuncionesApp ? (
                 <div className="flex flex-col gap-2">{[1,2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
@@ -336,12 +339,12 @@ export default function PaginaAplicaciones() {
                   ))}
                 </ul>
               )}
-              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>{tc('cerrar')}</Boton></div>
             </div>
           )}
           {tabModalApp === 'grupos' && appEditando && (
             <div className="flex flex-col gap-4">
-              <p className="text-xs text-texto-muted">Grupos de entidades que tienen acceso a esta aplicacion.</p>
+              <p className="text-xs text-texto-muted">{t('gruposAcceso')}</p>
               <div className="flex gap-2">
                 <div className="flex-1">
                   <select value={grupoNuevoApp} onChange={(e) => setGrupoNuevoApp(e.target.value)} className={selectClass}>
@@ -349,7 +352,7 @@ export default function PaginaAplicaciones() {
                     {gruposDisponiblesApp.map((g) => (<option key={g.codigo_grupo} value={g.codigo_grupo}>{g.nombre} ({g.codigo_grupo})</option>))}
                   </select>
                 </div>
-                <Boton variante="primario" onClick={asignarGrupoApp} cargando={asignandoGrupoApp} disabled={!grupoNuevoApp}><Plus size={14} />Agregar</Boton>
+                <Boton variante="primario" onClick={asignarGrupoApp} cargando={asignandoGrupoApp} disabled={!grupoNuevoApp}><Plus size={14} />{t('agregarGrupo')}</Boton>
               </div>
               {cargandoGruposApp ? <div className="flex flex-col gap-2">{[1,2].map((i) => <div key={i} className="h-10 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
               : gruposApp.length === 0 ? <p className="text-sm text-texto-muted text-center py-4">No tiene grupos asignados</p>
@@ -363,7 +366,7 @@ export default function PaginaAplicaciones() {
                 </div>
               ))}</div>}
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>{tc('cerrar')}</Boton></div>
             </div>
           )}
         </div>
@@ -374,9 +377,9 @@ export default function PaginaAplicaciones() {
         abierto={!!confirmacion}
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={ejecutarEliminacion}
-        titulo="Eliminar aplicacion"
+        titulo={t('eliminarApp')}
         mensaje={confirmacion ? `¿Estas seguro de eliminar la aplicacion "${confirmacion.nombre}"? Esta accion no se puede deshacer.` : ''}
-        textoConfirmar="Eliminar"
+        textoConfirmar={tc('eliminar')}
         cargando={eliminando}
       />
     </div>

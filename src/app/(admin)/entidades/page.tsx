@@ -12,8 +12,11 @@ import { entidadesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Entidad, Area } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { useTranslations } from 'next-intl'
 
 export default function PaginaEntidades() {
+  const t = useTranslations('entidades')
+  const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
 
   // ── Entidades y Áreas ─────────────────────────────────────────────────────
@@ -129,7 +132,7 @@ export default function PaginaEntidades() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Entidades y Áreas</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">Gestión de organizaciones y áreas jerárquicas</p>
       </div>
 
@@ -154,14 +157,14 @@ export default function PaginaEntidades() {
             <Download size={15} />
             Excel
           </Boton>
-          <Boton variante="primario" onClick={abrirNuevaEntidad}><Plus size={16} />Nueva entidad</Boton>
+          <Boton variante="primario" onClick={abrirNuevaEntidad}><Plus size={16} />{t('nuevaEntidad')}</Boton>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Lista de entidades */}
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-texto-muted uppercase tracking-wider px-1">Entidades</h3>
+          <h3 className="text-sm font-semibold text-texto-muted uppercase tracking-wider px-1">{t('seccionEntidades')}</h3>
           {cargando ? (
             <div className="flex flex-col gap-2">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -245,7 +248,7 @@ export default function PaginaEntidades() {
               <div className="px-6 py-3 border-b border-borde">
                 <div className="max-w-sm">
                   <Input
-                    placeholder="Buscar por nombre, código o responsable..."
+                    placeholder={t('buscarPlaceholder')}
                     value={busquedaAreas}
                     onChange={(e) => setBusquedaAreas(e.target.value)}
                     icono={<Search size={15} />}
@@ -256,10 +259,10 @@ export default function PaginaEntidades() {
                 <Tabla>
                   <TablaCabecera>
                     <tr>
-                      <TablaTh>Código</TablaTh>
-                      <TablaTh>Nombre</TablaTh>
-                      <TablaTh>Área superior</TablaTh>
-                      <TablaTh>Responsable</TablaTh>
+                      <TablaTh>{t('colCodigo')}</TablaTh>
+                      <TablaTh>{t('colNombre')}</TablaTh>
+                      <TablaTh>{t('colAreaSuperior')}</TablaTh>
+                      <TablaTh>{t('colResponsable')}</TablaTh>
                     </tr>
                   </TablaCabecera>
                   <TablaCuerpo>
@@ -316,7 +319,7 @@ export default function PaginaEntidades() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+                {tab === 'datos' ? t('tabDatos') : tab === 'prompt' ? t('tabPrompt') : t('tabSystemPrompt')}
               </button>
             ))}
           </div>
@@ -324,8 +327,8 @@ export default function PaginaEntidades() {
           {/* Tab Datos */}
           {tabModalEntidad === 'datos' && (
             <>
-              <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad de..." />
-              <Textarea etiqueta="Descripcion" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} rows={3} />
+              <Input etiqueta={t('etiquetaNombreEntidad')} value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder={t('placeholderNombreEntidad')} />
+              <Textarea etiqueta={t('etiquetaDescripcion')} value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} rows={3} />
               {entidadEditando && (
                 <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
               )}
@@ -364,20 +367,20 @@ export default function PaginaEntidades() {
 
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarEntidad} cargando={guardando}>{entidadEditando ? 'Guardar' : 'Crear entidad'}</Boton>
+            <Boton variante="contorno" onClick={() => setModalEntidad(false)}>{tc('cancelar')}</Boton>
+            <Boton variante="primario" onClick={guardarEntidad} cargando={guardando}>{entidadEditando ? tc('guardar') : t('crearEntidad')}</Boton>
           </div>
         </div>
       </Modal>
 
       {/* Modal área */}
-      <Modal abierto={modalArea} alCerrar={() => setModalArea(false)} titulo="Nueva área" descripcion={`Para entidad: ${entidadSeleccionada?.nombre}`}>
+      <Modal abierto={modalArea} alCerrar={() => setModalArea(false)} titulo={t('crearArea')} descripcion={`Para entidad: ${entidadSeleccionada?.nombre}`}>
         <div className="flex flex-col gap-4">
-          <Input etiqueta="Código *" value={formArea.codigo_area} onChange={(e) => setFormArea({ ...formArea, codigo_area: e.target.value.toUpperCase() })} placeholder="ADMIN" />
-          <Input etiqueta="Nombre *" value={formArea.nombre} onChange={(e) => setFormArea({ ...formArea, nombre: e.target.value })} placeholder="Administración" />
-          <Input etiqueta="Descripción" value={formArea.descripcion} onChange={(e) => setFormArea({ ...formArea, descripcion: e.target.value })} />
+          <Input etiqueta={t('etiquetaCodigoArea')} value={formArea.codigo_area} onChange={(e) => setFormArea({ ...formArea, codigo_area: e.target.value.toUpperCase() })} placeholder={t('placeholderCodigoArea')} />
+          <Input etiqueta={t('etiquetaNombreArea')} value={formArea.nombre} onChange={(e) => setFormArea({ ...formArea, nombre: e.target.value })} placeholder={t('placeholderNombreArea')} />
+          <Input etiqueta={t('etiquetaDescripcion')} value={formArea.descripcion} onChange={(e) => setFormArea({ ...formArea, descripcion: e.target.value })} />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Área superior</label>
+            <label className="text-sm font-medium text-texto">{t('etiquetaAreaSuperior')}</label>
             <select
               value={formArea.codigo_area_superior}
               onChange={(e) => setFormArea({ ...formArea, codigo_area_superior: e.target.value })}
@@ -394,8 +397,8 @@ export default function PaginaEntidades() {
           </div>
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalArea(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarArea} cargando={guardando}>Crear área</Boton>
+            <Boton variante="contorno" onClick={() => setModalArea(false)}>{tc('cancelar')}</Boton>
+            <Boton variante="primario" onClick={guardarArea} cargando={guardando}>{t('crearArea')}</Boton>
           </div>
         </div>
       </Modal>

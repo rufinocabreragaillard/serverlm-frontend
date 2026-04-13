@@ -14,10 +14,13 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { useAuth } from '@/context/AuthContext'
 import type { Grupo, Entidad, Usuario } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { useTranslations } from 'next-intl'
 
 type UsuarioGrupo = { codigo_usuario: string; fecha_alta?: string; usuarios?: { nombre: string; activo: boolean } }
 
 export default function PaginaGrupos() {
+  const t = useTranslations('grupos')
+  const tc = useTranslations('common')
   const { esSuperAdmin } = useAuth()
   const [grupos, setGrupos] = useState<Grupo[]>([])
   const [grupoSeleccionado, setGrupoSeleccionado] = useState<Grupo | null>(null)
@@ -303,10 +306,10 @@ export default function PaginaGrupos() {
     <div className="flex flex-col gap-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-texto">Grupos de Entidades</h2>
+          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
           <p className="text-sm text-texto-muted mt-1">Gestion de grupos, entidades y usuarios asociados</p>
         </div>
-        <Boton variante="primario" onClick={abrirNuevoGrupo}><Plus size={16} />Nuevo grupo</Boton>
+        <Boton variante="primario" onClick={abrirNuevoGrupo}><Plus size={16} />{t('nuevoGrupo')}</Boton>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -317,7 +320,7 @@ export default function PaginaGrupos() {
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
             <input
               type="text"
-              placeholder="Filtrar grupos..."
+              placeholder={t('filtrarPlaceholder')}
               value={busquedaGrupos}
               onChange={(e) => setBusquedaGrupos(e.target.value)}
               className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
@@ -439,17 +442,17 @@ export default function PaginaGrupos() {
                     <div className="px-4 py-3 border-b border-borde flex items-center gap-3">
                       <div className="max-w-sm flex-1">
                         <Input
-                          placeholder="Buscar por nombre o código..."
+                          placeholder={t('buscarEntidadPlaceholder')}
                           value={busquedaEntidades}
                           onChange={(e) => setBusquedaEntidades(e.target.value)}
                           icono={<Search size={15} />}
                         />
                       </div>
-                      <Boton variante="primario" tamano="sm" onClick={abrirNuevaEntidad}><Plus size={14} />Nueva entidad</Boton>
+                      <Boton variante="primario" tamano="sm" onClick={abrirNuevaEntidad}><Plus size={14} />{t('nuevaEntidad')}</Boton>
                     </div>
                   <Tabla>
                     <TablaCabecera>
-                      <tr><TablaTh>Nombre</TablaTh><TablaTh>Estado</TablaTh><TablaTh>Codigo</TablaTh><TablaTh className="text-right">Acciones</TablaTh></tr>
+                      <tr><TablaTh>{t('colNombre')}</TablaTh><TablaTh>{t('colEstado')}</TablaTh><TablaTh>{t('colCodigo')}</TablaTh><TablaTh className="text-right">{tc('acciones')}</TablaTh></tr>
                     </TablaCabecera>
                     <TablaCuerpo>
                       {cargandoDetalle ? (
@@ -486,7 +489,7 @@ export default function PaginaGrupos() {
                           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                           <input
                             type="text"
-                            placeholder="Buscar usuario por nombre o correo..."
+                            placeholder={t('buscarUsuarioPlaceholder')}
                             value={busquedaUsuario}
                             onChange={(e) => { setBusquedaUsuario(e.target.value); setDropdownAbierto(true); setUsuarioNuevo('') }}
                             onFocus={() => setDropdownAbierto(true)}
@@ -521,7 +524,7 @@ export default function PaginaGrupos() {
                         disabled={!usuarioNuevo}
                       >
                         <Plus size={14} />
-                        Asignar
+                        {t('agregarUsuario')}
                       </Boton>
                     </div>
 
@@ -535,7 +538,7 @@ export default function PaginaGrupos() {
                     {usuariosGrupo.length > 0 && (
                       <div className="max-w-sm">
                         <Input
-                          placeholder="Filtrar usuarios del grupo..."
+                          placeholder={t('filtrarUsuariosPlaceholder')}
                           value={busquedaUsuariosLista}
                           onChange={(e) => setBusquedaUsuariosLista(e.target.value)}
                           icono={<Search size={15} />}
@@ -618,7 +621,7 @@ export default function PaginaGrupos() {
           {/* Tab Datos */}
           {tabModalGrupo === 'datos' && (
             <>
-              <Input etiqueta="Nombre *" value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder="Corporacion Municipal" />
+              <Input etiqueta={t('etiquetaNombre')} value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
               <Textarea etiqueta="Descripción" value={formGrupo.descripcion} onChange={(e) => setFormGrupo({ ...formGrupo, descripcion: e.target.value })} rows={3} />
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-texto">Tipo</label>
@@ -643,7 +646,7 @@ export default function PaginaGrupos() {
               </p>
               <textarea
                 className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
-                placeholder="Ej: Este grupo gestiona documentos de contratación pública..."
+                placeholder={t('placeholderDescripcion')}
                 value={formGrupo.prompt}
                 onChange={(e) => setFormGrupo({ ...formGrupo, prompt: e.target.value })}
               />
@@ -658,7 +661,7 @@ export default function PaginaGrupos() {
               </p>
               <textarea
                 className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
-                placeholder="Ej: Eres un asistente especializado en documentación municipal..."
+                placeholder={t('placeholderSystemPrompt')}
                 value={formGrupo.system_prompt}
                 onChange={(e) => setFormGrupo({ ...formGrupo, system_prompt: e.target.value })}
               />
@@ -667,8 +670,8 @@ export default function PaginaGrupos() {
 
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarGrupo} cargando={guardando}>{grupoEditando ? 'Guardar' : 'Crear grupo'}</Boton>
+            <Boton variante="contorno" onClick={() => setModalGrupo(false)}>{tc('cancelar')}</Boton>
+            <Boton variante="primario" onClick={guardarGrupo} cargando={guardando}>{grupoEditando ? tc('guardar') : t('crearGrupo')}</Boton>
           </div>
         </div>
       </Modal>
@@ -679,7 +682,7 @@ export default function PaginaGrupos() {
           {/* Tabs (solo en edición) */}
           {entidadEditando && (
             <div className="flex border-b border-borde -mx-1">
-              <button onClick={() => setTabModalEntidad('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalEntidad === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Datos</button>
+              <button onClick={() => setTabModalEntidad('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalEntidad === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabDatos')}</button>
               <button onClick={() => setTabModalEntidad('usuarios')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalEntidad === 'usuarios' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Usuarios ({usuariosEntidad.length})</button>
             </div>
           )}
@@ -687,15 +690,15 @@ export default function PaginaGrupos() {
           {/* Tab Datos */}
           {tabModalEntidad === 'datos' && (
             <>
-              <Input etiqueta="Nombre *" value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder="Municipalidad" />
+              <Input etiqueta={t('etiquetaNombre')} value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder={t('placeholderNombreEntidad')} />
               <Textarea etiqueta="Descripción" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} placeholder="Descripción opcional" rows={3} />
               {entidadEditando && (
                 <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
               )}
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cancelar</Boton>
-                <Boton variante="primario" onClick={guardarEntidad} cargando={guardandoEntidad}>{entidadEditando ? 'Guardar' : 'Crear entidad'}</Boton>
+                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>{tc('cancelar')}</Boton>
+                <Boton variante="primario" onClick={guardarEntidad} cargando={guardandoEntidad}>{entidadEditando ? tc('guardar') : t('crearEntidad')}</Boton>
               </div>
             </>
           )}
@@ -709,7 +712,7 @@ export default function PaginaGrupos() {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                     <input
                       type="text"
-                      placeholder="Buscar usuario por nombre o correo..."
+                      placeholder={t('buscarUsuarioPlaceholder')}
                       value={busquedaUsuarioEnt}
                       onChange={(e) => { setBusquedaUsuarioEnt(e.target.value); setDropdownEntAbierto(true); setUsuarioNuevoEnt('') }}
                       onFocus={() => setDropdownEntAbierto(true)}
@@ -738,7 +741,7 @@ export default function PaginaGrupos() {
                   )}
                 </div>
                 <Boton variante="primario" onClick={asignarUsuarioAEntidad} cargando={asignandoUsuarioEnt} disabled={!usuarioNuevoEnt}>
-                  <Plus size={14} /> Asignar
+                  <Plus size={14} /> {t('agregarUsuario')}
                 </Boton>
               </div>
 
@@ -764,7 +767,7 @@ export default function PaginaGrupos() {
 
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Cerrar</Boton>
+                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>{tc('cerrar')}</Boton>
               </div>
             </>
           )}
