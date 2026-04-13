@@ -9,10 +9,10 @@ export const tema = {
     version: '1.0.0',
   },
   logo: {
-    url: '/logo_Server_LM.png',
+    url: '/logo_serverlm_A.png',
     alt: 'Server LM',
-    ancho: 110,
-    alto: 36,
+    ancho: 284,
+    alto: 92,
   },
   // Los colores de Tailwind se configuran en globals.css bajo @theme
   // Referencia para uso en estilos inline si fuera necesario:
