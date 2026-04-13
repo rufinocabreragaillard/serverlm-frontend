@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { ArrowDown, ArrowUp, Copy, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/components/ui/tarjeta'
@@ -16,12 +17,13 @@ type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nom
 type Tab = 'globales' | 'copiar'
 
 export default function PaginaRolesGenerales() {
+  const t = useTranslations('rolesGenerales')
   const [tab, setTab] = useState<Tab>('globales')
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Roles Generales</h2>
+        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
           Administra roles transversales (sin grupo) y copia roles entre grupos
         </p>
@@ -58,6 +60,8 @@ export default function PaginaRolesGenerales() {
 // ── Tab 1: CRUD de Roles Globales ─────────────────────────────────────────
 
 function TabRolesGlobales() {
+  const t = useTranslations('rolesGenerales')
+  const tc = useTranslations('common')
   const { aplicacionActiva } = useAuth()
   const [roles, setRoles] = useState<Rol[]>([])
   const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([])
@@ -275,7 +279,7 @@ function TabRolesGlobales() {
           <TarjetaTitulo>Roles generales (sin grupo)</TarjetaTitulo>
           <Boton variante="primario" onClick={abrirCrear}>
             <Plus size={16} />
-            Nuevo rol general
+            {t('nuevoRol')}
           </Boton>
         </div>
       </TarjetaCabecera>
@@ -393,7 +397,7 @@ function TabRolesGlobales() {
                     : 'border-transparent text-texto-muted hover:text-texto'
                 }`}
               >
-                Datos
+                {t('tabDatos')}
               </button>
               <button
                 type="button"
@@ -404,7 +408,7 @@ function TabRolesGlobales() {
                     : 'border-transparent text-texto-muted hover:text-texto'
                 }`}
               >
-                Funciones ({funcionesRol.length})
+                {t('tabFunciones')} ({funcionesRol.length})
               </button>
             </div>
           )}
@@ -419,29 +423,29 @@ function TabRolesGlobales() {
             <>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 <div>
-                  <label className="text-sm font-medium text-texto">Código *</label>
+                  <label className="text-sm font-medium text-texto">{t('etiquetaCodigo')}</label>
                   <Input
                     value={form.codigo_rol}
                     onChange={(e) => setForm({ ...form, codigo_rol: e.target.value.toUpperCase() })}
-                    placeholder="Ej: SEG-USUARIOS"
+                    placeholder={t('placeholderCodigo')}
                     disabled={!!editando}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-texto">Alias</label>
+                  <label className="text-sm font-medium text-texto">{t('etiquetaAlias')}</label>
                   <Input
                     value={form.alias_de_rol}
                     onChange={(e) => setForm({ ...form, alias_de_rol: e.target.value })}
-                    placeholder="Alias corto"
+                    placeholder={t('placeholderAlias')}
                     maxLength={40}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-texto">Nombre *</label>
+                  <label className="text-sm font-medium text-texto">{t('etiquetaNombre')}</label>
                   <Input
                     value={form.nombre}
                     onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                    placeholder="Nombre descriptivo del rol"
+                    placeholder={t('placeholderNombre')}
                   />
                 </div>
                 <div>
@@ -463,28 +467,28 @@ function TabRolesGlobales() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-texto">URL de inicio</label>
+                  <label className="text-sm font-medium text-texto">{t('etiquetaUrlInicio')}</label>
                   <Input
                     value={form.url_inicio}
                     onChange={(e) => setForm({ ...form, url_inicio: e.target.value })}
-                    placeholder="/dashboard"
+                    placeholder={t('placeholderUrlInicio')}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-texto">Descripción</label>
+                  <label className="text-sm font-medium text-texto">{t('etiquetaDescripcion')}</label>
                   <Input
                     value={form.descripcion}
                     onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                    placeholder="Descripción del rol..."
+                    placeholder={t('placeholderDescripcion')}
                   />
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Boton variante="contorno" onClick={() => setModalAbierto(false)} disabled={guardando}>
-                  Cancelar
+                  {tc('cancelar')}
                 </Boton>
                 <Boton variante="primario" onClick={guardar} cargando={guardando}>
-                  {editando ? 'Guardar cambios' : 'Crear rol general'}
+                  {editando ? t('guardarRol') : t('crearRol')}
                 </Boton>
               </div>
             </>
@@ -494,11 +498,11 @@ function TabRolesGlobales() {
             <div className="flex flex-col gap-3">
               {/* Asignar nueva */}
               <div>
-                <label className="text-sm font-medium text-texto">Asignar función</label>
+                <label className="text-sm font-medium text-texto">{t('asignarFuncion')}</label>
                 <div className="flex gap-2 mt-1">
                   <div className="flex-1 relative">
                     <Input
-                      placeholder="Buscar función por nombre o código..."
+                      placeholder={t('buscarFuncionPlaceholder')}
                       value={busquedaFuncion}
                       onChange={(e) => setBusquedaFuncion(e.target.value)}
                       icono={<Search size={14} />}
@@ -533,7 +537,7 @@ function TabRolesGlobales() {
                     disabled={!funcionNueva || asignandoFuncion}
                   >
                     <Plus size={14} />
-                    Agregar
+                    {t('asignar')}
                   </Boton>
                 </div>
               </div>
@@ -591,7 +595,7 @@ function TabRolesGlobales() {
 
               <div className="flex justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalAbierto(false)}>
-                  Cerrar
+                  {tc('cerrar')}
                 </Boton>
               </div>
             </div>

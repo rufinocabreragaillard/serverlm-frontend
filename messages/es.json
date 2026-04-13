@@ -23,6 +23,7 @@
     "servidorNoDisponible": "El servidor no está disponible",
     "acciones": "Acciones",
     "exportarExcel": "Exportar Excel",
+    "actualizar": "Actualizar",
     "activo": "Activo",
     "inactivo": "Inactivo"
   },
@@ -839,6 +840,7 @@
     "crearRol": "Crear rol",
     "guardarRol": "Guardar",
     "buscarFuncionPlaceholder": "Buscar función por nombre o código...",
+    "asignarFuncion": "Asignar función",
     "asignar": "Asignar",
     "tabDatos": "Datos",
     "tabFunciones": "Funciones"

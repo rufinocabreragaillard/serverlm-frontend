@@ -23,6 +23,7 @@
     "servidorNoDisponible": "Server unavailable",
     "acciones": "Actions",
     "exportarExcel": "Export Excel",
+    "actualizar": "Refresh",
     "activo": "Active",
     "inactivo": "Inactive"
   },
@@ -839,6 +840,7 @@
     "crearRol": "Create role",
     "guardarRol": "Save",
     "buscarFuncionPlaceholder": "Search function by name or code...",
+    "asignarFuncion": "Assign function",
     "asignar": "Assign",
     "tabDatos": "Data",
     "tabFunciones": "Functions"

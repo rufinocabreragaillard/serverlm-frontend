@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, RefreshCw, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,8 @@ import type { RegistroAuditoria } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 
 export default function PaginaAuditoriaConfiguracion() {
+  const t = useTranslations('auditoriaConfiguracion')
+  const tc = useTranslations('common')
   const [registros, setRegistros] = useState<RegistroAuditoria[]>([])
   const [cargando, setCargando] = useState(true)
   const [busqueda, setBusqueda] = useState('')
@@ -44,7 +47,7 @@ export default function PaginaAuditoriaConfiguracion() {
     <div className="flex flex-col gap-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-texto">Auditoría Configuración</h2>
+          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
           <p className="text-sm text-texto-muted mt-1">{registros.length} registros totales</p>
         </div>
         <div className="flex gap-2">
@@ -61,18 +64,18 @@ export default function PaginaAuditoriaConfiguracion() {
             disabled={filtrados.length === 0}
           >
             <Download size={15} />
-            Excel
+            {tc('exportarExcel')}
           </Boton>
           <Boton variante="contorno" onClick={cargar} cargando={cargando}>
             <RefreshCw size={15} />
-            Actualizar
+            {tc('actualizar')}
           </Boton>
         </div>
       </div>
 
       <div className="max-w-sm">
         <Input
-          placeholder="Filtrar por tabla, usuario u operación..."
+          placeholder={t('filtrarPlaceholder')}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           icono={<Search size={15} />}
@@ -82,11 +85,11 @@ export default function PaginaAuditoriaConfiguracion() {
       <Tabla>
         <TablaCabecera>
           <tr>
-            <TablaTh>Fecha y hora</TablaTh>
-            <TablaTh>Usuario</TablaTh>
-            <TablaTh>Tabla</TablaTh>
-            <TablaTh>Operación</TablaTh>
-            <TablaTh>Registro ID</TablaTh>
+            <TablaTh>{t('colFecha')}</TablaTh>
+            <TablaTh>{t('colUsuario')}</TablaTh>
+            <TablaTh>{t('colTabla')}</TablaTh>
+            <TablaTh>{t('colOperacion')}</TablaTh>
+            <TablaTh>{t('colRegistro')}</TablaTh>
           </tr>
         </TablaCabecera>
         <TablaCuerpo>

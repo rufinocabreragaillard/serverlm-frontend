@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Users, ShieldCheck, Building2, ClipboardList, TrendingUp, Activity } from 'lucide-react'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
 import { Insignia } from '@/components/ui/insignia'
@@ -15,38 +16,8 @@ interface Estadisticas {
   totalAuditoria: number
 }
 
-const tarjetasEstadistica = (stats: Estadisticas) => [
-  {
-    titulo: 'Usuarios del grupo',
-    valor: stats.totalUsuarios,
-    icono: Users,
-    color: 'bg-primario-muy-claro text-primario',
-    tendencia: 'Activos en el grupo',
-  },
-  {
-    titulo: 'Roles del grupo',
-    valor: stats.totalRoles,
-    icono: ShieldCheck,
-    color: 'bg-secundario-muy-claro text-secundario',
-    tendencia: 'Configurados',
-  },
-  {
-    titulo: 'Entidades del grupo',
-    valor: stats.totalEntidades,
-    icono: Building2,
-    color: 'bg-acento-muy-claro text-acento',
-    tendencia: 'Del grupo activo',
-  },
-  {
-    titulo: 'Registros auditoría',
-    valor: stats.totalAuditoria,
-    icono: ClipboardList,
-    color: 'bg-green-50 text-exito',
-    tendencia: 'Recientes del grupo',
-  },
-]
-
 export default function PaginaDashboard() {
+  const t = useTranslations('dashboard')
   const { usuario } = useAuth()
   const [stats, setStats] = useState<Estadisticas>({
     totalUsuarios: 0,
@@ -56,6 +27,37 @@ export default function PaginaDashboard() {
   })
   const [auditoria, setAuditoria] = useState<RegistroAuditoria[]>([])
   const [cargando, setCargando] = useState(true)
+
+  const tarjetasEstadistica = [
+    {
+      titulo: t('tarjetaUsuarios'),
+      valor: stats.totalUsuarios,
+      icono: Users,
+      color: 'bg-primario-muy-claro text-primario',
+      tendencia: t('tendenciaUsuarios'),
+    },
+    {
+      titulo: t('tarjetaRoles'),
+      valor: stats.totalRoles,
+      icono: ShieldCheck,
+      color: 'bg-secundario-muy-claro text-secundario',
+      tendencia: t('tendenciaRoles'),
+    },
+    {
+      titulo: t('tarjetaEntidades'),
+      valor: stats.totalEntidades,
+      icono: Building2,
+      color: 'bg-acento-muy-claro text-acento',
+      tendencia: t('tendenciaEntidades'),
+    },
+    {
+      titulo: t('tarjetaAuditoria'),
+      valor: stats.totalAuditoria,
+      icono: ClipboardList,
+      color: 'bg-green-50 text-exito',
+      tendencia: t('tendenciaAuditoria'),
+    },
+  ]
 
   useEffect(() => {
     const cargar = async () => {
@@ -85,7 +87,7 @@ export default function PaginaDashboard() {
   }, [])
 
   const hora = new Date().getHours()
-  const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches'
+  const saludo = hora < 12 ? t('saludoManana') : hora < 19 ? t('saludoTarde') : t('saludoNoche')
   const nombre = usuario?.alias || usuario?.nombre?.split(' ')[0] || 'Usuario'
 
   return (
@@ -94,24 +96,24 @@ export default function PaginaDashboard() {
       <div>
         <h2 className="text-2xl font-bold text-texto">{saludo}, {nombre}</h2>
         <p className="text-texto-muted text-sm mt-1">
-          Grupo: <span className="font-medium text-primario">{usuario?.grupo_activo}</span>
-          {' · '}Entidad: <span className="font-medium text-primario">{usuario?.entidad_activa}</span>
+          {t('grupo')}: <span className="font-medium text-primario">{usuario?.grupo_activo}</span>
+          {' · '}{t('entidad')}: <span className="font-medium text-primario">{usuario?.entidad_activa}</span>
           {usuario?.rol_principal && (
-            <> · Rol: <span className="font-medium">{usuario.rol_principal}</span></>
+            <> · {t('rol')}: <span className="font-medium">{usuario.rol_principal}</span></>
           )}
         </p>
       </div>
 
       {/* Tarjetas de estadísticas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {tarjetasEstadistica(stats).map((t) => {
-          const Icono = t.icono
+        {tarjetasEstadistica.map((card) => {
+          const Icono = card.icono
           return (
-            <Tarjeta key={t.titulo}>
+            <Tarjeta key={card.titulo}>
               <TarjetaContenido className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-texto-muted">{t.titulo}</span>
-                  <div className={`p-2 rounded-lg ${t.color}`}>
+                  <span className="text-sm font-medium text-texto-muted">{card.titulo}</span>
+                  <div className={`p-2 rounded-lg ${card.color}`}>
                     <Icono size={16} />
                   </div>
                 </div>
@@ -119,11 +121,11 @@ export default function PaginaDashboard() {
                   {cargando ? (
                     <div className="h-8 w-16 bg-borde rounded animate-pulse" />
                   ) : (
-                    <span className="text-3xl font-bold text-texto">{t.valor}</span>
+                    <span className="text-3xl font-bold text-texto">{card.valor}</span>
                   )}
                   <p className="text-xs text-texto-muted mt-1 flex items-center gap-1">
                     <TrendingUp size={12} />
-                    {t.tendencia}
+                    {card.tendencia}
                   </p>
                 </div>
               </TarjetaContenido>
@@ -139,14 +141,14 @@ export default function PaginaDashboard() {
           <TarjetaContenido>
             <h3 className="text-sm font-semibold text-texto mb-3 flex items-center gap-2">
               <Activity size={15} className="text-primario" />
-              Accesos rápidos
+              {t('accesosRapidos')}
             </h3>
             <div className="flex flex-col gap-2">
               {[
-                { nombre: 'Nuevo usuario', href: '/usuarios', icono: Users },
-                { nombre: 'Gestionar roles', href: '/roles', icono: ShieldCheck },
-                { nombre: 'Ver entidades', href: '/entidades', icono: Building2 },
-                { nombre: 'Parámetros', href: '/parametros', icono: ClipboardList },
+                { nombre: t('nuevoUsuario'), href: '/usuarios', icono: Users },
+                { nombre: t('gestionarRoles'), href: '/roles', icono: ShieldCheck },
+                { nombre: t('verEntidades'), href: '/entidades', icono: Building2 },
+                { nombre: t('parametros'), href: '/parametros', icono: ClipboardList },
               ].map((acc) => {
                 const Icono = acc.icono
                 return (
@@ -169,7 +171,7 @@ export default function PaginaDashboard() {
           <TarjetaContenido>
             <h3 className="text-sm font-semibold text-texto mb-3 flex items-center gap-2">
               <ClipboardList size={15} className="text-primario" />
-              Actividad reciente
+              {t('actividadReciente')}
             </h3>
             {cargando ? (
               <div className="flex flex-col gap-2">
@@ -179,7 +181,7 @@ export default function PaginaDashboard() {
               </div>
             ) : auditoria.length === 0 ? (
               <p className="text-sm text-texto-muted text-center py-6">
-                No hay registros de auditoría disponibles
+                {t('sinActividad')}
               </p>
             ) : (
               <div className="flex flex-col divide-y divide-borde">

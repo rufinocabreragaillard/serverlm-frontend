@@ -512,12 +512,12 @@ export default function PaginaUsuarios() {
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-texto">Usuarios</h2>
+          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
           <p className="text-sm text-texto-muted mt-1">Gestión de usuarios del sistema</p>
         </div>
         <Boton variante="primario" onClick={abrirNuevo}>
           <Plus size={16} />
-          Nuevo usuario
+          {t('nuevoUsuario')}
         </Boton>
       </div>
 
@@ -525,7 +525,7 @@ export default function PaginaUsuarios() {
       <div className="flex items-center gap-3">
         <div className="max-w-sm flex-1">
           <Input
-            placeholder="Buscar por nombre o correo..."
+            placeholder={t('buscarPlaceholder')}
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             icono={<Search size={15} />}
@@ -569,12 +569,12 @@ export default function PaginaUsuarios() {
         <Tabla>
           <TablaCabecera>
             <tr>
-              <TablaTh>Nombre</TablaTh>
-              <TablaTh>Correo</TablaTh>
-              <TablaTh>Rol principal</TablaTh>
-              <TablaTh>Estado</TablaTh>
-              <TablaTh>Último acceso</TablaTh>
-              <TablaTh className="text-right">Acciones</TablaTh>
+              <TablaTh>{t('colNombre')}</TablaTh>
+              <TablaTh>{t('colCorreo')}</TablaTh>
+              <TablaTh>{t('colRolPrincipal')}</TablaTh>
+              <TablaTh>{t('colEstado')}</TablaTh>
+              <TablaTh>{t('colUltimoAcceso')}</TablaTh>
+              <TablaTh className="text-right">{tc('acciones')}</TablaTh>
             </tr>
           </TablaCabecera>
           <TablaCuerpo>
@@ -661,7 +661,7 @@ export default function PaginaUsuarios() {
                       : 'text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {tab === 'datos' ? 'Datos' : tab === 'entidades' ? 'Entidades' : 'Roles'}
+                  {tab === 'datos' ? t('tabDatos') : tab === 'entidades' ? t('tabEntidades') : t('tabRoles')}
                 </button>
               ))}
             </div>
@@ -673,7 +673,7 @@ export default function PaginaUsuarios() {
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 <div className="col-span-2">
                   <Input
-                    etiqueta="Correo electrónico *"
+                    etiqueta={t('etiquetaCorreo')}
                     type="email"
                     value={form.codigo_usuario}
                     onChange={(e) => setForm({ ...form, codigo_usuario: e.target.value })}
@@ -682,13 +682,13 @@ export default function PaginaUsuarios() {
                   />
                 </div>
                 <Input
-                  etiqueta="Nombre completo *"
+                  etiqueta={t('etiquetaNombre')}
                   value={form.nombre}
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                   placeholder="Nombre Apellido"
                 />
                 <Input
-                  etiqueta="Alias"
+                  etiqueta={t('etiquetaAlias')}
                   value={form.alias}
                   onChange={(e) => setForm({ ...form, alias: e.target.value })}
                   placeholder="Alias del usuario"
@@ -852,7 +852,7 @@ export default function PaginaUsuarios() {
               )}
 
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cancelar</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
                 <Boton variante="primario" onClick={guardar} cargando={guardando}>
                   {usuarioEditando ? 'Guardar cambios' : 'Crear usuario'}
                 </Boton>
@@ -871,7 +871,7 @@ export default function PaginaUsuarios() {
                       <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                       <input
                         type="text"
-                        placeholder="Buscar entidad por nombre o código..."
+                        placeholder={t('buscarEntidad')}
                         value={busquedaEntidad}
                         onChange={(e) => { setBusquedaEntidad(e.target.value); setDropdownEntidadAbierto(true); setEntidadNueva('') }}
                         onFocus={() => setDropdownEntidadAbierto(true)}
@@ -967,7 +967,7 @@ export default function PaginaUsuarios() {
                 </div>
               )}
               <div className="flex justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cerrar</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cerrar')}</Boton>
               </div>
             </div>
           )}
@@ -990,7 +990,7 @@ export default function PaginaUsuarios() {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
                     <input
                       type="text"
-                      placeholder="Buscar rol por nombre o código..."
+                      placeholder={t('buscarRol')}
                       value={busquedaRol}
                       onChange={(e) => { setBusquedaRol(e.target.value); setDropdownRolAbierto(true); setRolNuevo('') }}
                       onFocus={() => setDropdownRolAbierto(true)}
@@ -1100,7 +1100,7 @@ export default function PaginaUsuarios() {
                 </div>
               )}
               <div className="flex justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cerrar</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cerrar')}</Boton>
               </div>
             </div>
           )}
