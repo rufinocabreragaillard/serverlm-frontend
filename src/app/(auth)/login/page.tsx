@@ -167,8 +167,8 @@ export default function PaginaLogin() {
                   )}
 
                   {mensajeError && !mensajeRecuperacion && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                      <p className="text-sm text-error">{mensajeError}</p>
+                    <div className={`border rounded-lg px-4 py-3 ${mensajeError.startsWith('Conectando') ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                      <p className={`text-sm ${mensajeError.startsWith('Conectando') ? 'text-blue-700' : 'text-error'}`}>{mensajeError}</p>
                     </div>
                   )}
 

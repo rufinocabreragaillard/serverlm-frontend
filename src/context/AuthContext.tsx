@@ -55,12 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { pathnameRef.current = pathname }, [pathname])
 
   const cargarContexto = useCallback(async () => {
-    const MAX_INTENTOS = 3
-    const PAUSA_MS = 3000 // pausa entre reintentos mientras Railway despierta
+    // Railway (hobby plan) duerme tras 30 min de inactividad y tarda ~15-25 s en despertar.
+    // Con 5 intentos × 5 s = 25 s de margen cubrimos la mayoría de cold-starts.
+    const MAX_INTENTOS = 5
+    const PAUSA_MS = 5000
 
     for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
       try {
         const ctx = await authApi.yo()
+        setError(null)   // limpiar cualquier "Conectando..." previo
         setUsuario(ctx)
         actualizarMapaFunciones(ctx.menu)
         // Cargar traducciones de campos de BD del sistema
@@ -69,10 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return ctx
       } catch (e: unknown) {
         const esUltimoIntento = intento === MAX_INTENTOS
-        const esTimeout = e instanceof Error && (e.message.includes('timeout') || e.message === 'Network Error')
+        const esConexion = e instanceof Error && (e.message === 'Network Error' || e.message.includes('timeout'))
 
-        if (!esUltimoIntento && esTimeout) {
-          // Railway puede estar despertando — esperar y reintentar automáticamente
+        if (!esUltimoIntento && esConexion) {
+          // Mostrar aviso suave (no error rojo) mientras Railway despierta
+          setError(`Conectando con el servidor… (intento ${intento}/${MAX_INTENTOS})`)
           await new Promise((r) => setTimeout(r, PAUSA_MS))
           continue
         }
@@ -82,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         actualizarMapaFunciones()
         let msg = 'Error al cargar datos del usuario'
         if (e instanceof Error) {
-          if (e.message === 'Network Error' || e.message.includes('timeout')) {
+          if (esConexion) {
             msg = 'No se pudo conectar con el servidor. Intente recargar la página.'
           } else {
             msg = e.message
@@ -97,6 +101,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true
+
+    // Warm-up: ping al backend en cuanto la app carga para despertar Railway antes
+    // de que el usuario intente hacer login. Fire-and-forget, no bloquea nada.
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    fetch(`${apiUrl}/health`, { method: 'GET', signal: AbortSignal.timeout(30000) })
+      .catch(() => { /* ignorar errores — solo queremos despertar el servidor */ })
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
