@@ -542,37 +542,16 @@ export default function PaginaProcesarDocumentos() {
 
     // ── EXTRAER (client-side): CARGADO → METADATA ─────────────────────────
     if (esExtraer) {
-      // Obtener handle efectivo siguiendo la jerarquía:
-      // 1. Handle ya activo en estado (permiso vigente)
-      // 2. Handle guardado en IndexedDB + requestPermission (pequeño banner del browser, NO el Finder)
-      // 3. Solo como último recurso: showDirectoryPicker (abre el Finder)
-      // La raíz correcta es la ubicación con nivel mínimo del árbol de ubicaciones_docs.
-      let handleEfectivo = dirHandle
+      // Usar handle guardado si existe y tiene permisos; si no, correr sin él
+      // (los docs sin archivo local quedarán marcados como NO_ENCONTRADO).
+      let handleEfectivo: FileSystemDirectoryHandle | null = dirHandle
       if (!handleEfectivo || !(await ensureReadPermission(handleEfectivo))) {
-        // Intentar handle guardado en IndexedDB
         const stored = await idbGetHandle()
         if (stored && (await ensureReadPermission(stored))) {
           handleEfectivo = stored
           setDirHandle(stored)
         } else {
-          // Último recurso: abrir Finder
-          // El hint de texto en pantalla indica la ruta raíz del árbol de ubicaciones.
-          try {
-            const opts: Record<string, unknown> = { mode: 'read', id: 'cab-procesar-docs' }
-            handleEfectivo = await (window as unknown as { showDirectoryPicker: (opts?: Record<string, unknown>) => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker(opts)
-            setDirHandle(handleEfectivo)
-            idbSetHandle(handleEfectivo)
-            setEscaneandoDir(true)
-            try {
-              const archivos = await escanearDirectorio(handleEfectivo)
-              setArchivosEnDir(archivos)
-            } finally {
-              setEscaneandoDir(false)
-            }
-          } catch {
-            setEjecutando(false)
-            return
-          }
+          handleEfectivo = null
         }
       }
 
@@ -599,13 +578,13 @@ export default function PaginaProcesarDocumentos() {
         setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'EN_PROCESO' } : c))
         const t0 = Date.now()
         try {
-          if (!item.ubicacion_documento) {
+          if (!item.ubicacion_documento || !handleEfectivo) {
             await documentosApi.subirTexto(item.codigo_documento, {
               texto_fuente: '', archivo_no_encontrado: true,
             })
             setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ENCONTRADO (sin ubicación)', tiempo_ms: Date.now() - t0 } : c))
           } else {
-            const fileHandle = await abrirArchivoPorRuta(handleEfectivo!, item.ubicacion_documento)
+            const fileHandle = await abrirArchivoPorRuta(handleEfectivo, item.ubicacion_documento)
             if (!fileHandle) {
               await documentosApi.subirTexto(item.codigo_documento, { texto_fuente: '', archivo_no_encontrado: true })
               setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: 'NO_ENCONTRADO', tiempo_ms: Date.now() - t0 } : c))
@@ -876,23 +855,21 @@ export default function PaginaProcesarDocumentos() {
                 <option value={PROCESO_RESTABLECER}>Restablecer (NO_ESCANEABLE / NO_ENCONTRADO → CARGADO/METADATA)</option>
               </select>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                {procesoSel && procesoSel !== PROCESO_RESTABLECER && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-texto-muted">Paralelo:</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={nParallelEdit}
-                      onChange={(e) => setNParallelEdit(Math.max(1, parseInt(e.target.value) || 1))}
-                      onBlur={guardarNParallel}
-                      onKeyDown={(e) => e.key === 'Enter' && guardarNParallel()}
-                      disabled={ejecutando || guardandoParalel}
-                      className="w-14 text-xs border border-borde rounded px-1.5 py-0.5 text-center bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50"
-                    />
-                    {guardandoParalel && <Loader2 className="w-3 h-3 animate-spin text-texto-muted" />}
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-texto-muted">Paralelo:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={nParallelEdit}
+                    onChange={(e) => setNParallelEdit(Math.max(1, parseInt(e.target.value) || 1))}
+                    onBlur={guardarNParallel}
+                    onKeyDown={(e) => e.key === 'Enter' && guardarNParallel()}
+                    disabled={ejecutando || guardandoParalel}
+                    className="w-14 text-xs border border-borde rounded px-1.5 py-0.5 text-center bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50"
+                  />
+                  {guardandoParalel && <Loader2 className="w-3 h-3 animate-spin text-texto-muted" />}
+                </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-texto-muted">Tope:</span>
                   <input
@@ -998,17 +975,9 @@ export default function PaginaProcesarDocumentos() {
           </div>
 
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde flex-wrap">
-            {usaLLM && (
-              <span className="text-xs text-texto-muted">
-                {t('correrServidor')}
-              </span>
-            )}
             <div className="ml-auto flex items-center gap-3">
-              {!procesoSel && documentos.length > 0 && (
-                <span className="text-xs text-amarillo-600 font-medium">Selecciona un proceso para ejecutar</span>
-              )}
               <span className="text-sm text-texto-muted">
-                {t('xDeYSeleccionados', { x: seleccionados.size, y: documentos.length })}{esExtraer && archivosEnDir && ` ${t('filtradoPorDirectorio')}`}
+                {t('xDeYSeleccionados', { x: seleccionados.size, y: documentos.length })}
               </span>
               <Boton variante="primario" onClick={ejecutar}
                 disabled={ejecutando || !procesoSel || ((esExtraer || esRestablecer) && seleccionados.size === 0)}>
