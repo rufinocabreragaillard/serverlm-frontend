@@ -365,15 +365,23 @@ export default function PaginaProcesarDocumentos() {
     })
   }
 
+  // docsFiltrados incluye TODOS los docs que pasan el filtro de búsqueda/texto,
+  // independientemente de si están en el directorio local o no.
+  // Los que no están en disco se muestran al final en rojo (no se ocultan).
   const docsFiltrados = documentos.filter((d) => {
-    // El filtro por archivos del filesystem solo aplica a EXTRAER (operación client-side).
-    // Para otros procesos el directorio es solo un filtro lógico de ubicación (ya aplicado
-    // en cargarDocumentos vía alcance=ubicacion / ubicacionSel).
-    if (esExtraer && archivosEnDir && !archivosEnDir.has(d.nombre_documento)) return false
     if (busqueda && !d.nombre_documento.toLowerCase().includes(busqueda.toLowerCase()) &&
         !(d.ubicacion_documento || '').toLowerCase().includes(busqueda.toLowerCase())) return false
     return true
   })
+
+  // Separar en dos grupos: encontrados en disco y no encontrados.
+  // Si no hay directorio escaneado, todos van al grupo "enDisco".
+  const docsEnDisco = esExtraer && archivosEnDir
+    ? docsFiltrados.filter((d) => archivosEnDir.has(d.nombre_documento))
+    : docsFiltrados
+  const docsSinDisco = esExtraer && archivosEnDir
+    ? docsFiltrados.filter((d) => !archivosEnDir.has(d.nombre_documento))
+    : []
 
   // Cuando se escanea un directorio en modo EXTRAER, marcar automáticamente los encontrados
   useEffect(() => {
@@ -383,7 +391,7 @@ export default function PaginaProcesarDocumentos() {
     }
   }, [esExtraer, archivosEnDir, documentos])
 
-  const seleccionarTodos = () => setSeleccionados(new Set(docsFiltrados.map((d) => d.codigo_documento)))
+  const seleccionarTodos = () => setSeleccionados(new Set(docsEnDisco.map((d) => d.codigo_documento)))
   const deseleccionarTodos = () => setSeleccionados(new Set())
 
   const escanearDirectorio = async (handle: FileSystemDirectoryHandle, maxNiveles: number = nivelesDirectorio): Promise<Set<string>> => {
@@ -1027,9 +1035,9 @@ export default function PaginaProcesarDocumentos() {
                   const topeNum = tope ? parseInt(tope) : 0
                   const efectivos = topeNum > 0 ? Math.min(seleccionados.size, topeNum) : seleccionados.size
                   if (efectivos < seleccionados.size) {
-                    return `${efectivos} a procesar (de ${seleccionados.size}/${docsFiltrados.length} sel.)`
+                    return `${efectivos} a procesar (de ${seleccionados.size}/${docsEnDisco.length} sel.)`
                   }
-                  return t('xDeYSeleccionados', { x: seleccionados.size, y: docsFiltrados.length })
+                  return t('xDeYSeleccionados', { x: seleccionados.size, y: docsEnDisco.length })
                 })()}
               </span>
               <Boton variante="primario" onClick={ejecutar}
@@ -1151,7 +1159,7 @@ export default function PaginaProcesarDocumentos() {
             <TablaCuerpo>
               {cargando ? (
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>{tc('cargando')}</TablaTd></TablaFila>
-              ) : docsFiltrados.length === 0 ? (
+              ) : docsEnDisco.length === 0 && docsSinDisco.length === 0 ? (
                 <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>
                   {!yaCargado
                     ? t('escribirFiltro')
@@ -1159,7 +1167,8 @@ export default function PaginaProcesarDocumentos() {
                     ? t('sinDocumentosEnEstado', { estado: pasoActual?.estado_origen || 'origen' })
                     : t('sinResultadosBusqueda')}
                 </TablaTd></TablaFila>
-              ) : docsFiltrados.map((d) => (
+              ) : (<>
+                {docsEnDisco.map((d) => (
                 <TablaFila key={d.codigo_documento}>
                   <TablaTd>
                     <input type="checkbox" checked={seleccionados.has(d.codigo_documento)}
@@ -1207,7 +1216,51 @@ export default function PaginaProcesarDocumentos() {
                     </div>
                   </TablaTd>
                 </TablaFila>
-              ))}
+                ))}
+                {docsSinDisco.length > 0 && (<>
+                  <TablaFila>
+                    <TablaTd colSpan={5 as never} className="bg-red-50 py-1.5 px-3">
+                      <div className="flex items-center gap-2 text-xs font-medium text-error">
+                        <AlertTriangle size={13} className="shrink-0" />
+                        {docsSinDisco.length} {docsSinDisco.length === 1 ? 'archivo no encontrado en el directorio seleccionado' : 'archivos no encontrados en el directorio seleccionado'} — no se procesarán
+                      </div>
+                    </TablaTd>
+                  </TablaFila>
+                  {docsSinDisco.map((d) => (
+                  <TablaFila key={d.codigo_documento} className="bg-red-50/60">
+                    <TablaTd>
+                      <input type="checkbox" disabled className="rounded border-borde opacity-30 cursor-not-allowed" />
+                    </TablaTd>
+                    <TablaTd className="max-w-0 w-[40%]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <AlertTriangle size={14} className="text-error shrink-0" />
+                        <span className="font-medium text-sm truncate text-error/80" title={d.nombre_documento}>{d.nombre_documento}</span>
+                      </div>
+                    </TablaTd>
+                    <TablaTd className="text-xs text-error/60 max-w-0 w-[30%] truncate" title={d.ubicacion_documento || ''}>{d.ubicacion_documento || '—'}</TablaTd>
+                    <TablaTd>
+                      <Insignia variante="error">{d.codigo_estado_doc}</Insignia>
+                    </TablaTd>
+                    <TablaTd>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => abrirDetalle(d)}
+                          className="p-1.5 rounded-lg hover:bg-red-100 text-error/50 hover:text-error transition-colors"
+                          title="Ver detalle">
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => setConfirmEliminarDoc(d)}
+                          className="p-1.5 rounded-lg hover:bg-red-100 text-error/50 hover:text-error transition-colors"
+                          title="Eliminar documento">
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </TablaTd>
+                  </TablaFila>
+                  ))}
+                </>)}
+              </>)}
             </TablaCuerpo>
           </Tabla>
         </>
