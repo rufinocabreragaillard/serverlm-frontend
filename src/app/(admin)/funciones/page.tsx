@@ -49,10 +49,15 @@ export default function PaginaFunciones() {
     id_modelo: string
     system_prompt: string
     prompt: string
+    perm_select: boolean
+    perm_insert: boolean
+    perm_update: boolean
+    perm_delete: boolean
   }>({
     codigo_funcion: '', nombre: '', descripcion: '', url_funcion: '',
     alias_de_funcion: '', icono_de_funcion: '', codigo_aplicacion_origen: '',
     tipo: 'NORMAL', id_modelo: '', system_prompt: '', prompt: '',
+    perm_select: true, perm_insert: true, perm_update: true, perm_delete: true,
   })
   const [tabModalFuncion, setTabModalFuncion] = useState<'datos' | 'aplicaciones' | 'prompt' | 'system_prompt' | 'llm'>('datos')
   const [guardandoFuncion, setGuardandoFuncion] = useState(false)
@@ -95,6 +100,7 @@ export default function PaginaFunciones() {
       alias_de_funcion: '', icono_de_funcion: '',
       codigo_aplicacion_origen: aplicacionActiva || '',
       tipo: 'NORMAL', id_modelo: '', system_prompt: '', prompt: '',
+      perm_select: true, perm_insert: true, perm_update: true, perm_delete: true,
     })
     setErrorFuncion(''); setTabModalFuncion('datos'); setModalFuncion(true)
   }
@@ -112,6 +118,10 @@ export default function PaginaFunciones() {
       id_modelo: f.id_modelo ? String(f.id_modelo) : '',
       system_prompt: (f as Funcion & { system_prompt?: string }).system_prompt || '',
       prompt: (f as Funcion & { prompt?: string }).prompt || '',
+      perm_select: f.perm_select ?? true,
+      perm_insert: f.perm_insert ?? true,
+      perm_update: f.perm_update ?? true,
+      perm_delete: f.perm_delete ?? true,
     })
     setErrorFuncion(''); setTabModalFuncion('datos'); cargarAppsDeFuncion(f.codigo_funcion); setModalFuncion(true)
   }
@@ -129,6 +139,10 @@ export default function PaginaFunciones() {
         id_modelo: formFuncion.id_modelo ? parseInt(formFuncion.id_modelo) : null,
         system_prompt: formFuncion.system_prompt || null,
         prompt: formFuncion.prompt || null,
+        perm_select: formFuncion.perm_select,
+        perm_insert: formFuncion.perm_insert,
+        perm_update: formFuncion.perm_update,
+        // perm_delete se excluye: solo modificable directamente en la BD
       }
       if (funcionEditando) {
         await funcionesApi.actualizar(funcionEditando.codigo_funcion, payload)
@@ -314,6 +328,32 @@ export default function PaginaFunciones() {
               <div className="col-span-2">
                 <label className="text-sm font-medium text-texto">Descripción</label>
                 <textarea value={formFuncion.descripcion} onChange={(e) => setFormFuncion({ ...formFuncion, descripcion: e.target.value })} rows={2} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario resize-none" />
+              </div>
+              <div className="col-span-2">
+                <label className="text-sm font-medium text-texto mb-2 block">Permisos de operación</label>
+                <div className="grid grid-cols-2 gap-2 p-3 bg-fondo rounded-lg border border-borde">
+                  {([
+                    { key: 'perm_select', label: 'Consultar (SELECT)', disabled: false },
+                    { key: 'perm_insert', label: 'Crear (INSERT)', disabled: false },
+                    { key: 'perm_update', label: 'Modificar (UPDATE)', disabled: false },
+                    { key: 'perm_delete', label: 'Eliminar (DELETE)', disabled: true },
+                  ] as { key: 'perm_select' | 'perm_insert' | 'perm_update' | 'perm_delete'; label: string; disabled: boolean }[]).map(({ key, label, disabled }) => (
+                    <label
+                      key={key}
+                      className={`flex items-center gap-2 text-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formFuncion[key]}
+                        disabled={disabled}
+                        onChange={disabled ? undefined : (e) => setFormFuncion({ ...formFuncion, [key]: e.target.checked })}
+                        className="w-4 h-4 rounded accent-primario disabled:cursor-not-allowed"
+                      />
+                      <span className={disabled ? 'text-texto-muted' : 'text-texto'}>{label}</span>
+                      {disabled && <span className="text-xs text-texto-muted">(solo BD)</span>}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
             {errorFuncion && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorFuncion}</p></div>}

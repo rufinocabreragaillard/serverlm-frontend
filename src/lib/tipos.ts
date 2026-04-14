@@ -179,6 +179,10 @@ export interface Funcion {
   prompt?: string | null
   system_prompt?: string | null  // instrucciones extra al LLM
   orden?: number
+  perm_select?: boolean
+  perm_insert?: boolean
+  perm_update?: boolean
+  perm_delete?: boolean
 }
 
 // ─── Chat con LLM ───────────────────────────────────────────────────────────
