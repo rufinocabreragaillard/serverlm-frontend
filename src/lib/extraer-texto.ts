@@ -182,17 +182,22 @@ async function extraerTextoPPTX(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer()
     const zip = await JSZip.loadAsync(arrayBuffer)
 
-    // Encontrar todos los slides (ppt/slides/slide1.xml, slide2.xml, ...)
-    const slideFiles = Object.keys(zip.files)
-      .filter((name) => /^ppt\/slides\/slide\d+\.xml$/i.test(name))
-      .sort((a, b) => {
-        const na = parseInt(a.match(/slide(\d+)/)?.[1] || '0')
-        const nb = parseInt(b.match(/slide(\d+)/)?.[1] || '0')
-        return na - nb
-      })
+    // Encontrar slides de contenido (ppt/slides/slideN.xml).
+    // Para plantillas .potx también se intenta extraer desde slide masters y layouts,
+    // que contienen el texto estructural de la plantilla (títulos, marcadores, etc.)
+    const allFiles = Object.keys(zip.files)
+    const slideFiles = [
+      ...allFiles.filter((n) => /^ppt\/slides\/slide\d+\.xml$/i.test(n)),
+      ...allFiles.filter((n) => /^ppt\/slideMasters\/slideMaster\d+\.xml$/i.test(n)),
+      ...allFiles.filter((n) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/i.test(n)),
+    ].sort((a, b) => {
+      const na = parseInt(a.match(/\d+/)?.[0] || '0')
+      const nb = parseInt(b.match(/\d+/)?.[0] || '0')
+      return na - nb
+    })
 
     if (slideFiles.length === 0) {
-      throw new ArchivoNoEscaneable('PPTX sin slides')
+      throw new ArchivoNoEscaneable('Plantilla PowerPoint sin contenido de texto (no contiene slides)')
     }
 
     const partes: string[] = []
