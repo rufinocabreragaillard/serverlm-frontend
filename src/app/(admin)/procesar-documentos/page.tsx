@@ -133,6 +133,8 @@ function PaginaProcesarDocumentosInterna() {
   const [guardandoParalel, setGuardandoParalel] = useState(false)
   const [tope, setTope] = useState<string>('')  // vacío = sin tope (procesa todo)
   const [estadoFiltro, setEstadoFiltro] = useState<string>('')  // override de estado para la lista
+  const [filtroLibre, setFiltroLibre] = useState<string>('')    // filtro libre de texto (nombre, ubicación, estado, comentarios)
+  const [filtroLibreInput, setFiltroLibreInput] = useState<string>('')  // valor del input antes de confirmar
   const [ubicaciones, setUbicaciones] = useState<UbicacionOption[]>([])
   const [ubicacionSel, setUbicacionSel] = useState('')
   const [ubicBusqueda, setUbicBusqueda] = useState('')
@@ -373,26 +375,23 @@ function PaginaProcesarDocumentosInterna() {
     try {
       let todos: Documento[]
       const estadoOverride = estadoFiltro || null
+      // filtroLibre se pasa como q al backend (nombre+ubicación) y se aplica
+      // también client-side sobre estado y detalle_estado
+      const qBackend = busqueda.trim() || filtroLibre.trim() || undefined
       if (estadoOverride) {
-        // Filtro manual de estado — ignora el proceso seleccionado
-        todos = await documentosApi.listar({ codigo_estado_doc: estadoOverride, activo: true, q: busqueda.trim() || undefined })
+        todos = await documentosApi.listar({ codigo_estado_doc: estadoOverride, activo: true, q: qBackend })
       } else if (esRestablecer) {
-        // Restablecer: listar documentos en NO_ESCANEABLE + NO_ENCONTRADO
         const [a, b] = await Promise.all([
-          documentosApi.listar({ codigo_estado_doc: 'NO_ESCANEABLE', activo: true, q: busqueda.trim() || undefined }),
-          documentosApi.listar({ codigo_estado_doc: 'NO_ENCONTRADO', activo: true, q: busqueda.trim() || undefined }),
+          documentosApi.listar({ codigo_estado_doc: 'NO_ESCANEABLE', activo: true, q: qBackend }),
+          documentosApi.listar({ codigo_estado_doc: 'NO_ENCONTRADO', activo: true, q: qBackend }),
         ])
         todos = [...a, ...b]
       } else if (esResetearCargado) {
-        // Resetear a CARGADO: listar todos los documentos activos (cualquier estado)
-        todos = await documentosApi.listar({ activo: true, q: busqueda.trim() || undefined })
+        todos = await documentosApi.listar({ activo: true, q: qBackend })
       } else if (pasoActual?.estado_origen) {
-        // Filtrar por el estado_origen del paso actual. Además, excluir docs que
-        // el proceso anterior marcó como inválidos (error en cola o resultado
-        // NO_ESCANEABLE/NO_ENCONTRADO/VACIO para ese destino).
         const estadoOrigenFiltro = pasoActual.estado_origen
         const [docsRaw, colaRaw] = await Promise.all([
-          documentosApi.listar({ codigo_estado_doc: estadoOrigenFiltro, activo: true, q: busqueda.trim() || undefined }),
+          documentosApi.listar({ codigo_estado_doc: estadoOrigenFiltro, activo: true, q: qBackend }),
           colaEstadosDocsApi.listar(),
         ])
         const INVALIDOS_RE = /NO_ESCANEABLE|NO_ENCONTRADO|VACIO/i
@@ -409,11 +408,21 @@ function PaginaProcesarDocumentosInterna() {
           ? docsRaw.filter(d => !idsInvalidos.has(d.codigo_documento))
           : docsRaw
       } else {
-        // "— Solo ver documentos —" (sin proceso ni estado): listar todos los activos,
-        // aplicando solo los filtros de búsqueda/ubicación.
-        todos = await documentosApi.listar({ activo: true, q: busqueda.trim() || undefined })
+        todos = await documentosApi.listar({ activo: true, q: qBackend })
       }
+
+      // Filtro client-side adicional del filtroLibre: estado y detalle_estado
+      // (el backend ya filtró nombre y ubicación via q)
       let filtrados = todos
+      if (filtroLibre.trim()) {
+        const q = filtroLibre.trim().toLowerCase()
+        filtrados = filtrados.filter((d) =>
+          (d.codigo_estado_doc || '').toLowerCase().includes(q) ||
+          (d.detalle_estado || '').toLowerCase().includes(q) ||
+          (d.nombre_documento || '').toLowerCase().includes(q) ||
+          (d.ubicacion_documento || '').toLowerCase().includes(q)
+        )
+      }
 
       if (ubicacionSel) {
         const ubic = ubicaciones.find((u) => u.codigo_ubicacion === ubicacionSel)
@@ -429,7 +438,7 @@ function PaginaProcesarDocumentosInterna() {
     } finally {
       setCargando(false)
     }
-  }, [procesoSel, esRestablecer, esResetearCargado, pasoActual, ubicacionSel, ubicaciones, busqueda, estadoFiltro])
+  }, [procesoSel, esRestablecer, esResetearCargado, pasoActual, ubicacionSel, ubicaciones, busqueda, estadoFiltro, filtroLibre])
 
   // Resetear lista cuando cambian filtros de proceso/alcance/ubicación.
   // Si se seleccionó un estado explícito, auto-cargar inmediatamente.
@@ -442,7 +451,7 @@ function PaginaProcesarDocumentosInterna() {
     // Siempre recargar (sin proceso/estado mostramos todos los docs activos).
     cargarDocumentos()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [procesoSel, ubicacionSel, estadoFiltro])
+  }, [procesoSel, ubicacionSel, estadoFiltro, filtroLibre])
 
   const toggleSeleccion = (id: number) => {
     setSeleccionados((prev) => {
@@ -1022,6 +1031,36 @@ function PaginaProcesarDocumentosInterna() {
       <Tarjeta>
         <TarjetaContenido>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="col-span-2 lg:col-span-3 flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Filtro libre</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Filtrar por nombre, directorio, estado o comentarios… (Enter para aplicar)"
+                  value={filtroLibreInput}
+                  onChange={(e) => setFiltroLibreInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setFiltroLibre(filtroLibreInput)
+                      setYaCargado(false)
+                    }
+                  }}
+                  disabled={ejecutando}
+                  className="flex-1 text-sm border border-borde rounded-lg px-3 py-2 bg-surface text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50 placeholder:text-texto-muted"
+                />
+                {filtroLibreInput && (
+                  <button
+                    type="button"
+                    onClick={() => { setFiltroLibreInput(''); setFiltroLibre(''); setYaCargado(false) }}
+                    disabled={ejecutando}
+                    className="px-2 rounded-lg border border-borde text-texto-muted hover:text-error hover:border-error transition-colors disabled:opacity-50"
+                    title="Limpiar filtro"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex flex-col gap-1.5 min-w-0">
               <label className="text-sm font-medium text-texto">{t('etiquetaProceso')}</label>
               <select value={procesoSel} onChange={(e) => setProcesoSel(e.target.value)} className={selectClass} disabled={ejecutando || cargandoInicial}>
@@ -1070,7 +1109,7 @@ function PaginaProcesarDocumentosInterna() {
             </div>
 
             <div className="flex flex-col gap-1.5 min-w-0">
-              <label className="text-sm font-medium text-texto">Estado (lista)</label>
+              <label className="text-sm font-medium text-texto">Estado</label>
               <select
                 value={estadoFiltro}
                 onChange={(e) => {
