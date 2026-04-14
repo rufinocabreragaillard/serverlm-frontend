@@ -34,7 +34,7 @@ export function Header({ titulo }: { titulo?: string }) {
   const [formCuenta, setFormCuenta] = useState({
     nombre: '', telefono: '', id_rol_principal: '', alias: '', descripcion: '',
     aplicacion_por_defecto: '', grupo_por_defecto: '', entidad_por_defecto: '',
-    prompt: '', system_prompt: '',
+    prompt: '', system_prompt: '', sidebar_colapsado: false,
   })
   const [guardandoCuenta, setGuardandoCuenta] = useState(false)
   const [errorCuenta, setErrorCuenta] = useState('')
@@ -120,6 +120,7 @@ export function Header({ titulo }: { titulo?: string }) {
       entidad_por_defecto: '',
       prompt: '',
       system_prompt: '',
+      sidebar_colapsado: false,
     })
     setErrorCuenta('')
     setExitoCuenta('')
@@ -143,6 +144,7 @@ export function Header({ titulo }: { titulo?: string }) {
             entidad_por_defecto: u.entidad_por_defecto || '',
             prompt: u.prompt || '',
             system_prompt: u.system_prompt || '',
+            sidebar_colapsado: u.sidebar_colapsado ?? false,
           }
           setFormCuenta(datos)
           setDatosOriginales(datos)
@@ -168,7 +170,7 @@ export function Header({ titulo }: { titulo?: string }) {
     setExitoCuenta('')
     try {
       // Solo enviar campos que realmente cambiaron
-      const cambios: Record<string, string | number | null | undefined> = {}
+      const cambios: Record<string, string | number | boolean | null | undefined> = {}
       // nombre siempre se envía
       cambios.nombre = formCuenta.nombre
       if (formCuenta.telefono !== datosOriginales.telefono) cambios.telefono = formCuenta.telefono || undefined
@@ -192,6 +194,10 @@ export function Header({ titulo }: { titulo?: string }) {
       }
       if (formCuenta.system_prompt !== datosOriginales.system_prompt) {
         cambios.system_prompt = formCuenta.system_prompt || undefined
+      }
+      // sidebar_colapsado: comparar como boolean
+      if (String(formCuenta.sidebar_colapsado) !== String(datosOriginales.sidebar_colapsado)) {
+        cambios.sidebar_colapsado = formCuenta.sidebar_colapsado
       }
       await usuariosApi.actualizar(usuario.codigo_usuario, cambios)
       setExitoCuenta(t('datosActualizados'))
@@ -586,6 +592,16 @@ export function Header({ titulo }: { titulo?: string }) {
                   </select>
                 </div>
               </div>
+              {/* Sidebar colapsado */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formCuenta.sidebar_colapsado}
+                  onChange={(e) => setFormCuenta({ ...formCuenta, sidebar_colapsado: e.target.checked })}
+                  className="rounded border-borde text-primario focus:ring-primario h-4 w-4"
+                />
+                <span className="text-sm text-texto">{t('sidebarColapsado')}</span>
+              </label>
               {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
               {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
               {/* Selector de idioma */}

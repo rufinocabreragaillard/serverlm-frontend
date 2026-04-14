@@ -130,6 +130,7 @@ export interface Usuario {
   aplicacion_por_defecto?: string
   fecha_creacion?: string
   ultimo_acceso?: string
+  sidebar_colapsado?: boolean
   prompt?: string | null
   system_prompt?: string | null
 }
@@ -232,6 +233,8 @@ export interface ParametroGeneral {
   tipo_parametro: string
   valor_parametro: string
   descripcion?: string
+  replica?: boolean
+  visible?: boolean
 }
 
 export interface ParametroUsuario {

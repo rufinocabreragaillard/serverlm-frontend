@@ -62,7 +62,8 @@
     "parametroGuardado": "Setting saved",
     "sinParametros": "You have no settings configured",
     "sinAplicacionesDisponibles": "No applications available",
-    "idioma": "Language"
+    "idioma": "Language",
+    "sidebarColapsado": "Sidebar collapsed by default"
   },
   "login": {
     "titulo": "Sign in",
@@ -667,6 +668,7 @@
     "colNombre": "Name",
     "colCorreo": "Email",
     "colRolPrincipal": "Primary role",
+    "colTipo": "Type",
     "colEstado": "Status",
     "colUltimoAcceso": "Last access",
     "etiquetaCorreo": "Email address *",

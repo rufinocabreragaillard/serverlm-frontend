@@ -575,6 +575,7 @@ export default function PaginaUsuarios() {
               <TablaTh>{t('colNombre')}</TablaTh>
               <TablaTh>{t('colCorreo')}</TablaTh>
               <TablaTh>{t('colRolPrincipal')}</TablaTh>
+              <TablaTh>{t('colTipo')}</TablaTh>
               <TablaTh>{t('colEstado')}</TablaTh>
               <TablaTh>{t('colUltimoAcceso')}</TablaTh>
               <TablaTh className="text-right">{tc('acciones')}</TablaTh>
@@ -583,7 +584,7 @@ export default function PaginaUsuarios() {
           <TablaCuerpo>
             {usuariosFiltrados.length === 0 ? (
               <TablaFila>
-                <TablaTd className="text-center text-texto-muted py-8" colSpan={6 as never}>
+                <TablaTd className="text-center text-texto-muted py-8" colSpan={7 as never}>
                   No se encontraron usuarios
                 </TablaTd>
               </TablaFila>
@@ -600,6 +601,11 @@ export default function PaginaUsuarios() {
                   </TablaTd>
                   <TablaTd className="text-texto-muted">{u.codigo_usuario}</TablaTd>
                   <TablaTd>{u.codigo_rol_principal || <span className="text-texto-light">—</span>}</TablaTd>
+                  <TablaTd>
+                    <Insignia variante={u.tipo === 'USUARIO' ? 'exito' : u.tipo === 'ADMINISTRADOR' ? 'advertencia' : u.tipo === 'RESTRINGIDO' ? 'error' : 'neutro'}>
+                      {u.tipo || '—'}
+                    </Insignia>
+                  </TablaTd>
                   <TablaTd>
                     <Insignia variante={u.activo ? 'exito' : 'error'}>
                       {u.activo ? 'Activo' : 'Inactivo'}

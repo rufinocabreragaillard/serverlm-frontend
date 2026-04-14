@@ -62,7 +62,8 @@
     "parametroGuardado": "Parámetro guardado",
     "sinParametros": "No tienes parámetros configurados",
     "sinAplicacionesDisponibles": "No hay aplicaciones disponibles",
-    "idioma": "Idioma"
+    "idioma": "Idioma",
+    "sidebarColapsado": "Menú lateral colapsado por defecto"
   },
   "login": {
     "titulo": "Iniciar sesión",
@@ -746,6 +747,7 @@
     "colNombre": "Nombre",
     "colCorreo": "Correo",
     "colRolPrincipal": "Rol principal",
+    "colTipo": "Tipo",
     "colEstado": "Estado",
     "colUltimoAcceso": "Último acceso",
     "etiquetaCorreo": "Correo electrónico *",

@@ -484,6 +484,7 @@ export default function PaginaUsuariosSemilla() {
             <TablaTh>Correo</TablaTh>
             <TablaTh>Grupo por defecto</TablaTh>
             <TablaTh>Tipo grupo</TablaTh>
+            <TablaTh>Tipo usuario</TablaTh>
             <TablaTh>Estado</TablaTh>
             <TablaTh className="text-right">Acciones</TablaTh>
           </tr>
@@ -491,11 +492,11 @@ export default function PaginaUsuariosSemilla() {
         <TablaCuerpo>
           {cargando ? (
             <TablaFila>
-              <TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando...</TablaTd>
+              <TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd>
             </TablaFila>
           ) : usuariosFiltrados.length === 0 ? (
             <TablaFila>
-              <TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>No se encontraron usuarios</TablaTd>
+              <TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron usuarios</TablaTd>
             </TablaFila>
           ) : usuariosFiltrados.map((u) => {
             const grupoInfo = grupos.find((g) => g.codigo_grupo === u.grupo_por_defecto)
@@ -511,6 +512,11 @@ export default function PaginaUsuariosSemilla() {
                       ? <Insignia variante="primario">Normal</Insignia>
                       : <span className="text-texto-muted text-sm">—</span>
                   }
+                </TablaTd>
+                <TablaTd>
+                  <Insignia variante={u.tipo === 'USUARIO' ? 'exito' : u.tipo === 'ADMINISTRADOR' ? 'advertencia' : u.tipo === 'RESTRINGIDO' ? 'error' : 'neutro'}>
+                    {u.tipo || '—'}
+                  </Insignia>
                 </TablaTd>
                 <TablaTd><Insignia variante={u.activo ? 'exito' : 'error'}>{u.activo ? 'Activo' : 'Inactivo'}</Insignia></TablaTd>
                 <TablaTd>

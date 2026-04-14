@@ -15,6 +15,8 @@ interface ParametroRow {
   tipo_parametro: string
   valor_parametro: string
   descripcion?: string
+  replica?: boolean
+  visible?: boolean
 }
 
 export default function PaginaParametrosGenerales() {
@@ -45,6 +47,8 @@ export default function PaginaParametrosGenerales() {
         tipo_parametro: p.tipo_parametro,
         valor_parametro: p.valor_parametro,
         descripcion: p.descripcion,
+        replica: p.replica ?? false,
+        visible: p.visible ?? true,
       })))
     } catch { setParams([]) }
     finally { setCargando(false) }
@@ -57,13 +61,24 @@ export default function PaginaParametrosGenerales() {
     datosBasicosApi.listarTipos(nuevoParam.categoria_parametro).then(setTiposPorCat).catch(() => {})
   }, [nuevoParam.categoria_parametro])
 
-  const guardarInline = async (cat: string, tipo: string, valor: string) => {
+  const guardarInline = async (cat: string, tipo: string, valor: string, extras?: { replica?: boolean; visible?: boolean }) => {
     setGuardando(`${cat}/${tipo}`); setError('')
     try {
-      await parametrosApi.upsertGenerales({ categoria_parametro: cat, tipo_parametro: tipo, valor_parametro: valor })
+      await parametrosApi.upsertGenerales({ categoria_parametro: cat, tipo_parametro: tipo, valor_parametro: valor, ...extras })
       mostrarExito(t('parametroGuardado'))
     } catch (e) { setError(e instanceof Error ? e.message : tc('error')) }
     finally { setGuardando(null) }
+  }
+
+  const toggleFlag = async (p: ParametroRow, campo: 'replica' | 'visible') => {
+    const nuevoValor = !p[campo]
+    setParams((prev) => prev.map((x) => x.categoria_parametro === p.categoria_parametro && x.tipo_parametro === p.tipo_parametro ? { ...x, [campo]: nuevoValor } : x))
+    try {
+      await parametrosApi.upsertGenerales({ categoria_parametro: p.categoria_parametro, tipo_parametro: p.tipo_parametro, valor_parametro: p.valor_parametro, [campo]: nuevoValor })
+    } catch (e) {
+      setParams((prev) => prev.map((x) => x.categoria_parametro === p.categoria_parametro && x.tipo_parametro === p.tipo_parametro ? { ...x, [campo]: !nuevoValor } : x))
+      setError(e instanceof Error ? e.message : tc('error'))
+    }
   }
 
   const eliminarParam = async () => {
@@ -113,7 +128,15 @@ export default function PaginaParametrosGenerales() {
                       <p className="text-xs font-semibold text-texto-muted mb-1">{p.categoria_parametro}<span className="mx-1 text-texto-light">/</span>{p.tipo_parametro}</p>
                       <input type="text" defaultValue={p.valor_parametro} onBlur={(e) => { if (e.target.value !== p.valor_parametro) guardarInline(p.categoria_parametro, p.tipo_parametro, e.target.value) }} className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5" />
                     </div>
-                    <button onClick={(e) => { const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement); if (input) guardarInline(p.categoria_parametro, p.tipo_parametro, input.value) }} disabled={guardando === key} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors shrink-0" title={tc('guardar')}><Save size={14} /></button>
+                    <label className="flex items-center gap-1 text-xs text-texto-muted shrink-0 cursor-pointer" title="Réplica a grupos nuevos">
+                      <input type="checkbox" checked={p.replica ?? false} onChange={() => toggleFlag(p, 'replica')} className="rounded border-borde text-primario focus:ring-primario h-3.5 w-3.5" />
+                      R
+                    </label>
+                    <label className="flex items-center gap-1 text-xs text-texto-muted shrink-0 cursor-pointer" title="Visible en parámetros de grupo">
+                      <input type="checkbox" checked={p.visible ?? true} onChange={() => toggleFlag(p, 'visible')} className="rounded border-borde text-primario focus:ring-primario h-3.5 w-3.5" />
+                      V
+                    </label>
+                    <button onClick={(e) => { const input = (e.currentTarget.parentElement?.querySelector('input[type=text]') as HTMLInputElement); if (input) guardarInline(p.categoria_parametro, p.tipo_parametro, input.value) }} disabled={guardando === key} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors shrink-0" title={tc('guardar')}><Save size={14} /></button>
                     <button onClick={() => setParamAEliminar({ cat: p.categoria_parametro, tipo: p.tipo_parametro })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0" title={t('eliminarTitulo')}><Trash2 size={14} /></button>
                   </div>
                 )
