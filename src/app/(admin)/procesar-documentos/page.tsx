@@ -599,11 +599,15 @@ export default function PaginaProcesarDocumentos() {
     if (ids.length === 0) return
     setEliminandoBulkSinDisco(true)
     try {
-      await documentosApi.eliminarBulk(ids)
+      const res = await documentosApi.eliminarBulk(ids)
       const eliminados = new Set(ids)
       setDocumentos((prev) => prev.filter((d) => !eliminados.has(d.codigo_documento)))
       setSeleccionadosSinDisco(new Set())
       setConfirmEliminarBulkSinDisco(false)
+      if (res.eliminados === 0) alert('No se eliminó ningún documento (no pertenecen al grupo activo).')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      alert(`Error al eliminar: ${msg}`)
     } finally {
       setEliminandoBulkSinDisco(false)
     }

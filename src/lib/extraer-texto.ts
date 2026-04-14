@@ -133,17 +133,61 @@ async function extraerTextoPDF(file: File): Promise<string | typeof NECESITA_OCR
 }
 
 /**
- * Extrae texto de un .docx usando mammoth.
+ * Extrae texto de un .docx.
+ *
+ * Primero intenta mammoth (más fiel al formato). Si mammoth falla (tracked changes,
+ * campos raros, estructura no soportada) pero el archivo es un ZIP válido con
+ * word/document.xml, hace fallback a extracción directa de los nodos <w:t> del XML.
+ * Así evita falsos NO_ESCANEABLE en .docx válidos.
  */
 async function extraerTextoDOCX(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer()
+  let mammothError: string | null = null
   try {
     const mammoth = await import('mammoth')
-    const arrayBuffer = await file.arrayBuffer()
     const result = await mammoth.extractRawText({ arrayBuffer })
-    return result.value
+    if (result.value && result.value.trim()) return result.value
+    mammothError = 'mammoth devolvió texto vacío'
   } catch (e) {
+    mammothError = e instanceof Error ? e.message : String(e)
+  }
+
+  try {
+    const JSZip = (await import('jszip')).default
+    const zip = await JSZip.loadAsync(arrayBuffer)
+    const partes: string[] = []
+    const candidatos = [
+      'word/document.xml',
+      ...Object.keys(zip.files).filter((n) => /^word\/document\d*\.xml$/i.test(n)),
+      ...Object.keys(zip.files).filter((n) => /^word\/header\d+\.xml$/i.test(n)),
+      ...Object.keys(zip.files).filter((n) => /^word\/footer\d+\.xml$/i.test(n)),
+    ]
+    const vistos = new Set<string>()
+    for (const path of candidatos) {
+      if (vistos.has(path) || !zip.files[path]) continue
+      vistos.add(path)
+      const xml = await zip.files[path].async('text')
+      const regex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g
+      const parrafos: string[] = []
+      let match
+      while ((match = regex.exec(xml)) !== null) {
+        const texto = match[1]
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&apos;/g, "'")
+        if (texto) parrafos.push(texto)
+      }
+      if (parrafos.length > 0) partes.push(parrafos.join(' '))
+    }
+    const texto = partes.join('\n\n').trim()
+    if (texto) return texto
+    throw new ArchivoNoEscaneable(`DOCX sin texto extraíble (${mammothError ?? 'vacío'})`)
+  } catch (e) {
+    if (e instanceof ArchivoNoEscaneable) throw e
     const msg = e instanceof Error ? e.message : String(e)
-    throw new ArchivoNoEscaneable(`DOCX corrupto: ${msg}`)
+    throw new ArchivoNoEscaneable(`DOCX corrupto: ${mammothError ?? msg}`)
   }
 }
 
