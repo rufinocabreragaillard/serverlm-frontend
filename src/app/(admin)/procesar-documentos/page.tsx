@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo, useLayoutEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon, Trash2, AlertTriangle, ListOrdered, Cpu, Eye, ExternalLink, X, ChevronDown, Copy, Check, MapPin } from 'lucide-react'
@@ -113,7 +113,7 @@ interface ItemCola {
   modelo_usado?: string | null
 }
 
-export default function PaginaProcesarDocumentos() {
+function PaginaProcesarDocumentosInterna() {
   const t = useTranslations('procesarDocumentos')
   const tc = useTranslations('common')
   const { grupoActivo } = useAuth()
@@ -1868,5 +1868,13 @@ export default function PaginaProcesarDocumentos() {
       </Modal>
     </>)}
     </div>
+  )
+}
+
+export default function PaginaProcesarDocumentos() {
+  return (
+    <Suspense fallback={<div className="p-8 text-texto-muted text-sm">Cargando...</div>}>
+      <PaginaProcesarDocumentosInterna />
+    </Suspense>
   )
 }
