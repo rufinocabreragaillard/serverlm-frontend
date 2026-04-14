@@ -55,10 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { pathnameRef.current = pathname }, [pathname])
 
   const cargarContexto = useCallback(async () => {
-    // Railway (hobby plan) duerme tras 30 min de inactividad y tarda ~15-25 s en despertar.
-    // Con 5 intentos × 5 s = 25 s de margen cubrimos la mayoría de cold-starts.
-    const MAX_INTENTOS = 5
-    const PAUSA_MS = 5000
+    // Reintentos por si Railway reinicia el contenedor (crash, deploy) o Supabase está lento.
+    // El backend tiene keepalive interno cada 4 min, pero en caso de crash los reintentos cubren el restart.
+    const MAX_INTENTOS = 3
+    const PAUSA_MS = 3000
 
     for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
       try {
