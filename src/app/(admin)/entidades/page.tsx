@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
+import { Insignia } from '@/components/ui/insignia'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { entidadesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
@@ -226,6 +227,7 @@ export default function PaginaEntidades() {
                       { titulo: 'Código área', campo: 'codigo_area' },
                       { titulo: 'Nombre', campo: 'nombre' },
                       { titulo: 'Área superior', campo: 'codigo_area_superior' },
+                      { titulo: 'Tipo', campo: 'tipo_ubicacion' },
                       { titulo: 'Nivel', campo: 'nivel' },
                       { titulo: 'Descripción', campo: 'descripcion' },
                       { titulo: 'Responsable', campo: 'usuario_responsable' },
@@ -264,15 +266,16 @@ export default function PaginaEntidades() {
                       <TablaTh>{t('colCodigo')}</TablaTh>
                       <TablaTh>{t('colNombre')}</TablaTh>
                       <TablaTh>{t('colAreaSuperior')}</TablaTh>
+                      <TablaTh>Tipo</TablaTh>
                       <TablaTh>{t('colResponsable')}</TablaTh>
                     </tr>
                   </TablaCabecera>
                   <TablaCuerpo>
                     {cargandoAreas ? (
-                      <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={4 as never}>Cargando áreas...</TablaTd></TablaFila>
+                      <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>Cargando áreas...</TablaTd></TablaFila>
                     ) : areasFiltradas.length === 0 ? (
                       <TablaFila>
-                        <TablaTd className="py-8 text-center" colSpan={4 as never}>
+                        <TablaTd className="py-8 text-center" colSpan={5 as never}>
                           <div className="flex flex-col items-center gap-2 text-texto-muted">
                             <MapPin size={24} />
                             <p className="text-sm">{busquedaAreas ? 'No se encontraron áreas' : 'No hay áreas configuradas'}</p>
@@ -289,6 +292,11 @@ export default function PaginaEntidades() {
                           </span>
                         </TablaTd>
                         <TablaTd className="text-texto-muted text-xs">{a.codigo_area_superior || '—'}</TablaTd>
+                        <TablaTd>
+                          <Insignia variante={a.tipo_ubicacion === 'AREA' ? 'primario' : 'neutro'}>
+                            {a.tipo_ubicacion || 'CONTENIDO'}
+                          </Insignia>
+                        </TablaTd>
                         <TablaTd className="text-texto-muted text-xs">{a.usuario_responsable || '—'}</TablaTd>
                       </TablaFila>
                     ))}

@@ -106,6 +106,7 @@ export interface Area {
   descripcion?: string
   usuario_responsable?: string
   codigo_area_superior?: string
+  tipo_ubicacion?: 'AREA' | 'CONTENIDO'
   activo: boolean
   nivel?: number
 }
