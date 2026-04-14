@@ -363,8 +363,6 @@ export default function PaginaProcesarDocumentos() {
 
   // Cargar documentos candidatos según el proceso seleccionado
   const cargarDocumentos = useCallback(async () => {
-    // Requiere proceso seleccionado O filtro de estado manual
-    if (!procesoSel && !estadoFiltro) return
     setCargando(true)
     try {
       let todos: Documento[]
@@ -390,7 +388,9 @@ export default function PaginaProcesarDocumentos() {
           q: busqueda.trim() || undefined,
         })
       } else {
-        todos = []
+        // "— Solo ver documentos —" (sin proceso ni estado): listar todos los activos,
+        // aplicando solo los filtros de búsqueda/ubicación.
+        todos = await documentosApi.listar({ activo: true, q: busqueda.trim() || undefined })
       }
       let filtrados = todos
 
@@ -418,9 +418,8 @@ export default function PaginaProcesarDocumentos() {
     setDocumentos([])
     setSeleccionados(new Set())
     setYaCargado(false)
-    if (estadoFiltro || procesoSel) {
-      cargarDocumentos()
-    }
+    // Siempre recargar (sin proceso/estado mostramos todos los docs activos).
+    cargarDocumentos()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [procesoSel, ubicacionSel, estadoFiltro])
 
@@ -1252,7 +1251,9 @@ export default function PaginaProcesarDocumentos() {
                   {!yaCargado
                     ? t('escribirFiltro')
                     : documentos.length === 0
-                    ? t('sinDocumentosEnEstado', { estado: pasoActual?.estado_origen || 'origen' })
+                    ? (pasoActual?.estado_origen || estadoFiltro)
+                      ? t('sinDocumentosEnEstado', { estado: estadoFiltro || pasoActual?.estado_origen || 'origen' })
+                      : 'No hay documentos que coincidan con los filtros'
                     : t('sinResultadosBusqueda')}
                 </TablaTd></TablaFila>
               ) : (<>
