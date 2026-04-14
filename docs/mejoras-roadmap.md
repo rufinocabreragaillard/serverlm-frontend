@@ -1,4 +1,4 @@
-# Roadmap de Mejoras — cab-seguridad (Server LM)
+# Roadmap de Mejoras — serverlm (Server LM)
 
 > Basado en: `Analisis_Mejoras_CAB_Seguridad.md` + revisión del código fuente real  
 > Fecha: abril 2026

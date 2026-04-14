@@ -1,4 +1,4 @@
-# Roadmap Multilingüe — cab-seguridad
+# Roadmap Multilingüe — serverlm
 
 > Última actualización: abril 2026  
 > Stack: Next.js 16 (next-intl, cookie-based) + FastAPI (locales JSON)
