@@ -419,6 +419,11 @@ export const documentosApi = {
       '/documentos/restablecer-estado',
       { codigos_documento },
     ).then((r) => r.data),
+  resetearACargado: (codigos_documento: number[]) =>
+    api.post<{ reseteados: number }>(
+      '/documentos/resetear-a-cargado',
+      { codigos_documento },
+    ).then((r) => r.data),
   // Características
   listarCaracteristicas: (id: number) =>
     api.get<CategoriaConCaracteristicasDocs[]>(`/documentos/${id}/caracteristicas`).then((r) => r.data),

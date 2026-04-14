@@ -31,6 +31,7 @@ const ESTADO_COLA_CONFIG: Record<string, { variante: 'exito' | 'error' | 'advert
 
 // Código especial fuera del catálogo: reset de docs en NO_ESCANEABLE/NO_ENCONTRADO.
 const PROCESO_RESTABLECER = '__RESTABLECER__'
+const PROCESO_RESETEAR_CARGADO = '__RESETEAR_CARGADO__'
 type TabDetalle = 'datos' | 'caracteristicas' | 'chunks'
 const ESTADOS_CON_CHUNKS = new Set(['CHUNKEADO', 'VECTORIZADO'])
 
@@ -81,7 +82,7 @@ export default function PaginaProcesarDocumentos() {
   // Paso actual derivado del proceso seleccionado (primer paso por ahora).
   // Trae estado_origen/estado_destino y define el flujo a ejecutar.
   const pasoActual = useMemo(() => {
-    if (procesoSel === PROCESO_RESTABLECER) return null
+    if (procesoSel === PROCESO_RESTABLECER || procesoSel === PROCESO_RESETEAR_CARGADO) return null
     const p = procesos.find((x) => x.codigo_proceso === procesoSel)
     return p?.pasos?.[0] || null
   }, [procesos, procesoSel])
@@ -96,6 +97,7 @@ export default function PaginaProcesarDocumentos() {
   // Si no, es un paso client-side (ej. EXTRAER que usa dirHandle).
   const usaLLM = !!(pasoActual?.id_modelo)
   const esRestablecer = procesoSel === PROCESO_RESTABLECER
+  const esResetearCargado = procesoSel === PROCESO_RESETEAR_CARGADO
   const esExtraer = pasoActual?.estado_destino === 'METADATA'
 
   // Documentos candidatos
@@ -427,7 +429,7 @@ export default function PaginaProcesarDocumentos() {
   //     dirHandle y sube el texto al backend (POST /documentos/{id}/texto).
   //   - Procesos con LLM (RESUMIR, ESCANEAR): encola + dispara worker backend
   const guardarNParallel = async () => {
-    if (!procesoSel || procesoSel === PROCESO_RESTABLECER) return
+    if (!procesoSel || procesoSel === PROCESO_RESTABLECER || procesoSel === PROCESO_RESETEAR_CARGADO) return
     setGuardandoParalel(true)
     try {
       const updated = await procesosApi.actualizar(procesoSel, { n_parallel: nParallelEdit })
@@ -511,12 +513,34 @@ export default function PaginaProcesarDocumentos() {
     // EXTRAER y RESTABLECER requieren selección explícita.
     // Para procesos LLM (ANALIZAR, CHUNKEAR, VECTORIZAR) se puede ejecutar sin
     // selección: el worker backend ya tiene ítems en la cola y los procesa todos.
-    if (seleccionados.size === 0 && (esExtraer || esRestablecer)) return
+    if (seleccionados.size === 0 && (esExtraer || esRestablecer || esResetearCargado)) return
 
     setEjecutando(true)
     setProcesados(0)
     setCola([])
     abortRef.current = false
+
+    // ── RESETEAR A CARGADO ────────────────────────────────────────────────
+    if (esResetearCargado) {
+      try {
+        const ids = Array.from(seleccionados)
+        const res = await documentosApi.resetearACargado(ids)
+        setCola([{
+          id_cola: 0,
+          codigo_documento: 0,
+          nombre_documento: `Reseteados a CARGADO: ${res.reseteados} documentos`,
+          ubicacion_documento: undefined,
+          estado_cola: 'COMPLETADO',
+        }])
+        setProcesados(res.reseteados)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Error al resetear'
+        setCola([{ id_cola: 0, codigo_documento: 0, nombre_documento: msg, estado_cola: 'ERROR' }])
+      }
+      setEjecutando(false)
+      cargarDocumentos()
+      return
+    }
 
     // ── RESTABLECER ───────────────────────────────────────────────────────
     if (esRestablecer) {
@@ -874,6 +898,7 @@ export default function PaginaProcesarDocumentos() {
                   )
                 })}
                 <option value={PROCESO_RESTABLECER}>Restablecer (NO_ESCANEABLE / NO_ENCONTRADO → CARGADO/METADATA)</option>
+                <option value={PROCESO_RESETEAR_CARGADO}>Resetear a CARGADO (cualquier estado → CARGADO, limpia texto/chunks)</option>
               </select>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <div className="flex items-center gap-1.5">
