@@ -1027,9 +1027,9 @@ export default function PaginaProcesarDocumentos() {
                   const topeNum = tope ? parseInt(tope) : 0
                   const efectivos = topeNum > 0 ? Math.min(seleccionados.size, topeNum) : seleccionados.size
                   if (efectivos < seleccionados.size) {
-                    return `${efectivos} a procesar (de ${seleccionados.size}/${documentos.length} sel.)`
+                    return `${efectivos} a procesar (de ${seleccionados.size}/${docsFiltrados.length} sel.)`
                   }
-                  return t('xDeYSeleccionados', { x: seleccionados.size, y: documentos.length })
+                  return t('xDeYSeleccionados', { x: seleccionados.size, y: docsFiltrados.length })
                 })()}
               </span>
               <Boton variante="primario" onClick={ejecutar}
