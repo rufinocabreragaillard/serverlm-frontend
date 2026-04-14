@@ -31,8 +31,8 @@ export default function PaginaRoles() {
   // Modal rol
   const [modalRol, setModalRol] = useState(false)
   const [rolEditando, setRolEditando] = useState<Rol | null>(null)
-  const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: '', tipo: 'NORMAL' as 'NORMAL' | 'RESTRINGIDO' })
-  const [tabModalRol, setTabModalRol] = useState<'datos' | 'funciones'>('datos')
+  const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: '', tipo: 'NORMAL' as 'NORMAL' | 'RESTRINGIDO' | 'GRUPO', prompt: '', system_prompt: '' })
+  const [tabModalRol, setTabModalRol] = useState<'datos' | 'funciones' | 'prompt' | 'system_prompt'>('datos')
 
   // Funciones del rol en edición
   const [funcionesRol, setFuncionesRol] = useState<FuncionAsignada[]>([])
@@ -116,7 +116,7 @@ export default function PaginaRoles() {
 
   const abrirNuevoRol = () => {
     setRolEditando(null)
-    setFormRol({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: aplicacionActiva || '', tipo: 'NORMAL' })
+    setFormRol({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: aplicacionActiva || '', tipo: 'NORMAL', prompt: '', system_prompt: '' })
     setError('')
     setTabModalRol('datos')
     setModalRol(true)
@@ -124,7 +124,7 @@ export default function PaginaRoles() {
 
   const abrirEditarRol = (r: Rol) => {
     setRolEditando(r)
-    setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, alias_de_rol: r.alias_de_rol || '', descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '', codigo_aplicacion_origen: r.codigo_aplicacion_origen || '', tipo: r.tipo || 'NORMAL' })
+    setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, alias_de_rol: r.alias_de_rol || '', descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '', codigo_aplicacion_origen: r.codigo_aplicacion_origen || '', tipo: (r.tipo as 'NORMAL' | 'RESTRINGIDO' | 'GRUPO') || 'NORMAL', prompt: (r as Record<string, unknown>).prompt as string || '', system_prompt: (r as Record<string, unknown>).system_prompt as string || '' })
     setError('')
     setTabModalRol('datos')
     setFuncionNueva('')
@@ -143,7 +143,7 @@ export default function PaginaRoles() {
     try {
       const origen = formRol.codigo_aplicacion_origen || null
       if (rolEditando) {
-        await rolesApi.actualizar(rolEditando.id_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined, codigo_aplicacion_origen: origen })
+        await rolesApi.actualizar(rolEditando.id_rol, { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined, codigo_aplicacion_origen: origen, prompt: formRol.prompt || undefined, system_prompt: formRol.system_prompt || undefined })
       } else {
         const payload: Record<string, unknown> = { nombre: formRol.nombre, alias_de_rol: formRol.alias_de_rol || undefined, descripcion: formRol.descripcion, url_inicio: formRol.url_inicio, funcion_por_defecto: formRol.funcion_por_defecto || undefined, codigo_aplicacion_origen: origen, codigo_grupo: grupoActivo || 'ADMIN' }
         if (esGlobalCreate && formRol.codigo_rol) payload.codigo_rol = formRol.codigo_rol
@@ -456,7 +456,7 @@ export default function PaginaRoles() {
                     </div>
                   </TablaTd>
                   <TablaTd className="text-xs text-texto-muted">{nombreApp(r.codigo_aplicacion_origen) || '—'}</TablaTd>
-                  <TablaTd>{r.tipo === 'RESTRINGIDO' ? <Insignia variante="error">Restringido</Insignia> : <Insignia variante="exito">Normal</Insignia>}</TablaTd>
+                  <TablaTd>{r.tipo === 'RESTRINGIDO' ? <Insignia variante="error">Restringido</Insignia> : r.tipo === 'GRUPO' ? <Insignia variante="advertencia">Grupo</Insignia> : <Insignia variante="exito">Normal</Insignia>}</TablaTd>
                   <TablaTd className="text-sm">{r.alias_de_rol || '—'}</TablaTd>
                   <TablaTd className="font-medium">{r.nombre}</TablaTd>
                   <TablaTd className="text-texto-muted text-xs">{r.url_inicio || '—'}</TablaTd>
@@ -554,27 +554,21 @@ export default function PaginaRoles() {
         <div className="flex flex-col gap-4">
           {/* Pestañas (solo en edición) */}
           {rolEditando && (
-            <div className="flex border-b border-borde -mx-1">
-              <button
-                onClick={() => setTabModalRol('datos')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  tabModalRol === 'datos'
-                    ? 'border-b-2 border-primario text-primario'
-                    : 'text-texto-muted hover:text-texto'
-                }`}
-              >
-                {t('tabDatos')}
-              </button>
-              <button
-                onClick={() => setTabModalRol('funciones')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  tabModalRol === 'funciones'
-                    ? 'border-b-2 border-primario text-primario'
-                    : 'text-texto-muted hover:text-texto'
-                }`}
-              >
-                {t('tabFuncionesAsignadas')}
-              </button>
+            <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+              {([
+                { key: 'datos', label: t('tabDatos') },
+                { key: 'funciones', label: t('tabFuncionesAsignadas') },
+                { key: 'prompt', label: 'Prompt' },
+                { key: 'system_prompt', label: 'System Prompt' },
+              ] as { key: typeof tabModalRol; label: string }[]).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setTabModalRol(tab.key)}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${tabModalRol === tab.key ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           )}
 
@@ -757,6 +751,36 @@ export default function PaginaRoles() {
                   {tc('cerrar')}
                 </Boton>
               </div>
+            </div>
+          )}
+
+          {/* Tab Prompt — rol */}
+          {tabModalRol === 'prompt' && rolEditando && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">Texto de contexto que se inyecta al LLM cuando los usuarios de este rol interactúan con funciones LLM.</p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: El usuario es un funcionario municipal con acceso a expedientes..."
+                value={formRol.prompt}
+                onChange={(e) => setFormRol({ ...formRol, prompt: e.target.value })}
+              />
+              {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalRol(false)}>{tc('cancelar')}</Boton><Boton variante="primario" onClick={guardarRol} cargando={guardando}>{tc('guardar')}</Boton></div>
+            </div>
+          )}
+
+          {/* Tab System Prompt — rol */}
+          {tabModalRol === 'system_prompt' && rolEditando && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">Instrucciones de sistema que se aplican a todos los usuarios de este rol al interactuar con LLM.</p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Responde siempre de forma formal y concisa..."
+                value={formRol.system_prompt}
+                onChange={(e) => setFormRol({ ...formRol, system_prompt: e.target.value })}
+              />
+              {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalRol(false)}>{tc('cancelar')}</Boton><Boton variante="primario" onClick={guardarRol} cargando={guardando}>{tc('guardar')}</Boton></div>
             </div>
           )}
         </div>

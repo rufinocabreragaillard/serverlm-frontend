@@ -69,7 +69,7 @@ export default function PaginaUsuarios() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [errorCarga, setErrorCarga] = useState('')
-  const [tabActiva, setTabActiva] = useState<'datos' | 'roles' | 'entidades'>('datos')
+  const [tabActiva, setTabActiva] = useState<'datos' | 'roles' | 'entidades' | 'prompt'>('datos')
 
   // ── Roles ──────────────────────────────────────────────────────────────────
   const [rolesUsuario, setRolesUsuario] = useState<RolAsignado[]>([])
@@ -117,6 +117,7 @@ export default function PaginaUsuarios() {
     codigo_ubicacion_area_por_defecto: '',
     aplicacion_por_defecto: '',
     invitar: true,
+    prompt: '',
   })
 
   // Apps disponibles para el grupo del usuario editado
@@ -220,7 +221,7 @@ export default function PaginaUsuarios() {
   const abrirNuevo = () => {
     setUsuarioEditando(null)
     setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '', id_rol_principal: '',
-      grupo_por_defecto: '', entidad_por_defecto: '', codigo_ubicacion_area_por_defecto: '', aplicacion_por_defecto: '', invitar: true })
+      grupo_por_defecto: '', entidad_por_defecto: '', codigo_ubicacion_area_por_defecto: '', aplicacion_por_defecto: '', invitar: true, prompt: '' })
     setError('')
     setGuardando(false)
     setTabActiva('datos')
@@ -245,6 +246,7 @@ export default function PaginaUsuarios() {
       codigo_ubicacion_area_por_defecto: u.codigo_ubicacion_area_por_defecto || '',
       aplicacion_por_defecto: u.aplicacion_por_defecto || '',
       invitar: false,
+      prompt: u.prompt || '',
     })
     setError('')
     setGuardando(false)
@@ -283,6 +285,7 @@ export default function PaginaUsuarios() {
           entidad_por_defecto: form.entidad_por_defecto || undefined,
           codigo_ubicacion_area_por_defecto: form.codigo_ubicacion_area_por_defecto || undefined,
           aplicacion_por_defecto: form.aplicacion_por_defecto || undefined,
+          prompt: form.prompt || undefined,
         })
       } else {
         await usuariosApi.crear({
@@ -650,18 +653,18 @@ export default function PaginaUsuarios() {
         <div className="flex flex-col gap-4">
           {/* Pestañas (solo en edición) */}
           {usuarioEditando && (
-            <div className="flex border-b border-borde -mx-1">
-              {(['datos', 'entidades', 'roles'] as const).map((tab) => (
+            <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+              {(['datos', 'entidades', 'roles', 'prompt'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setTabActiva(tab)}
-                  className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors capitalize ${
                     tabActiva === tab
                       ? 'border-b-2 border-primario text-primario'
                       : 'text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {tab === 'datos' ? t('tabDatos') : tab === 'entidades' ? t('tabEntidades') : t('tabRoles')}
+                  {tab === 'datos' ? t('tabDatos') : tab === 'entidades' ? t('tabEntidades') : tab === 'roles' ? t('tabRoles') : 'Prompt'}
                 </button>
               ))}
             </div>
@@ -1101,6 +1104,30 @@ export default function PaginaUsuarios() {
               )}
               <div className="flex justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cerrar')}</Boton>
+              </div>
+            </div>
+          )}
+
+          {/* ── Tab Prompt ────────────────────────────────────────────────────── */}
+          {tabActiva === 'prompt' && usuarioEditando && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucción personalizada para el LLM cuando actúa en nombre de este usuario. Se combina con el prompt de la función y del sistema.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Siempre responde en un tono formal y conciso..."
+                value={form.prompt}
+                onChange={(e) => setForm({ ...form, prompt: e.target.value })}
+              />
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                  <p className="text-sm text-error">{error}</p>
+                </div>
+              )}
+              <div className="flex gap-3 justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
+                <Boton variante="primario" onClick={guardar} cargando={guardando}>{tc('guardar')}</Boton>
               </div>
             </div>
           )}

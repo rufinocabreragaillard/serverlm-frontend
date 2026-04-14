@@ -159,7 +159,9 @@ export interface Rol {
   funcion_por_defecto?: string
   codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
   orden?: number
-  tipo?: 'NORMAL' | 'RESTRINGIDO'
+  tipo?: 'NORMAL' | 'RESTRINGIDO' | 'GRUPO'
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface Funcion {
@@ -170,8 +172,9 @@ export interface Funcion {
   alias_de_funcion?: string
   icono_de_funcion?: string
   codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
-  tipo?: 'NORMAL' | 'RESTRINGIDA'
+  tipo?: 'NORMAL' | 'RESTRINGIDA' | 'GRUPO'
   id_modelo?: number | null  // FK a registro_llm. NULL = sin LLM
+  prompt?: string | null
   system_prompt?: string | null  // instrucciones extra al LLM
   orden?: number
 }
@@ -209,9 +212,11 @@ export interface Aplicacion {
   codigo_aplicacion: string
   nombre: string
   descripcion?: string
-  tipo?: 'NORMAL' | 'RESTRINGIDA'
+  tipo?: 'NORMAL' | 'RESTRINGIDA' | 'GRUPO'
   sidebar_ancho?: boolean
   orden?: number
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 // ─── Parámetros ──────────────────────────────────────────────────────────────
@@ -522,6 +527,8 @@ export interface EstadoDoc {
   descripcion?: string | null
   orden: number
   activo: boolean
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 // ─── Cola Estados Docs ─────────────────────────────────────────────────────

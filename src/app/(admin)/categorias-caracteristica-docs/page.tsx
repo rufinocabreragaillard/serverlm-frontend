@@ -9,8 +9,8 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { categoriasCaractDocsApi } from '@/lib/api'
-import type { CategoriaCaractDocs, TipoCaractDocs } from '@/lib/tipos'
+import { categoriasCaractDocsApi, registroLLMApi } from '@/lib/api'
+import type { CategoriaCaractDocs, TipoCaractDocs, RegistroLLM } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 
@@ -28,13 +28,14 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const [cargandoCat, setCargandoCat] = useState(true)
   const [busquedaCat, setBusquedaCat] = useState('')
   const [modalCat, setModalCat] = useState(false)
-  const [tabModalCat, setTabModalCat] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
+  const [tabModalCat, setTabModalCat] = useState<'datos' | 'prompt' | 'system_prompt' | 'llm'>('datos')
   const [catEditando, setCatEditando] = useState<CategoriaCaractDocs | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '',
     es_unica_docs: false, editable_en_detalle_docs: true,
-    prompt: '', system_prompt: '',
+    prompt: '', system_prompt: '', id_modelo: null as number | null,
   })
+  const [modelosLLM, setModelosLLM] = useState<RegistroLLM[]>([])
   const [guardandoCat, setGuardandoCat] = useState(false)
   const [errorCat, setErrorCat] = useState('')
   const [confirmCat, setConfirmCat] = useState<CategoriaCaractDocs | null>(null)
@@ -66,6 +67,10 @@ export default function PaginaCategoriasCaracteristicaDocs() {
 
   useEffect(() => { cargarCategorias() }, [cargarCategorias])
 
+  useEffect(() => {
+    registroLLMApi.listar().then((m) => setModelosLLM(m.filter((x) => x.activo))).catch(() => {})
+  }, [])
+
   // ── Carga tipos ───────────────────────────────────────────────────────────
   const cargarTipos = useCallback(async () => {
     if (!catSeleccionada) { setTipos([]); return }
@@ -82,7 +87,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   // ── CRUD Categorias ───────────────────────────────────────────────────────
   const abrirNuevaCat = () => {
     setCatEditando(null)
-    setFormCat({ codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '', es_unica_docs: false, editable_en_detalle_docs: true, prompt: '', system_prompt: '' })
+    setFormCat({ codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '', es_unica_docs: false, editable_en_detalle_docs: true, prompt: '', system_prompt: '', id_modelo: null })
     setTabModalCat('datos')
     setErrorCat('')
     setModalCat(true)
@@ -98,6 +103,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       editable_en_detalle_docs: c.editable_en_detalle_docs,
       prompt: c.prompt || '',
       system_prompt: c.system_prompt || '',
+      id_modelo: c.id_modelo ?? null,
     })
     setTabModalCat('datos')
     setErrorCat('')
@@ -120,6 +126,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
           editable_en_detalle_docs: formCat.editable_en_detalle_docs,
           prompt: formCat.prompt || undefined,
           system_prompt: formCat.system_prompt || undefined,
+          id_modelo: formCat.id_modelo ?? undefined,
         })
       } else {
         await categoriasCaractDocsApi.crear({
@@ -399,17 +406,17 @@ export default function PaginaCategoriasCaracteristicaDocs() {
         <div className="flex flex-col gap-4 min-w-[520px]">
           {/* Tabs */}
           <div className="flex border-b border-borde">
-            {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+            {(['datos', 'prompt', 'system_prompt', 'llm'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalCat(tab)}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                   tabModalCat === tab
                     ? 'border-b-2 border-primario text-primario'
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : tab === 'system_prompt' ? 'System Prompt' : 'LLM'}
               </button>
             ))}
           </div>
@@ -479,6 +486,30 @@ export default function PaginaCategoriasCaracteristicaDocs() {
                 value={formCat.system_prompt}
                 onChange={(e) => setFormCat({ ...formCat, system_prompt: e.target.value })}
               />
+            </div>
+          )}
+
+          {/* Tab LLM */}
+          {tabModalCat === 'llm' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Modelo LLM que se usará al procesar documentos con esta categoría. Si no se asigna, se usará el modelo configurado en el proceso.
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Modelo LLM <span className="text-texto-muted font-normal">(opcional)</span></label>
+                <select
+                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                  value={formCat.id_modelo ?? ''}
+                  onChange={(e) => setFormCat({ ...formCat, id_modelo: e.target.value ? Number(e.target.value) : null })}
+                >
+                  <option value="">Sin modelo asignado</option>
+                  {modelosLLM.map((m) => (
+                    <option key={m.id_modelo} value={m.id_modelo}>
+                      {m.nombre_visible} — {m.proveedor}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 

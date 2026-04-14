@@ -29,8 +29,8 @@ export default function PaginaAplicaciones() {
   // ── Modal Aplicacion ──────────────────────────────────────────────────────
   const [modalApp, setModalApp] = useState(false)
   const [appEditando, setAppEditando] = useState<Aplicacion | null>(null)
-  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; descripcion: string; tipo: 'NORMAL' | 'RESTRINGIDA'; sidebar_ancho: boolean }>({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL', sidebar_ancho: true })
-  const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos'>('datos')
+  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; descripcion: string; tipo: 'NORMAL' | 'RESTRINGIDA' | 'GRUPO'; sidebar_ancho: boolean; prompt: string; system_prompt: string }>({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL', sidebar_ancho: true, prompt: '', system_prompt: '' })
+  const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos' | 'prompt' | 'system_prompt'>('datos')
   const [guardandoApp, setGuardandoApp] = useState(false)
   const [errorApp, setErrorApp] = useState('')
 
@@ -95,18 +95,18 @@ export default function PaginaAplicaciones() {
 
   // ── Aplicacion: CRUD ──────────────────────────────────────────────────────
   const abrirNuevaApp = () => {
-    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL', sidebar_ancho: true })
+    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'NORMAL', sidebar_ancho: true, prompt: '', system_prompt: '' })
     setErrorApp(''); setTabModalApp('datos'); setModalApp(true)
   }
   const abrirEditarApp = (a: Aplicacion) => {
-    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '', tipo: (a.tipo as 'NORMAL' | 'RESTRINGIDA') || 'NORMAL', sidebar_ancho: a.sidebar_ancho !== false })
+    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '', tipo: (a.tipo as 'NORMAL' | 'RESTRINGIDA' | 'GRUPO') || 'NORMAL', sidebar_ancho: a.sidebar_ancho !== false, prompt: (a as Record<string, unknown>).prompt as string || '', system_prompt: (a as Record<string, unknown>).system_prompt as string || '' })
     setErrorApp(''); setTabModalApp('datos'); cargarFuncionesApp(a.codigo_aplicacion); cargarGruposApp(a.codigo_aplicacion); setModalApp(true)
   }
   const guardarApp = async () => {
     if (!formApp.codigo_aplicacion || !formApp.nombre) { setErrorApp('Codigo y nombre son obligatorios'); return }
     setGuardandoApp(true)
     try {
-      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo, sidebar_ancho: formApp.sidebar_ancho }) }
+      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo, sidebar_ancho: formApp.sidebar_ancho, prompt: formApp.prompt || undefined, system_prompt: formApp.system_prompt || undefined }) }
       else { await aplicacionesApi.crear(formApp) }
       setModalApp(false); cargar()
     } catch (e) { setErrorApp(e instanceof Error ? e.message : 'Error') }
@@ -236,7 +236,7 @@ export default function PaginaAplicaciones() {
               </TablaTd>
               <TablaTd><code className="text-xs bg-fondo px-2 py-1 rounded font-mono">{a.codigo_aplicacion}</code></TablaTd>
               <TablaTd className="font-medium">{a.nombre}</TablaTd>
-              <TablaTd><Insignia variante={a.tipo === 'RESTRINGIDA' ? 'error' : 'exito'}>{a.tipo === 'RESTRINGIDA' ? 'Restringida' : 'Normal'}</Insignia></TablaTd>
+              <TablaTd>{a.tipo === 'RESTRINGIDA' ? <Insignia variante="error">Restringida</Insignia> : a.tipo === 'GRUPO' ? <Insignia variante="advertencia">Grupo</Insignia> : <Insignia variante="exito">Normal</Insignia>}</TablaTd>
               <TablaTd className="text-texto-muted text-sm">{a.descripcion || '—'}</TablaTd>
               <TablaTd>
                 <div className="flex items-center justify-end gap-1">
@@ -253,10 +253,16 @@ export default function PaginaAplicaciones() {
       <Modal abierto={modalApp} alCerrar={() => setModalApp(false)} titulo={appEditando ? `Editar aplicacion: ${appEditando.nombre}` : 'Nueva aplicacion'} className="max-w-2xl">
         <div className="flex flex-col gap-4">
           {appEditando && (
-            <div className="flex border-b border-borde -mx-1">
-              {(['datos', 'funciones', 'grupos'] as const).map((tab) => (
-                <button key={tab} onClick={() => setTabModalApp(tab)} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalApp === tab ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>
-                  {tab === 'datos' ? 'Datos' : tab === 'funciones' ? `${t('tabFunciones')} (${funcionesApp.length})` : `${t('tabGrupos')} (${gruposApp.length})`}
+            <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+              {([
+                { key: 'datos', label: 'Datos' },
+                { key: 'funciones', label: `${t('tabFunciones')} (${funcionesApp.length})` },
+                { key: 'grupos', label: `${t('tabGrupos')} (${gruposApp.length})` },
+                { key: 'prompt', label: 'Prompt' },
+                { key: 'system_prompt', label: 'System Prompt' },
+              ] as { key: typeof tabModalApp; label: string }[]).map((tab) => (
+                <button key={tab.key} onClick={() => setTabModalApp(tab.key)} className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${tabModalApp === tab.key ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -266,9 +272,10 @@ export default function PaginaAplicaciones() {
             <Input etiqueta={t('etiquetaNombre')} value={formApp.nombre} onChange={(e) => setFormApp({ ...formApp, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
             <div>
               <label className="block text-sm font-medium text-texto mb-1">Tipo *</label>
-              <select value={formApp.tipo} onChange={(e) => setFormApp({ ...formApp, tipo: e.target.value as 'NORMAL' | 'RESTRINGIDA' })} className={selectClass}>
-                <option value="NORMAL">NORMAL — visible para asignar a cualquier usuario</option>
-                <option value="RESTRINGIDA">RESTRINGIDA — solo super-admin puede asignar sus roles</option>
+              <select value={formApp.tipo} onChange={(e) => setFormApp({ ...formApp, tipo: e.target.value as 'NORMAL' | 'RESTRINGIDA' | 'GRUPO' })} className={selectClass}>
+                <option value="NORMAL">Normal — visible para asignar a cualquier usuario</option>
+                <option value="GRUPO">Grupo — funciones de administración de grupo</option>
+                <option value="RESTRINGIDA">Restringida — solo super-admin puede asignar sus roles</option>
               </select>
             </div>
             <Input etiqueta="Descripcion" value={formApp.descripcion} onChange={(e) => setFormApp({ ...formApp, descripcion: e.target.value })} />
@@ -340,6 +347,32 @@ export default function PaginaAplicaciones() {
                 </ul>
               )}
               <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>{tc('cerrar')}</Boton></div>
+            </div>
+          )}
+          {tabModalApp === 'prompt' && appEditando && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">Texto de contexto que se inyecta al LLM cuando se usa esta aplicación.</p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Esta aplicación gestiona documentos municipales..."
+                value={formApp.prompt}
+                onChange={(e) => setFormApp({ ...formApp, prompt: e.target.value })}
+              />
+              {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>{tc('cancelar')}</Boton><Boton variante="primario" onClick={guardarApp} cargando={guardandoApp}>{tc('guardar')}</Boton></div>
+            </div>
+          )}
+          {tabModalApp === 'system_prompt' && appEditando && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">Instrucciones de sistema para el LLM cuando se usa esta aplicación.</p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un asistente experto en gestión documental..."
+                value={formApp.system_prompt}
+                onChange={(e) => setFormApp({ ...formApp, system_prompt: e.target.value })}
+              />
+              {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>{tc('cancelar')}</Boton><Boton variante="primario" onClick={guardarApp} cargando={guardandoApp}>{tc('guardar')}</Boton></div>
             </div>
           )}
           {tabModalApp === 'grupos' && appEditando && (

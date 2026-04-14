@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,11 +12,21 @@ import { TablaCrud, columnaCodigo, columnaNombre, columnaDescripcion, columnaEst
 import { estadosDocsApi } from '@/lib/api'
 import type { EstadoDoc } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
+
+type TabModal = 'datos' | 'prompt' | 'system_prompt'
+
 export default function PaginaEstadosDocs() {
   const t = useTranslations('estadosDocs')
   const tc = useTranslations('common')
+  const [tabModal, setTabModal] = useState<TabModal>('datos')
 
-  const crud = useCrudPage<EstadoDoc, { codigo_estado_doc: string; nombre_estado: string; descripcion: string }>({
+  const crud = useCrudPage<EstadoDoc, {
+    codigo_estado_doc: string
+    nombre_estado: string
+    descripcion: string
+    prompt: string
+    system_prompt: string
+  }>({
     cargarFn: estadosDocsApi.listar,
     crearFn: (f) => estadosDocsApi.crear({
       codigo_estado_doc: f.codigo_estado_doc.toUpperCase().replace(/\s+/g, '_'),
@@ -25,15 +36,34 @@ export default function PaginaEstadosDocs() {
     actualizarFn: (id, f) => estadosDocsApi.actualizar(id, {
       nombre_estado: f.nombre_estado,
       descripcion: f.descripcion || undefined,
+      prompt: f.prompt || undefined,
+      system_prompt: f.system_prompt || undefined,
     }),
     eliminarFn: async (id: string) => { await estadosDocsApi.desactivar(id) },
     getId: (e) => e.codigo_estado_doc,
     camposBusqueda: (e) => [e.codigo_estado_doc, e.nombre_estado],
-    formInicial: { codigo_estado_doc: '', nombre_estado: '', descripcion: '' },
-    itemToForm: (e) => ({ codigo_estado_doc: e.codigo_estado_doc, nombre_estado: e.nombre_estado, descripcion: e.descripcion || '' }),
+    formInicial: { codigo_estado_doc: '', nombre_estado: '', descripcion: '', prompt: '', system_prompt: '' },
+    itemToForm: (e) => ({
+      codigo_estado_doc: e.codigo_estado_doc,
+      nombre_estado: e.nombre_estado,
+      descripcion: e.descripcion || '',
+      prompt: e.prompt || '',
+      system_prompt: e.system_prompt || '',
+    }),
   })
 
+  // Reset tab when modal opens
+  useEffect(() => {
+    if (crud.modal) setTabModal('datos')
+  }, [crud.modal])
+
   const filtradosOrdenados = [...crud.filtrados].sort((a, b) => a.orden - b.orden || a.nombre_estado.localeCompare(b.nombre_estado))
+
+  const TABS: { key: TabModal; label: string }[] = [
+    { key: 'datos', label: 'Datos' },
+    { key: 'prompt', label: 'Prompt' },
+    { key: 'system_prompt', label: 'System Prompt' },
+  ]
 
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
@@ -73,49 +103,123 @@ export default function PaginaEstadosDocs() {
         textoVacio={t('sinEstados')}
       />
 
-      <Modal abierto={crud.modal} alCerrar={crud.cerrarModal} titulo={crud.editando ? t('editarTitulo', { nombre: crud.editando.nombre_estado }) : t('nuevoTitulo')}>
-        <div className="flex flex-col gap-4 min-w-[400px]">
-          <Input
-            etiqueta={t('etiquetaCodigo')}
-            value={crud.form.codigo_estado_doc}
-            onChange={(e) => crud.updateForm('codigo_estado_doc', e.target.value)}
-            placeholder={t('placeholderCodigo')}
-            disabled={!!crud.editando}
-          />
-          <Input
-            etiqueta={t('etiquetaNombre')}
-            value={crud.form.nombre_estado}
-            onChange={(e) => crud.updateForm('nombre_estado', e.target.value)}
-            placeholder={t('placeholderNombre')}
-          />
-          <Textarea
-            etiqueta={t('etiquetaDescripcion')}
-            value={crud.form.descripcion}
-            onChange={(e) => crud.updateForm('descripcion', e.target.value)}
-            placeholder={t('placeholderDescripcion')}
-            rows={3}
-          />
+      <Modal
+        abierto={crud.modal}
+        alCerrar={crud.cerrarModal}
+        titulo={crud.editando ? t('editarTitulo', { nombre: crud.editando.nombre_estado }) : t('nuevoTitulo')}
+        className="w-[520px] max-w-[95vw]"
+      >
+        <div className="flex flex-col gap-4">
+          {/* Tabs — solo al editar */}
+          {crud.editando && (
+            <div className="flex border-b border-borde overflow-x-auto">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setTabModal(tab.key)}
+                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                    tabModal === tab.key
+                      ? 'border-b-2 border-primario text-primario'
+                      : 'text-texto-muted hover:text-texto'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Tab Datos */}
+          {(!crud.editando || tabModal === 'datos') && (
+            <div className="flex flex-col gap-4">
+              <Input
+                etiqueta={t('etiquetaCodigo')}
+                value={crud.form.codigo_estado_doc}
+                onChange={(e) => crud.updateForm('codigo_estado_doc', e.target.value)}
+                placeholder={t('placeholderCodigo')}
+                disabled={!!crud.editando}
+              />
+              <Input
+                etiqueta={t('etiquetaNombre')}
+                value={crud.form.nombre_estado}
+                onChange={(e) => crud.updateForm('nombre_estado', e.target.value)}
+                placeholder={t('placeholderNombre')}
+              />
+              <Textarea
+                etiqueta={t('etiquetaDescripcion')}
+                value={crud.form.descripcion}
+                onChange={(e) => crud.updateForm('descripcion', e.target.value)}
+                placeholder={t('placeholderDescripcion')}
+                rows={3}
+              />
+            </div>
+          )}
+
+          {/* Tab Prompt */}
+          {crud.editando && tabModal === 'prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto inyectado al prompt del LLM cuando procesa documentos en este estado. Da contexto para mejorar la precisión.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Este estado corresponde a documentos que ya han sido cargados y están pendientes de procesamiento..."
+                value={crud.form.prompt}
+                onChange={(e) => crud.updateForm('prompt', e.target.value)}
+              />
+              <div className="flex justify-end">
+                <Boton variante="primario" tamano="sm" onClick={crud.guardar} cargando={crud.guardando}>
+                  {tc('guardar')}
+                </Boton>
+              </div>
+            </div>
+          )}
+
+          {/* Tab System Prompt */}
+          {crud.editando && tabModal === 'system_prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema para el LLM al procesar documentos en este estado. Define el rol y restricciones del asistente.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Eres un asistente experto en análisis documental..."
+                value={crud.form.system_prompt}
+                onChange={(e) => crud.updateForm('system_prompt', e.target.value)}
+              />
+              <div className="flex justify-end">
+                <Boton variante="primario" tamano="sm" onClick={crud.guardar} cargando={crud.guardando}>
+                  {tc('guardar')}
+                </Boton>
+              </div>
+            </div>
+          )}
+
           {crud.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
               <p className="text-sm text-error">{crud.error}</p>
             </div>
           )}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('cancelar')}</Boton>
-            <Boton
-              variante="primario"
-              onClick={() => {
-                if (!crud.form.codigo_estado_doc.trim() || !crud.form.nombre_estado.trim()) {
-                  crud.setError(t('errorCodigoNombre'))
-                  return
-                }
-                crud.guardar()
-              }}
-              cargando={crud.guardando}
-            >
-              {crud.editando ? tc('guardar') : tc('crear')}
-            </Boton>
-          </div>
+
+          {/* Botones principales (solo en tab datos o al crear) */}
+          {(!crud.editando || tabModal === 'datos') && (
+            <div className="flex gap-3 justify-end pt-2">
+              <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('cancelar')}</Boton>
+              <Boton
+                variante="primario"
+                onClick={() => {
+                  if (!crud.form.codigo_estado_doc.trim() || !crud.form.nombre_estado.trim()) {
+                    crud.setError(t('errorCodigoNombre'))
+                    return
+                  }
+                  crud.guardar()
+                }}
+                cargando={crud.guardando}
+              >
+                {crud.editando ? tc('guardar') : tc('crear')}
+              </Boton>
+            </div>
+          )}
         </div>
       </Modal>
 
