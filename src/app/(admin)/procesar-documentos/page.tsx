@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo, useLayoutEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon, Trash2, AlertTriangle, ListOrdered, Cpu, Eye, ExternalLink, X, ChevronDown } from 'lucide-react'
+import { Play, FileText, CheckCircle, XCircle, Loader2, FolderOpen, Clock, Square, Search, CheckSquare, SquareIcon, Trash2, AlertTriangle, ListOrdered, Cpu, Eye, ExternalLink, X, ChevronDown, Image as ImageIcon, FileSpreadsheet, FileArchive, FileCode, File } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
@@ -21,6 +21,67 @@ import { getDirectoryHandle as idbGetHandle, setDirectoryHandle as idbSetHandle,
 import { TabPipelineTodo } from './_components/tab-pipeline-todo'
 import { ChatProcesar } from './_components/chat-procesar'
 import { useColaRealtime } from '@/hooks/useColaRealtime'
+
+/** Icono según extensión del archivo */
+function iconoTipoArchivo(nombre: string, size = 14, className = 'text-texto-muted shrink-0') {
+  const ext = nombre.split('.').pop()?.toLowerCase() || ''
+  switch (ext) {
+    case 'pdf':
+      return <FileText size={size} className={`text-red-400 shrink-0`} />
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'webp': case 'bmp': case 'svg': case 'tiff': case 'tif':
+      return <ImageIcon size={size} className={`text-blue-400 shrink-0`} />
+    case 'xls': case 'xlsx': case 'csv':
+      return <FileSpreadsheet size={size} className={`text-green-500 shrink-0`} />
+    case 'zip': case 'rar': case '7z': case 'tar': case 'gz':
+      return <FileArchive size={size} className={`text-amber-500 shrink-0`} />
+    case 'html': case 'xml': case 'json': case 'js': case 'ts': case 'py':
+      return <FileCode size={size} className={`text-purple-400 shrink-0`} />
+    case 'doc': case 'docx':
+      return <FileText size={size} className={`text-blue-500 shrink-0`} />
+    default:
+      return <File size={size} className={className} />
+  }
+}
+
+/** Botón de acción con tooltip inferior */
+function BotonAccion({ tooltip, onClick, className, children }: {
+  tooltip: string
+  onClick?: () => void
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="relative group/tip">
+      <button type="button" onClick={onClick} className={className}>
+        {children}
+      </button>
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity z-50">
+        {tooltip}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+      </div>
+    </div>
+  )
+}
+
+/** Botón-link de acción con tooltip inferior */
+function LinkAccion({ tooltip, href, className, children }: {
+  tooltip: string
+  href: string
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="relative group/tip">
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+        {children}
+      </a>
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity z-50">
+        {tooltip}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+      </div>
+    </div>
+  )
+}
 
 const ESTADO_COLA_CONFIG: Record<string, { variante: 'exito' | 'error' | 'advertencia' | 'neutro'; icono: typeof Clock }> = {
   PENDIENTE: { variante: 'neutro', icono: Clock },
@@ -1102,7 +1163,7 @@ export default function PaginaProcesarDocumentos() {
                     <TablaTd>{iconoEstado(c.estado_cola)}</TablaTd>
                     <TablaTd>
                       <div className="flex items-center gap-2">
-                        <FileText size={14} className="text-texto-muted shrink-0" />
+                        {iconoTipoArchivo(c.nombre_documento)}
                         <span className="font-medium text-sm">{c.nombre_documento}</span>
                       </div>
                     </TablaTd>
@@ -1176,7 +1237,7 @@ export default function PaginaProcesarDocumentos() {
                   </TablaTd>
                   <TablaTd className="max-w-0 w-[40%]">
                     <div className="flex items-center gap-2 min-w-0">
-                      <FileText size={14} className="text-texto-muted shrink-0" />
+                      {iconoTipoArchivo(d.nombre_documento)}
                       <span className="font-medium text-sm truncate" title={d.nombre_documento}>{d.nombre_documento}</span>
                     </div>
                   </TablaTd>
@@ -1187,32 +1248,33 @@ export default function PaginaProcesarDocumentos() {
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
                       {d.ubicacion_documento && /^https?:\/\//i.test(d.ubicacion_documento) && (
-                        <a href={d.ubicacion_documento} target="_blank" rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
-                          title="Abrir URL">
+                        <LinkAccion
+                          tooltip="Abrir URL"
+                          href={d.ubicacion_documento}
+                          className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors">
                           <ExternalLink size={15} />
-                        </a>
+                        </LinkAccion>
                       )}
                       {d.ubicacion_documento && !/^https?:\/\//i.test(d.ubicacion_documento) && (
-                        <button
-                          onClick={() => fetch(`http://localhost:27182/abrir`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ruta: d.ubicacion_documento }) }).catch(() => {})}
-                          className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
-                          title="Abrir archivo local">
+                        <BotonAccion
+                          tooltip="Abrir archivo"
+                          onClick={() => fetch(`http://localhost:27182/abrir`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ruta: d.ubicacion_documento }) }).catch(() => alert('No se pudo conectar con Server LM local. Verifica que esté ejecutándose.'))}
+                          className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors">
                           <FileText size={15} />
-                        </button>
+                        </BotonAccion>
                       )}
-                      <button
+                      <BotonAccion
+                        tooltip="Ver detalle"
                         onClick={() => abrirDetalle(d)}
-                        className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
-                        title="Ver detalle">
+                        className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors">
                         <Eye size={15} />
-                      </button>
-                      <button
+                      </BotonAccion>
+                      <BotonAccion
+                        tooltip="Eliminar"
                         onClick={() => setConfirmEliminarDoc(d)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
-                        title="Eliminar documento">
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors">
                         <Trash2 size={15} />
-                      </button>
+                      </BotonAccion>
                     </div>
                   </TablaTd>
                 </TablaFila>
@@ -1243,18 +1305,18 @@ export default function PaginaProcesarDocumentos() {
                     </TablaTd>
                     <TablaTd>
                       <div className="flex items-center justify-end gap-1">
-                        <button
+                        <BotonAccion
+                          tooltip="Ver detalle"
                           onClick={() => abrirDetalle(d)}
-                          className="p-1.5 rounded-lg hover:bg-red-100 text-error/50 hover:text-error transition-colors"
-                          title="Ver detalle">
+                          className="p-1.5 rounded-lg hover:bg-red-100 text-error/50 hover:text-error transition-colors">
                           <Eye size={15} />
-                        </button>
-                        <button
+                        </BotonAccion>
+                        <BotonAccion
+                          tooltip="Eliminar"
                           onClick={() => setConfirmEliminarDoc(d)}
-                          className="p-1.5 rounded-lg hover:bg-red-100 text-error/50 hover:text-error transition-colors"
-                          title="Eliminar documento">
+                          className="p-1.5 rounded-lg hover:bg-red-100 text-error/50 hover:text-error transition-colors">
                           <Trash2 size={15} />
-                        </button>
+                        </BotonAccion>
                       </div>
                     </TablaTd>
                   </TablaFila>
@@ -1337,13 +1399,12 @@ export default function PaginaProcesarDocumentos() {
                     <TablaTd className="text-sm text-center">{c.intentos}/{c.max_intentos}</TablaTd>
                     <TablaTd>
                       <div className="flex items-center justify-end gap-1">
-                        <button
+                        <BotonAccion
+                          tooltip="Eliminar"
                           onClick={() => setConfirmEliminar(c)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
-                          title={tc('eliminar')}
-                        >
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors">
                           <Trash2 size={14} />
-                        </button>
+                        </BotonAccion>
                       </div>
                     </TablaTd>
                   </TablaFila>
