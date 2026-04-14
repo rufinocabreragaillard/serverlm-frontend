@@ -54,7 +54,7 @@ interface Props {
 }
 
 export function ChatProcesar({ procesos, ubicaciones, estadosDocs, onEjecutar, onCambiarEstado, onAbiertoChange }: Props) {
-  const [abierto, setAbierto] = useState(true)
+  const [abierto, setAbierto] = useState(false)
 
   const cambiarAbierto = (valor: boolean) => {
     setAbierto(valor)

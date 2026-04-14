@@ -108,7 +108,7 @@ export default function PaginaProcesarDocumentos() {
   // Cola y ejecución
   const [cola, setCola] = useState<ItemCola[]>([])
   const [ejecutando, setEjecutando] = useState(false)
-  const [chatAbierto, setChatAbierto] = useState(true)
+  const [chatAbierto, setChatAbierto] = useState(false)
   const [procesados, setProcesados] = useState(0)
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
   const [archivosEnDir, setArchivosEnDir] = useState<Set<string> | null>(null)
@@ -826,7 +826,7 @@ export default function PaginaProcesarDocumentos() {
   }
 
   return (
-    <div className={`flex flex-col gap-6 w-full overflow-x-hidden${chatAbierto ? ' pt-72' : ''}`}>
+    <div className="flex flex-col gap-6 w-full overflow-x-hidden">
       <div>
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
@@ -940,41 +940,40 @@ export default function PaginaProcesarDocumentos() {
             </div>
 
             <div className="flex flex-col gap-1.5 min-w-0" ref={ubicDropdownRef}>
-              <label className="text-sm font-medium text-texto">{t('etiquetaUbicacion')}</label>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-texto">Ubicación</label>
+                <span className="text-xs text-texto-muted">Hasta 5 niveles</span>
+              </div>
               <div className="relative">
-                <div
-                  className={`flex items-center gap-2 rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto cursor-text ${ejecutando ? 'opacity-50 pointer-events-none' : ''}`}
-                  onClick={() => !ejecutando && setUbicDropdownOpen(true)}
+                <button
+                  type="button"
+                  onClick={() => !ejecutando && setUbicDropdownOpen(!ubicDropdownOpen)}
+                  disabled={ejecutando}
+                  className="flex items-center gap-2 rounded-lg border border-borde bg-fondo-tarjeta px-4 py-2 text-sm text-texto hover:border-primario transition-colors w-full disabled:opacity-50"
                 >
-                  <FolderOpen size={13} className="text-texto-muted shrink-0" />
-                  <input
-                    className="flex-1 bg-transparent outline-none text-texto placeholder:text-texto-muted text-sm min-w-0"
-                    placeholder={ubicacionSel
-                      ? (ubicaciones.find(u => u.codigo_ubicacion === ubicacionSel)?.nombre_ubicacion || t('todas'))
-                      : t('todas')}
-                    value={ubicBusqueda}
-                    onChange={(e) => { setUbicBusqueda(e.target.value); setUbicDropdownOpen(true) }}
-                    onFocus={() => setUbicDropdownOpen(true)}
-                    disabled={ejecutando}
-                  />
+                  <FolderOpen size={16} className={ubicacionSel ? 'text-primario shrink-0' : 'text-texto-muted shrink-0'} />
+                  <span className="flex-1 text-left truncate">
+                    {ubicacionSel
+                      ? (ubicaciones.find(u => u.codigo_ubicacion === ubicacionSel)?.nombre_ubicacion || 'Seleccionar ubicación')
+                      : 'Seleccionar ubicación'}
+                  </span>
                   {ubicacionSel ? (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setUbicacionSel(''); setUbicBusqueda('') }}
+                    <X
+                      size={13}
                       className="text-texto-muted hover:text-error shrink-0"
-                    >
-                      <X size={13} />
-                    </button>
+                      onClick={(e) => { e.stopPropagation(); setUbicacionSel(''); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
+                    />
                   ) : (
                     <ChevronDown size={13} className="text-texto-muted shrink-0" />
                   )}
-                </div>
+                </button>
                 {ubicDropdownOpen && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
                     <div
                       className="px-3 py-2 hover:bg-fondo cursor-pointer text-sm text-texto-muted border-b border-borde"
                       onClick={() => { setUbicacionSel(''); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
                     >
-                      {t('todas')}
+                      Todas
                     </div>
                     {ubicaciones
                       .filter(u => !ubicBusqueda || u.nombre_ubicacion.toLowerCase().includes(ubicBusqueda.toLowerCase()) || u.ruta_completa.toLowerCase().includes(ubicBusqueda.toLowerCase()))
@@ -999,40 +998,6 @@ export default function PaginaProcesarDocumentos() {
           </div>
 
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde flex-wrap">
-            {/* Directorio: siempre visible si hay handle activo (filtra la lista),
-                más el selector completo cuando el proceso es EXTRAER */}
-            {(esExtraer || dirHandle) && (
-              <>
-                <Boton variante="contorno" tamano="sm" onClick={seleccionarDirectorio} disabled={ejecutando || escaneandoDir}>
-                  {escaneandoDir ? <Loader2 size={16} className="animate-spin" /> : <FolderOpen size={16} />}
-                  {escaneandoDir ? t('escaneando') : dirHandle ? `📂 ${dirHandle.name}` : t('seleccionarDirectorio')}
-                </Boton>
-                {dirHandle && !escaneandoDir && (
-                  <Boton variante="contorno" tamano="sm" onClick={limpiarDirectorio} disabled={ejecutando}>
-                    {t('quitar')}
-                  </Boton>
-                )}
-                {esExtraer && (
-                  <>
-                    <span className="text-xs text-texto-muted" title="Niveles del árbol de directorios a escanear (configurable en Parámetros → DOCUMENTOS/NIVELES_DIRECTORIO)">
-                      {nivelesDirectorio === 0 ? t('soloRaiz') : t('hastaXNiveles', { n: nivelesDirectorio })}
-                    </span>
-                    {!dirHandle && (() => {
-                      const raiz = ubicaciones.length > 0
-                        ? ubicaciones.reduce((min, u) => u.nivel < min.nivel ? u : min, ubicaciones[0])
-                        : null
-                      return (
-                        <span className="text-xs text-texto-muted">
-                          {raiz?.ruta_completa
-                            ? <>Al ejecutar se pedirá acceso al directorio. Selecciona la carpeta raíz: <strong className="text-texto">{raiz.ruta_completa.split('/').filter(Boolean)[0] ?? raiz.ruta_completa}</strong> (no subcarpetas).</>
-                            : 'Al ejecutar se pedirá acceso al directorio raíz de los archivos.'}
-                        </span>
-                      )
-                    })()}
-                  </>
-                )}
-              </>
-            )}
             {usaLLM && (
               <span className="text-xs text-texto-muted">
                 {t('correrServidor')}
