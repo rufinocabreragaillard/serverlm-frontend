@@ -826,7 +826,7 @@ export default function PaginaProcesarDocumentos() {
   }
 
   return (
-    <div className={`flex flex-col gap-6 w-full overflow-x-hidden${chatAbierto ? ' pb-80' : ''}`}>
+    <div className={`flex flex-col gap-6 w-full overflow-x-hidden${chatAbierto ? ' pt-72' : ''}`}>
       <div>
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>

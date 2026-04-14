@@ -130,7 +130,7 @@ export function ChatProcesar({ procesos, ubicaciones, estadosDocs, onEjecutar, o
     <>
       {/* Panel de chat — siempre en top-right, el botón lo abre/cierra */}
       {abierto && (
-        <div className="fixed bottom-6 right-6 z-50 w-[420px] h-64 bg-surface border border-borde rounded-xl shadow-xl flex flex-col overflow-hidden">
+        <div className="fixed top-16 right-6 z-50 w-[420px] h-72 bg-surface border border-borde rounded-xl shadow-xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center gap-2 px-3 py-2.5 bg-primario text-primario-texto">
             <Bot size={16} />
@@ -183,14 +183,15 @@ export function ChatProcesar({ procesos, ubicaciones, estadosDocs, onEjecutar, o
           </div>
 
           {/* Input */}
-          <div className="p-2 border-t border-borde flex gap-1.5">
-            <input
+          <div className="p-2 border-t border-borde flex gap-1.5 items-end">
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
-              placeholder="Escribe un comando..."
+              placeholder="Escribe un comando... (Enter para enviar, Shift+Enter nueva línea)"
               disabled={enviando}
-              className="flex-1 text-xs border border-borde rounded-lg px-2.5 py-1.5 bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario placeholder:text-texto-muted disabled:opacity-50"
+              rows={2}
+              className="flex-1 text-xs border border-borde rounded-lg px-2.5 py-1.5 bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario placeholder:text-texto-muted disabled:opacity-50 resize-none overflow-y-auto"
             />
             <button
               onClick={enviar}
@@ -207,7 +208,7 @@ export function ChatProcesar({ procesos, ubicaciones, estadosDocs, onEjecutar, o
       {!abierto && (
         <button
           onClick={() => cambiarAbierto(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3 py-2 rounded-xl bg-primario text-primario-texto shadow-lg hover:bg-primario-oscuro transition-colors text-sm font-medium"
+          className="fixed top-16 right-6 z-50 flex items-center gap-2 px-3 py-2 rounded-xl bg-primario text-primario-texto shadow-lg hover:bg-primario-oscuro transition-colors text-sm font-medium"
           title="Abrir asistente"
         >
           <MessageSquare size={16} />
