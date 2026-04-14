@@ -203,6 +203,8 @@ export const usuariosApi = {
     api.post(`/usuarios/${id}/grupos`, { codigo_grupo: codigoGrupo }),
   quitarGrupo: (id: string, codigoGrupo: string) =>
     api.delete(`/usuarios/${id}/grupos/${codigoGrupo}`),
+  cambiarGrupoPropio: (codigoGrupo: string) =>
+    api.put('/usuarios/cambiar-grupo', { codigo_grupo: codigoGrupo }),
 }
 
 // ─── Roles ────────────────────────────────────────────────────────────────────

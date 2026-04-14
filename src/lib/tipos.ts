@@ -9,7 +9,7 @@ export interface Grupo {
   codigo_grupo: string
   nombre: string
   descripcion?: string
-  tipo?: 'NORMAL' | 'RESTRINGIDO'
+  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'PRUEBAS' | 'RESTRINGIDO'
   prompt?: string | null
   system_prompt?: string | null
 }
@@ -51,6 +51,7 @@ export interface UsuarioContexto {
   alias?: string | null
   locale?: string          // Locale preferido (es, en, fr-CA, etc.)
   activo: boolean
+  tipo?: 'ADMINISTRADOR' | 'USUARIO' | 'PRUEBAS' | 'RESTRINGIDO' | null
   grupo_activo: string
   nombre_grupo?: string
   grupos: GrupoResumen[]
@@ -116,6 +117,7 @@ export interface Usuario {
   nombre: string
   alias?: string
   locale?: string          // Locale preferido (es, en, fr-CA, etc.)
+  tipo?: 'ADMINISTRADOR' | 'USUARIO' | 'PRUEBAS' | 'RESTRINGIDO' | null
   telefono?: string
   fono_verificado?: boolean
   descripcion?: string
