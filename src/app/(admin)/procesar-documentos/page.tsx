@@ -379,6 +379,9 @@ export default function PaginaProcesarDocumentos() {
           documentosApi.listar({ codigo_estado_doc: 'NO_ENCONTRADO', activo: true, q: busqueda.trim() || undefined }),
         ])
         todos = [...a, ...b]
+      } else if (esResetearCargado) {
+        // Resetear a CARGADO: listar todos los documentos activos (cualquier estado)
+        todos = await documentosApi.listar({ activo: true, q: busqueda.trim() || undefined })
       } else if (pasoActual?.estado_origen) {
         // Filtrar por el estado_origen del paso actual del proceso seleccionado
         todos = await documentosApi.listar({
@@ -405,7 +408,7 @@ export default function PaginaProcesarDocumentos() {
     } finally {
       setCargando(false)
     }
-  }, [procesoSel, esRestablecer, pasoActual, ubicacionSel, ubicaciones, busqueda, estadoFiltro])
+  }, [procesoSel, esRestablecer, esResetearCargado, pasoActual, ubicacionSel, ubicaciones, busqueda, estadoFiltro])
 
   // Resetear lista cuando cambian filtros de proceso/alcance/ubicación.
   // Si se seleccionó un estado explícito, auto-cargar inmediatamente.
