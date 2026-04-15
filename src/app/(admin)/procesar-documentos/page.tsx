@@ -391,20 +391,11 @@ function PaginaProcesarDocumentosInterna() {
         todos = await documentosApi.listar({ activo: true, q: qBackend })
       } else if (pasoActual?.estado_origen) {
         const estadoOrigenFiltro = pasoActual.estado_origen
-        const [docsRaw, colaRaw] = await Promise.all([
+        const [docsRaw, idsInv] = await Promise.all([
           documentosApi.listar({ codigo_estado_doc: estadoOrigenFiltro, activo: true, q: qBackend }),
-          colaEstadosDocsApi.listar(),
+          colaEstadosDocsApi.idsInvalidos(estadoOrigenFiltro),
         ])
-        const INVALIDOS_RE = /NO_ESCANEABLE|NO_ENCONTRADO|VACIO/i
-        const idsInvalidos = new Set(
-          colaRaw
-            .filter(c =>
-              c.codigo_estado_doc_destino === estadoOrigenFiltro &&
-              (c.estado_cola === 'ERROR' ||
-               (c.estado_cola === 'COMPLETADO' && c.resultado && INVALIDOS_RE.test(c.resultado)))
-            )
-            .map(c => c.codigo_documento)
-        )
+        const idsInvalidos = new Set(idsInv)
         todos = idsInvalidos.size > 0
           ? docsRaw.filter(d => !idsInvalidos.has(d.codigo_documento))
           : docsRaw
@@ -589,13 +580,9 @@ function PaginaProcesarDocumentosInterna() {
     setBusquedaChunkInput('')
     setPaginaChunk(1)
     setColaItemDetalle(null)
-    // Cargar cola para obtener datos frescos de procesamiento
     try {
-      const colaFresca = await colaEstadosDocsApi.listar()
-      setColaBackend(colaFresca)
-      const itemsDoc = colaFresca.filter(c => c.codigo_documento === d.codigo_documento)
-      const ultimo = itemsDoc.sort((a, b) => (b.id_cola || 0) - (a.id_cola || 0))[0]
-      setColaItemDetalle(ultimo ?? null)
+      const itemsDoc = await colaEstadosDocsApi.porDocumento(d.codigo_documento)
+      setColaItemDetalle(itemsDoc[0] ?? null)
     } catch { /* mostrar sin datos de cola */ }
     cargarCaracteristicas(d.codigo_documento)
   }, [cargarCaracteristicas])
@@ -889,7 +876,7 @@ function PaginaProcesarDocumentosInterna() {
 
     // 2. Cargar cola inicial — solo los docs encolados en esta ejecución
     const idsSeleccionados = new Set(Array.from(seleccionados).slice(0, tope ? parseInt(tope) : undefined))
-    const pendientes = await colaEstadosDocsApi.listar()
+    const pendientes = await colaEstadosDocsApi.listar('PENDIENTE')
     const misItems = pendientes.filter((p) =>
       p.codigo_estado_doc_destino === estadoDestino && idsSeleccionados.has(p.codigo_documento),
     )
@@ -934,8 +921,8 @@ function PaginaProcesarDocumentosInterna() {
         await esperarCambio()
         if (abortRef.current) break
         try {
-          const actual = await colaEstadosDocsApi.listar()
-          const mapa = new Map(actual.filter((c) => idsSet.has(c.id_cola)).map((c) => [c.id_cola, c]))
+          const actual = await colaEstadosDocsApi.porIds(Array.from(idsSet))
+          const mapa = new Map(actual.map((c) => [c.id_cola, c]))
           // Contar activos fuera del setCola callback para evitar el problema de
           // closures con React 18 batching (el callback se ejecuta en reconciliación,
           // no de forma síncrona). activos = ítems aún PENDIENTE o EN_PROCESO.

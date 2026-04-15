@@ -149,8 +149,8 @@ export function TabPipelineTodo() {
 
     // Carga inicial del estado de la cola
     const refrescarCola = async (): Promise<{ activos: number; completados: number }> => {
-      const cola = await colaEstadosDocsApi.listar()
-      const propios = cola.filter((c) => idsSet.has(c.codigo_documento) && c.codigo_estado_doc_destino === estadoDestino)
+      const cola = await colaEstadosDocsApi.listar(undefined, estadoDestino)
+      const propios = cola.filter((c) => idsSet.has(c.codigo_documento))
       const activos = propios.filter((c) => c.estado_cola === 'PENDIENTE' || c.estado_cola === 'EN_PROCESO').length
       const completados = propios.filter((c) => c.estado_cola === 'COMPLETADO').length
       setPaso(key, { completados })

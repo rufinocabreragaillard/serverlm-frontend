@@ -852,8 +852,12 @@ export const estadosDocsApi = {
 // ─── Cola Estados Docs ─────────────────────────────────────────────────────
 
 export const colaEstadosDocsApi = {
-  listar: (estadoCola?: string) =>
-    api.get<ColaEstadoDoc[]>('/cola-estados-docs', { params: estadoCola ? { estado_cola: estadoCola } : undefined }).then((r) => r.data),
+  listar: (estadoCola?: string, estadoDestino?: string) => {
+    const params: Record<string, string> = {}
+    if (estadoCola) params.estado_cola = estadoCola
+    if (estadoDestino) params.estado_destino = estadoDestino
+    return api.get<ColaEstadoDoc[]>('/cola-estados-docs', { params: Object.keys(params).length ? params : undefined }).then((r) => r.data)
+  },
   listarPaginado: (params: { page: number; limit: number; estado_cola?: string; q?: string }) =>
     api.get<RespuestaPaginadaApi<ColaEstadoDoc>>('/cola-estados-docs/paginado', { params }).then((r) => r.data),
   inicializar: (items: { codigo_documento: number; codigo_estado_doc_destino: string; prioridad?: number }[]) =>
@@ -876,6 +880,12 @@ export const colaEstadosDocsApi = {
       undefined,
       { params: { minutos } },
     ).then((r) => r.data),
+  idsInvalidos: (estadoDestino: string) =>
+    api.get<number[]>('/cola-estados-docs/ids-invalidos', { params: { estado_destino: estadoDestino } }).then((r) => r.data),
+  porDocumento: (codigoDocumento: number) =>
+    api.get<ColaEstadoDoc[]>(`/cola-estados-docs/por-documento/${codigoDocumento}`).then((r) => r.data),
+  porIds: (ids: number[]) =>
+    api.get<ColaEstadoDoc[]>('/cola-estados-docs/por-ids', { params: { ids: ids.join(',') } }).then((r) => r.data),
 }
 
 // ─── Ubicaciones Docs ──────────────────────────────────────────────────────
