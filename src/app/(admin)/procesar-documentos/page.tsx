@@ -813,7 +813,8 @@ function PaginaProcesarDocumentosInterna() {
                   : textoLimpio
                 const res = await documentosApi.subirTexto(item.codigo_documento, {
                   texto_fuente: textoTruncado,
-                  caracteres: contenido.length,  // tamaño original para info
+                  caracteres: contenido.length,
+                  fecha_inicio_extraccion: new Date(t0).toISOString(),
                 })
                 setCola((prev) => prev.map((c, j) => j === idx ? { ...c, estado_cola: 'COMPLETADO', resultado: `METADATA (${res.caracteres} chars)`, tiempo_ms: Date.now() - t0 } : c))
               }

@@ -450,6 +450,7 @@ export const documentosApi = {
       texto_fuente: string
       caracteres?: number
       paginas?: number
+      fecha_inicio_extraccion?: string
       archivo_no_encontrado?: boolean
       formato_no_soportado?: string
       contenido_vacio?: boolean

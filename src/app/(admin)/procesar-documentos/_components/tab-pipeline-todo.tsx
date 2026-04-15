@@ -110,6 +110,7 @@ export function TabPipelineTodo() {
     for (const doc of docs) {
       if (abortRef.current) return false
       try {
+        const t0 = Date.now()
         if (!doc.ubicacion_documento) {
           await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', archivo_no_encontrado: true })
         } else {
@@ -124,7 +125,7 @@ export function TabPipelineTodo() {
             } else if (!contenido.trim()) {
               await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', contenido_vacio: true })
             } else {
-              await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: contenido, caracteres: contenido.length })
+              await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: contenido, caracteres: contenido.length, fecha_inicio_extraccion: new Date(t0).toISOString() })
             }
           }
         }
