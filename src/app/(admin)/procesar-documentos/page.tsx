@@ -19,6 +19,7 @@ import type { Documento, ColaEstadoDoc, EstadoDoc, CategoriaConCaracteristicasDo
 import { extraerTextoDeArchivo, abrirArchivoPorRuta, PdfProtegidoError, ArchivoNoEscaneable, NECESITA_OCR } from '@/lib/extraer-texto'
 
 import { getDirectoryHandle as idbGetHandle, setDirectoryHandle as idbSetHandle, ensureReadPermission } from '@/lib/file-handle-store'
+import { abrirDocumento } from '@/lib/abrir-documento'
 import { TabPipelineTodo } from './_components/tab-pipeline-todo'
 import { ChatProcesar } from './_components/chat-procesar'
 import { useColaRealtime } from '@/hooks/useColaRealtime'
@@ -587,26 +588,7 @@ function PaginaProcesarDocumentosInterna() {
     cargarCaracteristicas(d.codigo_documento)
   }, [cargarCaracteristicas])
 
-  const abrirDocumentoLocal = async (d: Documento) => {
-    if (!d.ubicacion_documento) return
-    const handle = await idbGetHandle()
-    if (!handle) {
-      alert('No hay carpeta raíz seleccionada. Selecciona el directorio raíz en esta pantalla primero.')
-      return
-    }
-    const ok = await ensureReadPermission(handle)
-    if (!ok) { alert('Permiso de lectura denegado.'); return }
-    try {
-      const fileHandle = await abrirArchivoPorRuta(handle, d.ubicacion_documento)
-      if (!fileHandle) { alert(`No se encontró: ${d.ubicacion_documento}`); return }
-      const file = await fileHandle.getFile()
-      const url = URL.createObjectURL(file)
-      window.open(url, '_blank', 'noopener,noreferrer')
-      setTimeout(() => URL.revokeObjectURL(url), 60_000)
-    } catch (e) {
-      alert(`Error al abrir: ${e instanceof Error ? e.message : e}`)
-    }
-  }
+  const abrirDocumentoLocal = (d: Documento) => abrirDocumento(d.ubicacion_documento)
 
   const ejecutarEliminarDoc = async () => {
     if (!confirmEliminarDoc) return
