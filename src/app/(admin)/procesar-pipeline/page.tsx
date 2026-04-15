@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import {
   FolderOpen, Folder, FolderInput, FolderPlus, FolderTree,
   CheckCircle, AlertTriangle, RefreshCw, Upload,
@@ -13,7 +13,7 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { documentosApi, colaEstadosDocsApi, ubicacionesDocsApi } from '@/lib/api'
-import { extraerTextoDeArchivo, abrirArchivoPorRuta } from '@/lib/extraer-texto'
+import { extraerTextoDeArchivo, abrirArchivoPorRuta, NECESITA_OCR } from '@/lib/extraer-texto'
 import { getDirectoryHandle, setDirectoryHandle, ensureReadPermission } from '@/lib/file-handle-store'
 import {
   escanearDirectorio, escanearDirectorioSinHijos,
@@ -21,7 +21,7 @@ import {
 } from '@/lib/escanear-directorio'
 import { useAuth } from '@/context/AuthContext'
 import { useColaRealtime } from '@/hooks/useColaRealtime'
-import type { UbicacionDoc } from '@/lib/tipos'
+import type { UbicacionDoc, Documento } from '@/lib/tipos'
 
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 
@@ -274,10 +274,18 @@ export default function PaginaCargaDocsUsuario() {
   const [docsValidos, setDocsValidos] = useState(0)
   const [docsRechazados, setDocsRechazados] = useState(0)
 
+  // Lista paginada de documentos en etapa 2
+  const [docsLista, setDocsLista] = useState<Documento[]>([])
+  const [docsListaPagina, setDocsListaPagina] = useState(1)
+  const [docsListaTotal, setDocsListaTotal] = useState(0)
+  const [cargandoDocsLista, setCargandoDocsLista] = useState(false)
+  const DOCS_LISTA_POR_PAGINA = 20
+
   // Selector de ubicación para etapa 2 (árbol de ubicaciones, no directorio físico)
   const [ubicacionDocSel, setUbicacionDocSel] = useState('')
   const [ubicDocDropdownOpen, setUbicDocDropdownOpen] = useState(false)
   const [ubicDocBusqueda, setUbicDocBusqueda] = useState('')
+  const [ubicDocExpandidos, setUbicDocExpandidos] = useState<Set<string>>(new Set())
   const ubicDocDropdownRef = useRef<HTMLDivElement>(null)
 
   // Cerrar dropdown al click fuera
@@ -324,6 +332,22 @@ export default function PaginaCargaDocsUsuario() {
     } catch { /* ignorar */ }
   }, [])
 
+  const cargarDocsLista = useCallback(async (pagina: number, estadoDoc: string) => {
+    setCargandoDocsLista(true)
+    try {
+      const res = await documentosApi.listarPaginado({ page: pagina, limit: 20, codigo_estado_doc: estadoDoc, activo: true })
+      // Filtrar por ubicación si hay una seleccionada (client-side, la API no tiene ese param)
+      const ubic = ubicacionDocSel ? ubicaciones.find(u => u.codigo_ubicacion === ubicacionDocSel) : null
+      const rutaUbic = ubic?.ruta_completa ?? null
+      const items = rutaUbic
+        ? res.items.filter(d => d.ubicacion_documento?.startsWith(rutaUbic))
+        : res.items
+      setDocsLista(items)
+      setDocsListaTotal(ubic ? items.length : res.total)
+    } catch { /* ignorar */ }
+    finally { setCargandoDocsLista(false) }
+  }, [ubicacionDocSel, ubicaciones])
+
   useEffect(() => {
     getDirectoryHandle().then((h) => { if (h) setDirHandleState(h) })
     cargarConteos()
@@ -351,7 +375,7 @@ export default function PaginaCargaDocsUsuario() {
           } else {
             const ext = (doc.ubicacion_documento.split('.').pop() || '').toLowerCase()
             const contenido = await extraerTextoDeArchivo(fh)
-            if (contenido === null) await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', formato_no_soportado: ext })
+            if (contenido === null || contenido === NECESITA_OCR) await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', formato_no_soportado: ext })
             else if (!contenido.trim()) await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', contenido_vacio: true })
             else await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: contenido, caracteres: contenido.length, fecha_inicio_extraccion: new Date(t0).toISOString() })
           }
@@ -424,6 +448,18 @@ export default function PaginaCargaDocsUsuario() {
   const formatTiempo = (seg: number) => { const m = Math.floor(seg / 60); return m > 0 ? `${m}m ${seg % 60}s` : `${seg % 60}s` }
   const todosListos = PASOS.every((p) => progresos[p.key]?.estado === 'listo')
   const etapa2Estado: EstadoEtapa = ejecutando ? 'activo' : todosListos ? 'completado' : 'pendiente'
+
+  // Cargar lista de docs cuando cambia la paginación, el estado del pipeline o la ubicación
+  useEffect(() => {
+    setDocsListaPagina(1)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todosListos, ubicacionDocSel])
+
+  useEffect(() => {
+    const estadoDoc = todosListos ? 'CHUNKEADO' : 'CARGADO'
+    cargarDocsLista(docsListaPagina, estadoDoc)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docsListaPagina, todosListos, ubicacionDocSel])
 
   // Barra de progreso individual
   const BarraPaso = ({ pasoKey, color }: { pasoKey: string; color: string }) => {
@@ -567,29 +603,79 @@ export default function PaginaCargaDocsUsuario() {
                       <div className="px-3 py-2 hover:bg-fondo cursor-pointer text-sm text-texto-muted border-b border-borde" onClick={() => { setUbicacionDocSel(''); setUbicDocBusqueda(''); setUbicDocDropdownOpen(false) }}>
                         Todas las ubicaciones
                       </div>
-                      {ubicaciones
-                        .filter(u => !ubicDocBusqueda || u.nombre_ubicacion.toLowerCase().includes(ubicDocBusqueda.toLowerCase()) || (u.ruta_completa || '').toLowerCase().includes(ubicDocBusqueda.toLowerCase()))
-                        .map(u => {
+                      {(() => {
+                        const tieneHijosDoc = (cod: string) => ubicaciones.some(u => u.codigo_ubicacion_superior === cod)
+                        // Con búsqueda: mostrar todos los que coincidan sin restricción de árbol
+                        if (ubicDocBusqueda) {
+                          const filtradas = ubicaciones.filter(u =>
+                            u.nombre_ubicacion.toLowerCase().includes(ubicDocBusqueda.toLowerCase()) ||
+                            (u.ruta_completa || '').toLowerCase().includes(ubicDocBusqueda.toLowerCase())
+                          )
+                          if (filtradas.length === 0) return <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin coincidencias</div>
+                          return filtradas.map(u => {
+                            const esArea = u.tipo_ubicacion === 'AREA'
+                            const selec = ubicacionDocSel === u.codigo_ubicacion
+                            return (
+                              <div
+                                key={u.codigo_ubicacion}
+                                className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer ${selec ? 'bg-primario-muy-claro' : ''}`}
+                                style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
+                                onClick={() => { setUbicacionDocSel(u.codigo_ubicacion); setUbicDocBusqueda(''); setUbicDocDropdownOpen(false) }}
+                              >
+                                <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
+                                <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>{esArea ? 'Área' : 'Contenido'}</span>
+                              </div>
+                            )
+                          })
+                        }
+                        // Sin búsqueda: árbol colapsado — solo raíces y nodos expandidos
+                        const renderNodoDropdown = (u: UbicacionDoc): React.ReactNode => {
+                          const tieneHijos = tieneHijosDoc(u.codigo_ubicacion)
+                          const expandido = ubicDocExpandidos.has(u.codigo_ubicacion)
                           const esArea = u.tipo_ubicacion === 'AREA'
                           const selec = ubicacionDocSel === u.codigo_ubicacion
+                          const hijos = tieneHijos
+                            ? ubicaciones
+                                .filter(h => h.codigo_ubicacion_superior === u.codigo_ubicacion)
+                                .sort((a, b) => a.nombre_ubicacion.localeCompare(b.nombre_ubicacion))
+                            : []
                           return (
-                            <div
-                              key={u.codigo_ubicacion}
-                              className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer ${selec ? 'bg-primario-muy-claro' : ''}`}
-                              style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
-                              onClick={() => { setUbicacionDocSel(u.codigo_ubicacion); setUbicDocBusqueda(''); setUbicDocDropdownOpen(false) }}
-                            >
-                              <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
-                              <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
-                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>
-                                {esArea ? 'Área' : 'Contenido'}
-                              </span>
+                            <div key={u.codigo_ubicacion}>
+                              <div
+                                className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer select-none ${selec ? 'bg-primario-muy-claro' : ''}`}
+                                style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
+                                onClick={() => { setUbicacionDocSel(u.codigo_ubicacion); setUbicDocBusqueda(''); setUbicDocDropdownOpen(false) }}
+                                onDoubleClick={(e) => {
+                                  e.stopPropagation()
+                                  if (tieneHijos) {
+                                    setUbicDocExpandidos(prev => {
+                                      const next = new Set(prev)
+                                      next.has(u.codigo_ubicacion) ? next.delete(u.codigo_ubicacion) : next.add(u.codigo_ubicacion)
+                                      return next
+                                    })
+                                  }
+                                }}
+                                title={tieneHijos ? 'Doble clic para expandir/colapsar' : undefined}
+                              >
+                                {tieneHijos
+                                  ? (expandido ? <ChevronDown size={12} className="shrink-0 text-texto-muted" /> : <ChevronRight size={12} className="shrink-0 text-texto-muted" />)
+                                  : <span className="w-3 shrink-0" />
+                                }
+                                <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
+                                <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>{esArea ? 'Área' : 'Contenido'}</span>
+                              </div>
+                              {expandido && hijos.map(h => renderNodoDropdown(h))}
                             </div>
                           )
-                        })}
-                      {ubicaciones.filter(u => !ubicDocBusqueda || u.nombre_ubicacion.toLowerCase().includes(ubicDocBusqueda.toLowerCase()) || (u.ruta_completa || '').toLowerCase().includes(ubicDocBusqueda.toLowerCase())).length === 0 && (
-                        <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin coincidencias</div>
-                      )}
+                        }
+                        const raicesDoc = ubicaciones
+                          .filter(u => !u.codigo_ubicacion_superior)
+                          .sort((a, b) => a.nombre_ubicacion.localeCompare(b.nombre_ubicacion))
+                        if (raicesDoc.length === 0) return <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin ubicaciones</div>
+                        return raicesDoc.map(u => renderNodoDropdown(u))
+                      })()}
                     </div>
                   </div>
                 )}
@@ -641,6 +727,87 @@ export default function PaginaCargaDocsUsuario() {
                 <span className="text-2xl font-bold text-red-500">{docsRechazados}</span>
                 <span className="text-xs text-texto-muted">Rechazados</span>
               </div>
+            </div>
+
+            {/* Lista paginada de documentos */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-texto-muted uppercase">
+                  {todosListos ? 'Documentos procesados (CHUNKEADO)' : 'Documentos pendientes (CARGADO)'}
+                </p>
+                {cargandoDocsLista && <span className="text-xs text-texto-muted animate-pulse">Cargando...</span>}
+              </div>
+              {docsLista.length === 0 && !cargandoDocsLista ? (
+                <p className="text-xs text-texto-muted text-center py-3">Sin documentos en este estado</p>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-borde overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-fondo border-b border-borde">
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-texto-muted">Archivo</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-texto-muted w-32">Estado</th>
+                          <th className="text-left px-3 py-2 text-xs font-semibold text-texto-muted w-36 hidden sm:table-cell">Modificado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {docsLista.map((doc) => {
+                          const esRechazado = doc.codigo_estado_doc === 'NO_ANALIZABLE' || doc.codigo_estado_doc === 'NO_ESCANEABLE'
+                          const nombreArchivo = doc.nombre_documento.split('/').pop() ?? doc.nombre_documento
+                          const fecha = doc.fecha_modificacion
+                            ? new Date(doc.fecha_modificacion).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                            : '—'
+                          return (
+                            <tr key={doc.codigo_documento} className="border-b border-borde last:border-0 hover:bg-fondo/50 transition-colors">
+                              <td className="px-3 py-2 text-texto truncate max-w-0">
+                                <span className="block truncate" title={doc.ubicacion_documento ?? doc.nombre_documento}>{nombreArchivo}</span>
+                              </td>
+                              <td className="px-3 py-2 w-32">
+                                <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                                  esRechazado
+                                    ? 'bg-red-100 text-red-700'
+                                    : doc.codigo_estado_doc === 'CHUNKEADO' || doc.codigo_estado_doc === 'VECTORIZADO'
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {doc.codigo_estado_doc ?? '—'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-xs text-texto-muted w-36 hidden sm:table-cell">{fecha}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* Paginación */}
+                  {docsListaTotal > DOCS_LISTA_POR_PAGINA && (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs text-texto-muted">
+                        Página {docsListaPagina} de {Math.ceil(docsListaTotal / DOCS_LISTA_POR_PAGINA)}
+                      </span>
+                      <div className="flex gap-2">
+                        <Boton
+                          variante="contorno"
+                          tamano="sm"
+                          onClick={() => setDocsListaPagina(p => Math.max(1, p - 1))}
+                          disabled={docsListaPagina <= 1 || cargandoDocsLista}
+                        >
+                          Anterior
+                        </Boton>
+                        <Boton
+                          variante="contorno"
+                          tamano="sm"
+                          onClick={() => setDocsListaPagina(p => Math.min(Math.ceil(docsListaTotal / DOCS_LISTA_POR_PAGINA), p + 1))}
+                          disabled={docsListaPagina >= Math.ceil(docsListaTotal / DOCS_LISTA_POR_PAGINA) || cargandoDocsLista}
+                        >
+                          Siguiente
+                        </Boton>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Timer */}

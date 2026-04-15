@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { FolderOpen } from 'lucide-react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { FolderOpen, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { CirculoProgreso } from '@/components/ui/circulo-progreso'
 import { documentosApi, colaEstadosDocsApi, ubicacionesDocsApi } from '@/lib/api'
-import { extraerTextoDeArchivo, abrirArchivoPorRuta } from '@/lib/extraer-texto'
+import type { Proceso as ProcesoCatalogo } from '@/lib/api'
+import { extraerTextoDeArchivo, abrirArchivoPorRuta, NECESITA_OCR } from '@/lib/extraer-texto'
 import { getDirectoryHandle, setDirectoryHandle, ensureReadPermission } from '@/lib/file-handle-store'
 import { useAuth } from '@/context/AuthContext'
 import { useColaRealtime } from '@/hooks/useColaRealtime'
+import type { EstadoDoc } from '@/lib/tipos'
 
 const PASOS = [
   { key: 'EXTRAER',    nombre: 'EXTRAER',    estadoOrigen: 'CARGADO',   estadoDestino: 'METADATA',    colorDisco: '#EF4444', clienteSide: true },
@@ -23,7 +25,33 @@ interface ProgresoPaso { total: number; completados: number; estado: EstadoPaso;
 const progresosIniciales = (): Record<string, ProgresoPaso> =>
   Object.fromEntries(PASOS.map((p) => [p.key, { total: 0, completados: 0, estado: 'esperando' }]))
 
-export function TabPipelineTodo() {
+// Configuración de estados del pipeline para las estadísticas
+const ESTADOS_PIPELINE = [
+  { codigo: 'CARGADO',        nombre: 'Cargado',        color: '#6B7280' },
+  { codigo: 'METADATA',       nombre: 'Metadata',       color: '#3B82F6' },
+  { codigo: 'ESCANEADO',      nombre: 'Escaneado',      color: '#F97316' },
+  { codigo: 'CHUNKEADO',      nombre: 'Chunkeado',      color: '#84CC16' },
+  { codigo: 'VECTORIZADO',    nombre: 'Vectorizado',    color: '#22C55E' },
+  { codigo: 'NO_ANALIZABLE',  nombre: 'No analizable',  color: '#EF4444' },
+  { codigo: 'NO_ESCANEABLE',  nombre: 'No escaneable',  color: '#DC2626' },
+] as const
+
+interface UbicacionOption {
+  codigo_ubicacion: string
+  nombre_ubicacion: string
+  ruta_completa: string
+  nivel: number
+  tipo_ubicacion?: 'AREA' | 'CONTENIDO'
+  codigo_ubicacion_superior?: string
+}
+
+interface TabPipelineTodoProps {
+  procesos?: ProcesoCatalogo[]
+  estadosDocs?: EstadoDoc[]
+  ubicaciones?: UbicacionOption[]
+}
+
+export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: ubicacionesProp = [] }: TabPipelineTodoProps) {
   const { grupoActivo } = useAuth()
 
   const [progresos, setProgresos] = useState<Record<string, ProgresoPaso>>(progresosIniciales)
@@ -34,15 +62,27 @@ export function TabPipelineTodo() {
   const [mensajeError, setMensajeError] = useState('')
   const [carpetaRaiz, setCarpetaRaiz] = useState<string>('')
 
+  // Filtros (Cambio 2)
+  const [procesoFiltro, setProcesoFiltro] = useState<string>('')
+  const [estadoFiltro, setEstadoFiltro] = useState<string>('')
+  const [ubicacionSel, setUbicacionSel] = useState('')
+  const [ubicBusqueda, setUbicBusqueda] = useState('')
+  const [ubicDropdownOpen, setUbicDropdownOpen] = useState(false)
+  const [ubicExpandidos, setUbicExpandidos] = useState<Set<string>>(new Set())
+  const [nParalelo, setNParalelo] = useState<number>(10)
+  const [tope, setTope] = useState<string>('')
+  const [filtroLibreInput, setFiltroLibreInput] = useState<string>('')
+  const [filtroLibre, setFiltroLibre] = useState<string>('')
+  const ubicDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Estadísticas por estado (Cambio 4)
+  const [conteosPorEstado, setConteosPorEstado] = useState<Record<string, number>>({})
+
   const abortRef = useRef(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // Estado de la cola en tiempo real (usado por ejecutarPasoBackend)
-  const colaActualRef = useRef<Map<number, string>>(new Map()) // id_cola -> estado_cola
-  const resolveColaRef = useRef<(() => void) | null>(null)    // desbloquea la espera Realtime
+  const resolveColaRef = useRef<(() => void) | null>(null)
 
   const handleColaChange = useCallback(() => {
-    // Cuando llega cualquier cambio, desbloquear la espera activa (si existe)
     if (resolveColaRef.current) {
       resolveColaRef.current()
       resolveColaRef.current = null
@@ -54,6 +94,17 @@ export function TabPipelineTodo() {
     handleColaChange,
   )
 
+  // Cerrar dropdown al click fuera
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ubicDropdownRef.current && !ubicDropdownRef.current.contains(e.target as Node)) {
+        setUbicDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
   useEffect(() => {
     if (ejecutando && tiempoInicio) {
       timerRef.current = setInterval(() => {
@@ -64,6 +115,20 @@ export function TabPipelineTodo() {
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [ejecutando, tiempoInicio])
+
+  const cargarConteos = useCallback(async () => {
+    try {
+      const conteos = await documentosApi.contarPorEstado()
+      setConteosPorEstado(conteos as Record<string, number>)
+      setProgresos((prev) => {
+        const next = { ...prev }
+        for (const paso of PASOS) {
+          next[paso.key] = { ...next[paso.key], total: (conteos as Record<string, number>)[paso.estadoOrigen] ?? 0, completados: 0, estado: 'esperando' }
+        }
+        return next
+      })
+    } catch { /* ignorar */ }
+  }, [])
 
   useEffect(() => {
     getDirectoryHandle().then((h) => { if (h) setDirHandleState(h) })
@@ -78,19 +143,6 @@ export function TabPipelineTodo() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupoActivo])
 
-  const cargarConteos = useCallback(async () => {
-    try {
-      const conteos = await documentosApi.contarPorEstado()
-      setProgresos((prev) => {
-        const next = { ...prev }
-        for (const paso of PASOS) {
-          next[paso.key] = { ...next[paso.key], total: conteos[paso.estadoOrigen] ?? 0, completados: 0, estado: 'esperando' }
-        }
-        return next
-      })
-    } catch { /* ignorar */ }
-  }, [])
-
   const seleccionarDirectorio = async () => {
     try {
       const handle = await (window as unknown as { showDirectoryPicker: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker()
@@ -103,11 +155,16 @@ export function TabPipelineTodo() {
     setProgresos((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }))
 
   const ejecutarExtraer = async (handle: FileSystemDirectoryHandle): Promise<boolean> => {
-    const docs = await documentosApi.listar({ codigo_estado_doc: 'CARGADO', activo: true })
-    if (docs.length === 0) { setPaso('EXTRAER', { estado: 'listo' }); return true }
-    setPaso('EXTRAER', { total: docs.length, completados: 0, estado: 'activo' })
+    const params: Record<string, unknown> = { codigo_estado_doc: 'CARGADO', activo: true }
+    if (ubicacionSel) params.codigo_ubicacion = ubicacionSel
+    if (filtroLibre.trim()) params.q = filtroLibre.trim()
+    const topeNum = tope ? parseInt(tope) : 0
+    const docs = await documentosApi.listar(params as Parameters<typeof documentosApi.listar>[0])
+    const docsFinal = topeNum > 0 ? docs.slice(0, topeNum) : docs
+    if (docsFinal.length === 0) { setPaso('EXTRAER', { estado: 'listo' }); return true }
+    setPaso('EXTRAER', { total: docsFinal.length, completados: 0, estado: 'activo' })
     let completados = 0
-    for (const doc of docs) {
+    for (const doc of docsFinal) {
       if (abortRef.current) return false
       try {
         const t0 = Date.now()
@@ -120,7 +177,7 @@ export function TabPipelineTodo() {
           } else {
             const ext = (doc.ubicacion_documento.split('.').pop() || '').toLowerCase()
             const contenido = await extraerTextoDeArchivo(fileHandle)
-            if (contenido === null) {
+            if (contenido === null || contenido === NECESITA_OCR) {
               await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', formato_no_soportado: ext })
             } else if (!contenido.trim()) {
               await documentosApi.subirTexto(doc.codigo_documento, { texto_fuente: '', contenido_vacio: true })
@@ -133,12 +190,17 @@ export function TabPipelineTodo() {
       completados++
       setPaso('EXTRAER', { completados })
     }
-    setPaso('EXTRAER', { completados: docs.length, estado: 'listo' })
+    setPaso('EXTRAER', { completados: docsFinal.length, estado: 'listo' })
     return true
   }
 
   const ejecutarPasoBackend = async (key: string, estadoOrigen: string, estadoDestino: string): Promise<boolean> => {
-    const docs = await documentosApi.listar({ codigo_estado_doc: estadoOrigen, activo: true })
+    const params: Record<string, unknown> = { codigo_estado_doc: estadoOrigen, activo: true }
+    if (ubicacionSel) params.codigo_ubicacion = ubicacionSel
+    if (filtroLibre.trim()) params.q = filtroLibre.trim()
+    const topeNum = tope ? parseInt(tope) : 0
+    const docsRaw = await documentosApi.listar(params as Parameters<typeof documentosApi.listar>[0])
+    const docs = topeNum > 0 ? docsRaw.slice(0, topeNum) : docsRaw
     if (docs.length === 0) { setPaso(key, { estado: 'listo' }); return true }
     setPaso(key, { total: docs.length, completados: 0, estado: 'activo' })
     const items = docs.map((d) => ({ codigo_documento: d.codigo_documento, codigo_estado_doc_destino: estadoDestino }))
@@ -147,7 +209,6 @@ export function TabPipelineTodo() {
 
     const idsSet = new Set(docs.map((d) => d.codigo_documento))
 
-    // Carga inicial del estado de la cola
     const refrescarCola = async (): Promise<{ activos: number; completados: number }> => {
       const cola = await colaEstadosDocsApi.listar(undefined, estadoDestino)
       const propios = cola.filter((c) => idsSet.has(c.codigo_documento))
@@ -157,19 +218,17 @@ export function TabPipelineTodo() {
       return { activos, completados }
     }
 
-    // Esperar cambio via Realtime o fallback timeout de 30s
     const esperarCambio = () => new Promise<void>((resolve) => {
       const timeoutId = setTimeout(() => {
         resolveColaRef.current = null
         resolve()
-      }, 30_000) // fallback si Realtime no llega en 30s
+      }, 30_000)
       resolveColaRef.current = () => {
         clearTimeout(timeoutId)
         resolve()
       }
     })
 
-    // Verificación inicial
     try {
       const { activos } = await refrescarCola()
       if (activos === 0) {
@@ -178,7 +237,6 @@ export function TabPipelineTodo() {
       }
     } catch { /* continuar */ }
 
-    // Loop Realtime: espera notificación → refresca → continúa si hay activos
     while (!abortRef.current) {
       await esperarCambio()
       if (abortRef.current) return false
@@ -219,10 +277,16 @@ export function TabPipelineTodo() {
     setTiempoInicio(Date.now())
     setTiempoTranscurrido(0)
     setProgresos(progresosIniciales())
-    // Activar Realtime antes de disparar el worker
     suscribirCola()
     try {
-      for (const paso of PASOS) {
+      // Filtrar pasos según el proceso seleccionado
+      const pasosAEjecutar = procesoFiltro
+        ? PASOS.filter(p => {
+            const proc = procesos.find(pr => pr.codigo_proceso === procesoFiltro)
+            return proc?.pasos?.some(ps => ps.estado_destino === p.estadoDestino)
+          })
+        : PASOS
+      for (const paso of pasosAEjecutar) {
         if (abortRef.current) break
         const ok = paso.clienteSide
           ? await ejecutarExtraer(handleEfectivo)
@@ -240,7 +304,6 @@ export function TabPipelineTodo() {
 
   const detener = () => {
     abortRef.current = true
-    // Desbloquear cualquier espera Realtime pendiente
     if (resolveColaRef.current) {
       resolveColaRef.current()
       resolveColaRef.current = null
@@ -255,9 +318,218 @@ export function TabPipelineTodo() {
 
   const todosListos = PASOS.every((p) => progresos[p.key]?.estado === 'listo')
 
+  // Render árbol de ubicaciones para el dropdown (igual que procesar-documentos)
+  const tieneHijosUbic = (cod: string) => ubicacionesProp.some(u => u.codigo_ubicacion !== cod && u.codigo_ubicacion_superior === cod)
+
+  const renderNodoDropdown = (u: UbicacionOption): React.ReactNode => {
+    const tieneHijos = tieneHijosUbic(u.codigo_ubicacion)
+    const expandido = ubicExpandidos.has(u.codigo_ubicacion)
+    const esArea = u.tipo_ubicacion === 'AREA'
+    const selec = ubicacionSel === u.codigo_ubicacion
+    const hijos = tieneHijos
+      ? ubicacionesProp
+          .filter(h => h.codigo_ubicacion_superior === u.codigo_ubicacion)
+          .sort((a, b) => a.nombre_ubicacion.localeCompare(b.nombre_ubicacion))
+      : []
+    return (
+      <div key={u.codigo_ubicacion}>
+        <div
+          className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer select-none ${selec ? 'bg-primario-muy-claro' : ''}`}
+          style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
+          onClick={() => { setUbicacionSel(u.codigo_ubicacion); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            if (tieneHijos) {
+              setUbicExpandidos(prev => {
+                const next = new Set(prev)
+                next.has(u.codigo_ubicacion) ? next.delete(u.codigo_ubicacion) : next.add(u.codigo_ubicacion)
+                return next
+              })
+            }
+          }}
+          title={tieneHijos ? 'Doble clic para expandir/colapsar' : undefined}
+        >
+          {tieneHijos
+            ? (expandido ? <ChevronDown size={12} className="shrink-0 text-texto-muted" /> : <ChevronRight size={12} className="shrink-0 text-texto-muted" />)
+            : <span className="w-3 shrink-0" />
+          }
+          <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
+          <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>{esArea ? 'Área' : 'Contenido'}</span>
+        </div>
+        {expandido && hijos.map(h => renderNodoDropdown(h))}
+      </div>
+    )
+  }
+
+  const raicesUbic = ubicacionesProp
+    .filter(u => !u.codigo_ubicacion_superior)
+    .sort((a, b) => a.nombre_ubicacion.localeCompare(b.nombre_ubicacion))
+
+  const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
+
   return (
-    <div className="flex flex-col gap-8">
-      {/* Selector de directorio */}
+    <div className="flex flex-col gap-6">
+
+      {/* ── Filtros (Cambio 2) ─────────────────────────────────────────────── */}
+      <div className="rounded-lg border border-borde bg-fondo-tarjeta p-4 flex flex-col gap-4">
+        <p className="text-xs font-semibold text-texto-muted uppercase">Filtros del pipeline</p>
+
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Proceso */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">Proceso</label>
+            <select value={procesoFiltro} onChange={(e) => setProcesoFiltro(e.target.value)} className={selectClass} disabled={ejecutando}>
+              <option value="">— Pipeline completo —</option>
+              {procesos.map((p) => {
+                const paso = p.pasos?.[0]
+                const flecha = paso ? `${paso.estado_origen || '—'} → ${paso.estado_destino}` : ''
+                return (
+                  <option key={p.codigo_proceso} value={p.codigo_proceso}>
+                    {p.nombre_proceso} ({flecha})
+                  </option>
+                )
+              })}
+            </select>
+          </div>
+
+          {/* Estado */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">Estado</label>
+            <select value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)} className={selectClass} disabled={ejecutando}>
+              <option value="">— Según proceso —</option>
+              {estadosDocs.map((e) => (
+                <option key={e.codigo_estado_doc} value={e.codigo_estado_doc}>
+                  {e.nombre_estado || e.codigo_estado_doc}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Ubicación */}
+          <div className="flex flex-col gap-1.5" ref={ubicDropdownRef}>
+            <label className="text-sm font-medium text-texto">Ubicación</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => !ejecutando && setUbicDropdownOpen(!ubicDropdownOpen)}
+                disabled={ejecutando}
+                className="flex items-center gap-2 rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto hover:border-primario transition-colors w-full disabled:opacity-50"
+              >
+                <FolderOpen size={15} className={ubicacionSel ? 'text-primario shrink-0' : 'text-texto-muted shrink-0'} />
+                <span className="flex-1 text-left truncate">
+                  {ubicacionSel
+                    ? (ubicacionesProp.find(u => u.codigo_ubicacion === ubicacionSel)?.nombre_ubicacion ?? 'Seleccionar ubicación')
+                    : 'Seleccionar ubicación'}
+                </span>
+                {ubicacionSel ? (
+                  <X size={13} className="text-texto-muted hover:text-error shrink-0" onClick={(e) => { e.stopPropagation(); setUbicacionSel(''); setUbicBusqueda(''); setUbicDropdownOpen(false) }} />
+                ) : (
+                  <ChevronDown size={13} className="text-texto-muted shrink-0" />
+                )}
+              </button>
+              {ubicDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-surface border border-borde rounded-lg shadow-lg flex flex-col" style={{ maxHeight: '16rem' }}>
+                  <div className="p-2 border-b border-borde shrink-0">
+                    <input
+                      type="text"
+                      placeholder="Buscar ubicación…"
+                      value={ubicBusqueda}
+                      onChange={(e) => setUbicBusqueda(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full text-sm border border-borde rounded px-2 py-1 bg-fondo text-texto focus:outline-none focus:ring-1 focus:ring-primario placeholder:text-texto-muted"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="overflow-y-auto flex-1">
+                    <div className="px-3 py-2 hover:bg-fondo cursor-pointer text-sm text-texto-muted border-b border-borde" onClick={() => { setUbicacionSel(''); setUbicBusqueda(''); setUbicDropdownOpen(false) }}>
+                      Todas las ubicaciones
+                    </div>
+                    {ubicBusqueda ? (
+                      (() => {
+                        const filtradas = ubicacionesProp.filter(u =>
+                          u.nombre_ubicacion.toLowerCase().includes(ubicBusqueda.toLowerCase()) ||
+                          (u.ruta_completa || '').toLowerCase().includes(ubicBusqueda.toLowerCase())
+                        )
+                        if (filtradas.length === 0) return <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin coincidencias</div>
+                        return filtradas.map(u => {
+                          const esArea = u.tipo_ubicacion === 'AREA'
+                          const selec = ubicacionSel === u.codigo_ubicacion
+                          return (
+                            <div
+                              key={u.codigo_ubicacion}
+                              className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer ${selec ? 'bg-primario-muy-claro' : ''}`}
+                              style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
+                              onClick={() => { setUbicacionSel(u.codigo_ubicacion); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
+                            >
+                              <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
+                              <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>{esArea ? 'Área' : 'Contenido'}</span>
+                            </div>
+                          )
+                        })
+                      })()
+                    ) : (
+                      raicesUbic.length === 0
+                        ? <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin ubicaciones</div>
+                        : raicesUbic.map(u => renderNodoDropdown(u))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Segunda fila: Paralelo + Tope + Filtro libre */}
+        <div className="flex items-end gap-4 flex-wrap">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-texto-muted font-medium">Paralelo</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={nParalelo}
+              onChange={(e) => setNParalelo(Math.max(1, parseInt(e.target.value) || 1))}
+              disabled={ejecutando}
+              className="w-16 text-sm border border-borde rounded-lg px-2 py-1.5 text-center bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-texto-muted font-medium">Tope</label>
+            <input
+              type="number"
+              min={1}
+              placeholder="todos"
+              value={tope}
+              onChange={(e) => setTope(e.target.value)}
+              disabled={ejecutando}
+              className="w-20 text-sm border border-borde rounded-lg px-2 py-1.5 text-center bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50 placeholder:text-texto-muted"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+            <label className="text-xs text-texto-muted font-medium">Filtro libre</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Filtrar por nombre, directorio… (Enter para aplicar)"
+                value={filtroLibreInput}
+                onChange={(e) => setFiltroLibreInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setFiltroLibre(filtroLibreInput) }}
+                disabled={ejecutando}
+                className="flex-1 text-sm border border-borde rounded-lg px-3 py-1.5 bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50 placeholder:text-texto-muted"
+              />
+              {filtroLibreInput && (
+                <button type="button" onClick={() => { setFiltroLibreInput(''); setFiltroLibre('') }} disabled={ejecutando} className="px-2 rounded-lg border border-borde text-texto-muted hover:text-error hover:border-error transition-colors disabled:opacity-50">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Selector de directorio ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-texto-muted">
           Ejecuta el pipeline completo: Extraer → Resumir → Escanear → Chunkear → Vectorizar
@@ -284,7 +556,7 @@ export function TabPipelineTodo() {
         </div>
       )}
 
-      {/* Pipeline visual — círculos */}
+      {/* ── Pipeline visual — círculos ─────────────────────────────────────── */}
       <div className="flex items-center justify-center gap-0 flex-wrap">
         {PASOS.map((paso, i) => {
           const prog = progresos[paso.key]
@@ -329,24 +601,40 @@ export function TabPipelineTodo() {
         )}
       </div>
 
-      {!ejecutando && !todosListos && (
-        <div className="rounded-lg border border-borde bg-fondo-tarjeta p-4">
-          <p className="text-xs font-semibold text-texto-muted uppercase mb-3">Documentos por procesar</p>
-          <div className="grid grid-cols-5 gap-2">
-            {PASOS.map((paso) => {
-              const total = progresos[paso.key]?.total ?? 0
-              return (
-                <div key={paso.key} className="flex flex-col items-center gap-1">
-                  <span className="text-2xl font-bold" style={{ color: total > 0 ? paso.colorDisco : '#9CA3AF' }}>
-                    {total}
-                  </span>
-                  <span className="text-xs text-texto-muted text-center leading-tight">{paso.nombre}</span>
-                </div>
-              )
-            })}
-          </div>
+      {/* ── Estadísticas por estado (Cambio 4) ────────────────────────────── */}
+      <div className="rounded-lg border border-borde bg-fondo-tarjeta p-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-texto-muted uppercase">Estado del pipeline</p>
+          <button
+            type="button"
+            onClick={cargarConteos}
+            className="text-xs text-texto-muted hover:text-primario transition-colors"
+            disabled={ejecutando}
+          >
+            Actualizar
+          </button>
         </div>
-      )}
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+          {ESTADOS_PIPELINE.map((estado) => {
+            const count = conteosPorEstado[estado.codigo] ?? 0
+            return (
+              <div key={estado.codigo} className="flex flex-col items-center gap-1 py-2">
+                <span
+                  className="text-2xl font-bold tabular-nums"
+                  style={{ color: count > 0 ? estado.color : '#9CA3AF' }}
+                >
+                  {count}
+                </span>
+                <span className="text-[10px] text-texto-muted text-center leading-tight font-medium uppercase tracking-wide">
+                  {estado.nombre}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Nota: el bloque "DOCUMENTOS POR PROCESAR" anterior fue reemplazado por las estadísticas de arriba */}
     </div>
   )
 }
