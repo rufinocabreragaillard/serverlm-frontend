@@ -5,7 +5,9 @@ import {
   FolderOpen, Folder, FolderInput, FolderPlus, FolderTree,
   CheckCircle, AlertTriangle, RefreshCw, Upload, Download,
   ChevronRight, ChevronDown, ToggleLeft, ToggleRight, Shuffle, Plus, Pencil, Trash2, X,
+  Eye,
 } from 'lucide-react'
+import { iconoTipoArchivo } from '@/lib/icono-tipo-archivo'
 import { Boton } from '@/components/ui/boton'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
@@ -801,39 +803,46 @@ export default function PaginaCargaDocsUsuario() {
                 <p className="text-xs text-texto-muted text-center py-3">Sin documentos en este estado</p>
               ) : (
                 <>
-                  <div className="rounded-lg border border-borde overflow-hidden">
+                  <div className="rounded-lg border border-borde overflow-hidden bg-white">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-fondo border-b border-borde">
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-texto-muted">Archivo</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-texto-muted w-32">Estado</th>
-                          <th className="text-left px-3 py-2 text-xs font-semibold text-texto-muted w-36 hidden sm:table-cell">Modificado</th>
+                        <tr className="border-b border-borde">
+                          <th className="text-left px-3 py-2.5 text-xs font-semibold text-texto-muted uppercase">Documento</th>
+                          <th className="text-left px-3 py-2.5 text-xs font-semibold text-texto-muted uppercase hidden md:table-cell">Ubicación</th>
+                          <th className="text-left px-3 py-2.5 text-xs font-semibold text-texto-muted uppercase w-36">Estado</th>
+                          <th className="text-right px-3 py-2.5 text-xs font-semibold text-texto-muted uppercase w-24">Acciones</th>
                         </tr>
                       </thead>
                       <tbody>
                         {docsLista.map((doc) => {
                           const esRechazado = doc.codigo_estado_doc === 'NO_ANALIZABLE' || doc.codigo_estado_doc === 'NO_ESCANEABLE'
-                          const nombreArchivo = doc.nombre_documento.split('/').pop() ?? doc.nombre_documento
-                          const fecha = doc.fecha_modificacion
-                            ? new Date(doc.fecha_modificacion).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' })
-                            : '—'
+                          const esListo = doc.codigo_estado_doc === 'CHUNKEADO' || doc.codigo_estado_doc === 'VECTORIZADO'
+                          const varianteEstado: 'error' | 'exito' | 'advertencia' | 'primario' | 'neutro' = esRechazado ? 'error' : esListo ? 'exito' : doc.codigo_estado_doc === 'CARGADO' ? 'advertencia' : 'primario'
                           return (
-                            <tr key={doc.codigo_documento} className="border-b border-borde last:border-0 hover:bg-fondo/50 transition-colors">
-                              <td className="px-3 py-2 text-texto truncate max-w-0">
-                                <span className="block truncate" title={doc.ubicacion_documento ?? doc.nombre_documento}>{nombreArchivo}</span>
+                            <tr key={doc.codigo_documento} className="border-b border-borde last:border-0 hover:bg-fondo/30 transition-colors">
+                              <td className="px-3 py-2.5 max-w-0 w-[40%]">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {iconoTipoArchivo(doc.nombre_documento)}
+                                  <span className="font-medium text-sm truncate" title={doc.nombre_documento}>{doc.nombre_documento.split('/').pop() ?? doc.nombre_documento}</span>
+                                </div>
                               </td>
-                              <td className="px-3 py-2 w-32">
-                                <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                                  esRechazado
-                                    ? 'bg-red-100 text-red-700'
-                                    : doc.codigo_estado_doc === 'CHUNKEADO' || doc.codigo_estado_doc === 'VECTORIZADO'
-                                      ? 'bg-green-100 text-green-700'
-                                      : 'bg-gray-100 text-gray-600'
-                                }`}>
-                                  {doc.codigo_estado_doc ?? '—'}
-                                </span>
+                              <td className="px-3 py-2.5 text-xs text-texto-muted max-w-0 w-[30%] truncate hidden md:table-cell" title={doc.ubicacion_documento || ''}>{doc.ubicacion_documento || '—'}</td>
+                              <td className="px-3 py-2.5 w-36">
+                                <Insignia variante={varianteEstado}>{doc.codigo_estado_doc ?? '—'}</Insignia>
                               </td>
-                              <td className="px-3 py-2 text-xs text-texto-muted w-36 hidden sm:table-cell">{fecha}</td>
+                              <td className="px-3 py-2.5 w-24">
+                                <div className="flex items-center justify-end gap-1">
+                                  <div className="relative group/tip">
+                                    <button type="button" onClick={() => {/* TODO: ver detalle */}} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors">
+                                      <Eye size={15} />
+                                    </button>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 pointer-events-none group-hover/tip:opacity-100 transition-opacity z-50">
+                                      Ver detalle
+                                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
                             </tr>
                           )
                         })}

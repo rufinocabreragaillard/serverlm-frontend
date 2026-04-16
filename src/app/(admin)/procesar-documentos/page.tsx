@@ -1434,10 +1434,10 @@ function PaginaProcesarDocumentosInterna() {
                         <Eye size={15} />
                       </BotonAccion>
                       <BotonAccion
-                        tooltip="Eliminar"
+                        tooltip="Quitar de la BD"
                         onClick={() => setConfirmEliminarDoc(d)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors">
-                        <Trash2 size={15} />
+                        className="p-1.5 rounded-lg hover:bg-orange-50 text-texto-muted hover:text-orange-500 transition-colors">
+                        <XCircle size={15} />
                       </BotonAccion>
                     </div>
                   </TablaTd>
