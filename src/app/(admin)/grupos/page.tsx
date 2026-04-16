@@ -686,8 +686,8 @@ export default function PaginaGrupos() {
 
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => guardarGrupo(true)} cargando={guardando}>Guardar y salir</Boton>
             <Boton variante="primario" onClick={() => guardarGrupo(false)} cargando={guardando}>{grupoEditando ? tc('guardar') : t('crearGrupo')}</Boton>
+            <Boton variante="secundario" onClick={() => guardarGrupo(true)} cargando={guardando}>Guardar y salir</Boton>
           </div>
         </div>
       </Modal>
@@ -713,8 +713,8 @@ export default function PaginaGrupos() {
               )}
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => guardarEntidad(true)} cargando={guardandoEntidad}>Guardar y salir</Boton>
                 <Boton variante="primario" onClick={() => guardarEntidad(false)} cargando={guardandoEntidad}>{entidadEditando ? tc('guardar') : t('crearEntidad')}</Boton>
+                <Boton variante="secundario" onClick={() => guardarEntidad(true)} cargando={guardandoEntidad}>Guardar y salir</Boton>
               </div>
             </>
           )}
@@ -783,7 +783,7 @@ export default function PaginaGrupos() {
 
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Guardar y salir</Boton>
+                <Boton variante="secundario" onClick={() => setModalEntidad(false)}>Guardar y salir</Boton>
               </div>
             </>
           )}

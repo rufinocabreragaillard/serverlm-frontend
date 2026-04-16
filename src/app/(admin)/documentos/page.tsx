@@ -604,11 +604,11 @@ export default function PaginaDocumentos() {
               )}
 
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => guardar(true)} cargando={guardando}>
-                  Guardar y salir
-                </Boton>
                 <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>
                   {tc('guardar')}
+                </Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>
+                  Guardar y salir
                 </Boton>
               </div>
             </div>
@@ -651,11 +651,11 @@ export default function PaginaDocumentos() {
                 })
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => guardar(true)} cargando={guardando}>
-                  Guardar y salir
-                </Boton>
                 <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>
                   {tc('guardar')}
+                </Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>
+                  Guardar y salir
                 </Boton>
               </div>
             </div>
@@ -783,7 +783,7 @@ export default function PaginaDocumentos() {
                 </div>
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModal(false)}>
+                <Boton variante="secundario" onClick={() => setModal(false)}>
                   Guardar y salir
                 </Boton>
               </div>
