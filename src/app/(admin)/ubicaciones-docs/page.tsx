@@ -452,12 +452,16 @@ export default function PaginaUbicacionesDocs() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex gap-2 flex-wrap">
           <Boton variante="contorno" onClick={cargarUbicacionIndividual} cargando={cargandoUbicacion} title="Carga solamente el directorio seleccionado, sin incluir subdirectorios">
-            <FolderPlus size={16} />
-            {t('cargarUbicacion')}
+            <span className="pointer-events-none inline-flex items-center gap-2">
+              <FolderPlus size={16} />
+              {t('cargarUbicacion')}
+            </span>
           </Boton>
           <Boton variante="contorno" onClick={iniciarEscaneo} cargando={escaneando} title="Carga el directorio seleccionado y todos sus subdirectorios de forma recursiva">
-            <FolderInput size={16} />
-            {t('cargarDesdeDirectorioTitulo')}
+            <span className="pointer-events-none inline-flex items-center gap-2">
+              <FolderInput size={16} />
+              {t('cargarDesdeDirectorioTitulo')}
+            </span>
           </Boton>
           <Boton variante="contorno" tamano="sm" onClick={expandirTodos} disabled={ubicaciones.length === 0}>
             {t('expandirTodo')}
