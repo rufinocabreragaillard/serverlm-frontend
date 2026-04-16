@@ -897,8 +897,8 @@ export default function PaginaCargaDocsUsuario() {
       ══════════════════════════════════════════════════════════════════════ */}
 
       {/* Modal CRUD ubicación */}
-      <Modal abierto={modalUb} alCerrar={() => setModalUb(false)} titulo={editandoUb ? `Editar: ${editandoUb.nombre_ubicacion}` : 'Nueva Ubicación'} className={editandoUb?.tipo_ubicacion === 'AREA' ? 'max-w-2xl' : undefined}>
-        <div className="flex flex-col gap-4 min-w-[420px]">
+      <Modal abierto={modalUb} alCerrar={() => setModalUb(false)} titulo={editandoUb ? `Ubicación Docs.: ${editandoUb.nombre_ubicacion}` : 'Nueva Ubicación'} className="max-w-3xl">
+        <div className="flex flex-col gap-4">
           {editandoUb?.tipo_ubicacion === 'AREA' && (
             <div className="flex border-b border-borde">
               {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
@@ -909,31 +909,74 @@ export default function PaginaCargaDocsUsuario() {
             </div>
           )}
           {tabModalUb === 'datos' && (
-            <>
-              <Input etiqueta="Nombre" value={formUb.nombre_ubicacion} onChange={(e) => setFormUb({ ...formUb, nombre_ubicacion: e.target.value })} placeholder="Nombre de la ubicación" />
-              <Input etiqueta="Alias" value={formUb.alias_ubicacion} onChange={(e) => setFormUb({ ...formUb, alias_ubicacion: e.target.value })} placeholder="Nombre amigable" />
-              <Textarea etiqueta="Descripción" value={formUb.descripcion} onChange={(e) => setFormUb({ ...formUb, descripcion: e.target.value })} placeholder="Descripción opcional" rows={2} />
-              <div>
-                <label className="block text-sm font-medium text-texto mb-1.5">Carpeta padre</label>
-                <select className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none" value={formUb.codigo_ubicacion_superior} onChange={(e) => setFormUb({ ...formUb, codigo_ubicacion_superior: e.target.value })}>
-                  <option value="">— Raíz —</option>
-                  {opcionesPadre(editandoUb?.codigo_ubicacion).map((u) => <option key={u.codigo_ubicacion} value={u.codigo_ubicacion}>{'  '.repeat(u.nivel)}{u.nombre_ubicacion}</option>)}
-                </select>
+            <div className="grid grid-cols-2 gap-4">
+              {!editandoUb && (
+                <div className="col-span-2">
+                  <Input etiqueta="Nombre" value={formUb.nombre_ubicacion} onChange={(e) => setFormUb({ ...formUb, nombre_ubicacion: e.target.value })} placeholder="Nombre de la ubicación" />
+                </div>
+              )}
+              <Input etiqueta="Alias" value={formUb.alias_ubicacion} onChange={(e) => setFormUb({ ...formUb, alias_ubicacion: e.target.value })} placeholder="Alias corto opcional" />
+              {editandoUb && (
+                <div>
+                  <label className="block text-sm font-medium text-texto mb-1.5">Tipo</label>
+                  <select
+                    className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
+                    value={editandoUb.tipo_ubicacion}
+                    onChange={(e) => {
+                      const nuevoTipo = e.target.value as 'AREA' | 'CONTENIDO'
+                      if (nuevoTipo !== editandoUb.tipo_ubicacion) {
+                        setConfirmarTipo({ u: editandoUb, nuevoTipo })
+                      }
+                    }}
+                  >
+                    <option value="AREA">AREA</option>
+                    <option value="CONTENIDO">CONTENIDO</option>
+                  </select>
+                </div>
+              )}
+              <div className="col-span-2">
+                <Textarea etiqueta="Descripción" value={formUb.descripcion} onChange={(e) => setFormUb({ ...formUb, descripcion: e.target.value })} placeholder="Descripción de esta ubicación" rows={2} />
               </div>
-              {editandoUb && <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={formUb.ubicacion_habilitada} onChange={(e) => setFormUb({ ...formUb, ubicacion_habilitada: e.target.checked })} className="w-4 h-4 rounded border-borde text-primario" /><span className="text-sm font-medium text-texto">Habilitada</span></label>}
+              {!editandoUb && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-texto mb-1.5">Carpeta padre</label>
+                  <select className="w-full rounded-lg border border-borde bg-fondo-tarjeta px-3 py-2 text-sm text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none" value={formUb.codigo_ubicacion_superior} onChange={(e) => setFormUb({ ...formUb, codigo_ubicacion_superior: e.target.value })}>
+                    <option value="">— Raíz —</option>
+                    {opcionesPadre(editandoUb?.codigo_ubicacion).map((u) => <option key={u.codigo_ubicacion} value={u.codigo_ubicacion}>{'  '.repeat(u.nivel)}{u.nombre_ubicacion}</option>)}
+                  </select>
+                </div>
+              )}
+              {editandoUb && (
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={formUb.ubicacion_habilitada} onChange={(e) => setFormUb({ ...formUb, ubicacion_habilitada: e.target.checked })} className="w-4 h-4 rounded border-borde text-primario focus:ring-primario" />
+                  <span className="text-sm font-medium text-texto">Ubicación habilitada</span>
+                  <span className="text-xs text-texto-muted">(se aplica a todas las ubicaciones hijas)</span>
+                </label>
+              )}
               {editandoUb && <Input etiqueta="Código" value={formUb.codigo_ubicacion} disabled readOnly />}
-            </>
+            </div>
           )}
           {tabModalUb === 'prompt' && editandoUb?.tipo_ubicacion === 'AREA' && (
-            <textarea className="w-full h-40 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30" placeholder="Prompt para esta área..." value={formUb.prompt} onChange={(e) => setFormUb({ ...formUb, prompt: e.target.value })} />
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Texto que se inyecta en el prompt del LLM para dar contexto específico a esta área. Se usa en clasificación de documentos y análisis.
+              </p>
+              <textarea className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30" placeholder="Ej: Esta área gestiona documentos de contratación pública..." value={formUb.prompt} onChange={(e) => setFormUb({ ...formUb, prompt: e.target.value })} />
+            </div>
           )}
           {tabModalUb === 'system_prompt' && editandoUb?.tipo_ubicacion === 'AREA' && (
-            <textarea className="w-full h-40 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30" placeholder="System prompt para esta área..." value={formUb.system_prompt} onChange={(e) => setFormUb({ ...formUb, system_prompt: e.target.value })} />
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Instrucciones de sistema que se prependen a todas las conversaciones y análisis LLM en esta área. Define el tono, restricciones y rol del asistente.
+              </p>
+              <textarea className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30" placeholder="Ej: Eres un asistente especializado en documentación de esta área..." value={formUb.system_prompt} onChange={(e) => setFormUb({ ...formUb, system_prompt: e.target.value })} />
+            </div>
           )}
-          {errorUb && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-error">{errorUb}</div>}
-          <div className="flex gap-3 justify-end pt-1">
-            <Boton variante="contorno" onClick={() => setModalUb(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={() => guardarUb(true)} cargando={guardandoUb}>Guardar</Boton>
+          {errorUb && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorUb}</p></div>}
+          <div className="flex gap-3 justify-end pt-2">
+            <Boton variante="primario" onClick={() => guardarUb(false)} cargando={guardandoUb}>Guardar</Boton>
+            <Boton variante="secundario" onClick={() => guardarUb(true)} cargando={guardandoUb}>Guardar y salir</Boton>
+            <Boton variante="contorno" onClick={() => setModalUb(false)}>Cerrar</Boton>
           </div>
         </div>
       </Modal>

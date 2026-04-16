@@ -640,6 +640,9 @@ export default function PaginaUbicacionesDocs() {
             <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>
               Guardar y salir
             </Boton>
+            <Boton variante="contorno" onClick={() => setModal(false)}>
+              Cerrar
+            </Boton>
           </div>
         </div>
       </Modal>
