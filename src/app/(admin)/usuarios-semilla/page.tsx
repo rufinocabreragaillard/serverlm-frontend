@@ -36,7 +36,7 @@ type RolAsignado = {
 export default function PaginaUsuariosSemilla() {
   const t = useTranslations('usuariosSemilla')
   const tc = useTranslations('common')
-  const { usuario: usuarioActual, esSuperAdmin } = useAuth()
+  const { usuario: usuarioActual, esSuperAdmin, aplicacionActiva } = useAuth()
 
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [cargando, setCargando] = useState(true)
@@ -197,8 +197,13 @@ export default function PaginaUsuariosSemilla() {
   }, [form.entidad_por_defecto])
 
   // ── Abrir modal ────────────────────────────────────────────────────────────
+  // ── Form simplificado para creación (Nuevo Usuario Semilla) ────────────
+  const [formNuevo, setFormNuevo] = useState({ correo: '', nombre: '', empresa: '' })
+  const [creandoSemilla, setCreandoSemilla] = useState(false)
+
   const abrirNuevo = () => {
     setUsuarioEditando(null)
+    setFormNuevo({ correo: '', nombre: '', empresa: '' })
     setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '',
       id_rol_principal: '', aplicacion_por_defecto: '', invitar: true, sidebar_colapsado: false,
@@ -211,6 +216,55 @@ export default function PaginaUsuariosSemilla() {
     setRolesUsuario([])
     setTabActiva('datos')
     setModalAbierto(true)
+  }
+
+  const crearUsuarioSemilla = async () => {
+    setError('')
+    if (!formNuevo.correo || !formNuevo.nombre || !formNuevo.empresa) {
+      setError('Todos los campos son obligatorios')
+      return
+    }
+    setCreandoSemilla(true)
+    try {
+      // 1. Crear grupo con el nombre de empresa
+      const grupo = await gruposApi.crear({ nombre: formNuevo.empresa })
+
+      // 2. Crear entidad asociada al grupo con el mismo nombre
+      const entidad = await entidadesApi.crear({
+        nombre: formNuevo.empresa,
+        codigo_grupo: grupo.codigo_grupo,
+      })
+
+      // 3. Crear usuario con tipo ADMINISTRADOR
+      const nuevoUsuario = await usuariosApi.crear({
+        codigo_usuario: formNuevo.correo.toLowerCase(),
+        nombre: formNuevo.nombre,
+        alias: formNuevo.nombre,
+        tipo: 'ADMINISTRADOR',
+        grupo_por_defecto: grupo.codigo_grupo,
+        entidad_por_defecto: entidad.codigo_entidad,
+        aplicacion_por_defecto: aplicacionActiva || undefined,
+        invitar: true,
+      })
+
+      // 4. Asignar todos los roles de tipo ADMINISTRADOR del grupo
+      const rolesDelGrupo = await rolesApi.listar(grupo.codigo_grupo, true)
+      const rolesAdmin = rolesDelGrupo.filter((r: Rol) => r.tipo === 'ADMINISTRADOR')
+      for (const rol of rolesAdmin) {
+        try {
+          await usuariosApi.asignarRol(nuevoUsuario.codigo_usuario, rol.id_rol, grupo.codigo_grupo)
+        } catch {
+          // Si falla un rol individual, continuar con los demás
+        }
+      }
+
+      setModalAbierto(false)
+      cargarUsuarios()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al crear usuario semilla')
+    } finally {
+      setCreandoSemilla(false)
+    }
   }
 
   const abrirEditar = (u: Usuario) => {
@@ -581,25 +635,59 @@ export default function PaginaUsuariosSemilla() {
             </div>
           )}
 
-          {tabActiva === 'datos' && (
+          {tabActiva === 'datos' && !usuarioEditando && (
+            <>
+              <p className="text-sm text-texto-muted bg-fondo border border-borde rounded-lg px-4 py-3">
+                El usuario recibirá una invitación por correo. Se creará automáticamente el grupo, la empresa y se asignarán los roles de administración.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <Input
+                  etiqueta="Correo electrónico *"
+                  type="email"
+                  value={formNuevo.correo}
+                  onChange={(e) => setFormNuevo({ ...formNuevo, correo: e.target.value.toLowerCase() })}
+                  placeholder="usuario@correo.com"
+                />
+                <div className="grid grid-cols-2 gap-x-4">
+                  <Input
+                    etiqueta="Nombre completo *"
+                    value={formNuevo.nombre}
+                    onChange={(e) => setFormNuevo({ ...formNuevo, nombre: e.target.value })}
+                    placeholder="Nombre Apellido"
+                  />
+                  <Input
+                    etiqueta="Nombre de empresa *"
+                    value={formNuevo.empresa}
+                    onChange={(e) => setFormNuevo({ ...formNuevo, empresa: e.target.value })}
+                    placeholder="Mi Empresa S.A."
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                  <p className="text-sm text-error">{error}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cancelar</Boton>
+                <Boton variante="primario" onClick={crearUsuarioSemilla} cargando={creandoSemilla}>
+                  Crear usuario semilla
+                </Boton>
+              </div>
+            </>
+          )}
+
+          {tabActiva === 'datos' && usuarioEditando && (
             <>
           <p className="text-sm text-texto-muted bg-fondo border border-borde rounded-lg px-4 py-3">
             {t('aviso')}
           </p>
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-            {/* Email — solo al crear */}
-            {!usuarioEditando ? (
-              <Input
-                etiqueta="Correo (login) *"
-                type="email"
-                value={form.codigo_usuario}
-                onChange={(e) => setForm({ ...form, codigo_usuario: e.target.value.toLowerCase() })}
-                placeholder="admin@grupo.cl"
-              />
-            ) : (
               <Input etiqueta="Correo" value={form.codigo_usuario} disabled readOnly />
-            )}
 
             <Input
               etiqueta="Nombre completo *"
@@ -621,19 +709,6 @@ export default function PaginaUsuariosSemilla() {
             />
           </div>
 
-          {/* Invitar — solo al crear */}
-          {!usuarioEditando && (
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={form.invitar}
-                onChange={(e) => setForm({ ...form, invitar: e.target.checked })}
-                className="w-4 h-4 rounded border-borde text-primario focus:ring-primario"
-              />
-              <span className="text-sm text-texto">Enviar invitación por correo al crear</span>
-            </label>
-          )}
-
           {/* Sidebar colapsado por defecto */}
           <label className="flex items-center gap-3 cursor-pointer select-none">
             <input
@@ -653,12 +728,8 @@ export default function PaginaUsuariosSemilla() {
 
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardar} cargando={guardando}>
-              {usuarioEditando ? 'Guardar' : 'Crear usuario semilla'}
-            </Boton>
-            {usuarioEditando && (
-              <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
-            )}
+            <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+            <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
           </div>
             </>
           )}
