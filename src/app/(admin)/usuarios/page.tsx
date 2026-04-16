@@ -112,6 +112,7 @@ export default function PaginaUsuarios() {
     alias: '',
     telefono: '',
     descripcion: '',
+    tipo: 'USUARIO',
     id_rol_principal: '',
     grupo_por_defecto: '',
     entidad_por_defecto: '',
@@ -227,7 +228,7 @@ export default function PaginaUsuarios() {
   // ── Abrir modal ────────────────────────────────────────────────────────────
   const abrirNuevo = () => {
     setUsuarioEditando(null)
-    setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '', id_rol_principal: '',
+    setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '', tipo: 'USUARIO', id_rol_principal: '',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '', aplicacion_por_defecto: '', invitar: true, prompt: '', fecha_inicial: '', fecha_final: '' })
     setError('')
     setGuardando(false)
@@ -247,6 +248,7 @@ export default function PaginaUsuarios() {
       alias: u.alias || '',
       telefono: u.telefono || '',
       descripcion: u.descripcion || '',
+      tipo: u.tipo || 'USUARIO',
       id_rol_principal: u.id_rol_principal != null ? String(u.id_rol_principal) : '',
       grupo_por_defecto: u.grupo_por_defecto || '',
       entidad_por_defecto: u.entidad_por_defecto || '',
@@ -299,15 +301,23 @@ export default function PaginaUsuarios() {
           fecha_final: form.fecha_final || undefined,
         })
       } else {
-        await usuariosApi.crear({
+        const creado = await usuariosApi.crear({
           codigo_usuario: form.codigo_usuario,
           nombre: form.nombre,
-          alias: form.alias || undefined,
-          telefono: form.telefono || undefined,
-          descripcion: form.descripcion || undefined,
-          id_rol_principal: form.id_rol_principal ? Number(form.id_rol_principal) : null,
+          tipo: form.tipo || 'USUARIO',
           invitar: form.invitar,
         })
+        const nuevoUsuario: Usuario = {
+          codigo_usuario: form.codigo_usuario,
+          nombre: form.nombre,
+          activo: true,
+          grupo_por_defecto: grupoActivo,
+          ...creado,
+        }
+        setUsuarioEditando(nuevoUsuario)
+        setForm((f) => ({ ...f, grupo_por_defecto: grupoActivo }))
+        cargarEntidadesUsuario(form.codigo_usuario)
+        cargarGruposUsuario(form.codigo_usuario)
       }
       cargar()
       return true
@@ -687,87 +697,118 @@ export default function PaginaUsuarios() {
           {/* ── Tab Datos ─────────────────────────────────────────────────── */}
           {tabActiva === 'datos' && (
             <>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                <div className="col-span-2">
-                  <Input
-                    etiqueta={t('etiquetaCorreo')}
-                    type="email"
-                    value={form.codigo_usuario}
-                    onChange={(e) => setForm({ ...form, codigo_usuario: e.target.value })}
-                    disabled={!!usuarioEditando}
-                    placeholder="usuario@correo.com"
-                  />
-                </div>
-                <Input
-                  etiqueta={t('etiquetaNombre')}
-                  value={form.nombre}
-                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  placeholder="Nombre Apellido"
-                />
-                <Input
-                  etiqueta={t('etiquetaAlias')}
-                  value={form.alias}
-                  onChange={(e) => setForm({ ...form, alias: e.target.value })}
-                  placeholder="Alias del usuario"
-                />
-
-                {/* Teléfono + indicador de verificación */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-texto">Teléfono</label>
-                  <div className="flex gap-2 items-center">
-                    <div className="flex-1">
+              {!usuarioEditando ? (
+                /* ── Modo creación: correo + nombre + tipo ── */
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="col-span-2">
                       <Input
-                        value={form.telefono}
-                        onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                        placeholder="+56 9 1234 5678"
+                        etiqueta={t('etiquetaCorreo')}
+                        type="email"
+                        value={form.codigo_usuario}
+                        onChange={(e) => setForm({ ...form, codigo_usuario: e.target.value })}
+                        placeholder="usuario@correo.com"
                       />
                     </div>
-                    {usuarioEditando && form.telefono && (
-                      <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full shrink-0 ${
-                        usuarioEditando.fono_verificado
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-yellow-50 text-yellow-700'
-                      }`}>
-                        {usuarioEditando.fono_verificado
-                          ? <><Phone size={12} /> Verificado</>
-                          : <><PhoneOff size={12} /> Sin verificar</>
-                        }
-                      </div>
-                    )}
+                    <Input
+                      etiqueta={t('etiquetaNombre')}
+                      value={form.nombre}
+                      onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                      placeholder="Nombre Apellido"
+                    />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-texto">Tipo</label>
+                      <select
+                        value={form.tipo}
+                        onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                        className={selectClass}
+                      >
+                        <option value="USUARIO">Usuario</option>
+                        <option value="ADMINISTRADOR">Administrador</option>
+                      </select>
+                    </div>
                   </div>
-                  {usuarioEditando && form.telefono !== (usuarioEditando.telefono || '') && (
-                    <p className="text-xs text-yellow-600">Al guardar, se requerirá verificar el nuevo teléfono</p>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                      <p className="text-sm text-error">{error}</p>
+                    </div>
                   )}
+                  <div className="flex gap-3 justify-end pt-2">
+                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
+                    <Boton variante="primario" onClick={async () => { if (await guardar()) setTabActiva('inicializacion') }} cargando={guardando}>Siguiente</Boton>
+                  </div>
                 </div>
-                <div /> {/* spacer */}
-
-                <div className="col-span-2">
-                  <Textarea
-                    etiqueta={t('etiquetaDescripcion')}
-                    value={form.descripcion}
-                    onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                  <p className="text-sm text-error">{error}</p>
-                </div>
-              )}
-
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
-                {usuarioEditando ? (
-                  <>
+              ) : (
+                /* ── Modo edición: todos los campos ── */
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <div className="col-span-2">
+                      <Input
+                        etiqueta={t('etiquetaCorreo')}
+                        type="email"
+                        value={form.codigo_usuario}
+                        disabled
+                        placeholder="usuario@correo.com"
+                      />
+                    </div>
+                    <Input
+                      etiqueta={t('etiquetaNombre')}
+                      value={form.nombre}
+                      onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                      placeholder="Nombre Apellido"
+                    />
+                    <Input
+                      etiqueta={t('etiquetaAlias')}
+                      value={form.alias}
+                      onChange={(e) => setForm({ ...form, alias: e.target.value })}
+                      placeholder="Alias del usuario"
+                    />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-texto">Teléfono</label>
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1">
+                          <Input
+                            value={form.telefono}
+                            onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                            placeholder="+56 9 1234 5678"
+                          />
+                        </div>
+                        {usuarioEditando && form.telefono && (
+                          <div className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full shrink-0 ${
+                            usuarioEditando.fono_verificado
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-yellow-50 text-yellow-700'
+                          }`}>
+                            {usuarioEditando.fono_verificado
+                              ? <><Phone size={12} /> Verificado</>
+                              : <><PhoneOff size={12} /> Sin verificar</>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div />
+                    <div className="col-span-2">
+                      <Textarea
+                        etiqueta={t('etiquetaDescripcion')}
+                        value={form.descripcion}
+                        onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                      <p className="text-sm text-error">{error}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-3 justify-end pt-2">
+                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
                     <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
                     <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
-                  </>
-                ) : (
-                  <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Crear usuario</Boton>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -882,6 +923,7 @@ export default function PaginaUsuarios() {
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
                 <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+                <Boton variante="primario" onClick={async () => { if (await guardar()) setTabActiva('entidades') }} cargando={guardando}>Siguiente</Boton>
                 <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
               </div>
             </div>
@@ -996,6 +1038,7 @@ export default function PaginaUsuarios() {
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
                 <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+                <Boton variante="primario" onClick={() => setTabActiva('roles')}>Siguiente</Boton>
                 <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
               </div>
             </div>

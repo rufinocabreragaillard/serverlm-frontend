@@ -141,6 +141,7 @@ export interface Usuario {
 export interface CrearUsuarioRequest {
   codigo_usuario: string
   nombre: string
+  tipo?: string
   alias?: string
   password?: string
   telefono?: string
