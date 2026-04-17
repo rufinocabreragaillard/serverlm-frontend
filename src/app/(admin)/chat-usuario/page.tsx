@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { useEffect, useState, useRef, useCallback, KeyboardEvent } from 'react'
-import { Plus, Trash2, Send, MessageCircle, Pencil, Check, X, ScrollText } from 'lucide-react'
+import { Plus, Trash2, Send, MessageCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Boton } from '@/components/ui/boton'
@@ -14,7 +14,7 @@ import type { ChatConversacion, ChatMensaje } from '@/lib/tipos'
 const CODIGO_FUNCION = 'CHAT-USUARIO'
 
 export default function PaginaChatUsuario() {
-  const { grupoActivo, usuario } = useAuth()
+  const { grupoActivo } = useAuth()
   const t = useTranslations('chat')
   const tc = useTranslations('common')
 
@@ -26,8 +26,6 @@ export default function PaginaChatUsuario() {
   // Conversación activa
   const [convActivaId, setConvActivaId] = useState<number | null>(null)
   const [mensajes, setMensajes] = useState<ChatMensaje[]>([])
-  const [tituloActivo, setTituloActivo] = useState('')
-  const [nombreModelo, setNombreModelo] = useState<string | null>(null)
   const [cargandoConv, setCargandoConv] = useState(false)
   const [errorConv, setErrorConv] = useState('')
 
@@ -36,21 +34,9 @@ export default function PaginaChatUsuario() {
   const [enviando, setEnviando] = useState(false)
   const [respuestaEnCurso, setRespuestaEnCurso] = useState('')
 
-  // Edición de título
-  const [editandoTitulo, setEditandoTitulo] = useState(false)
-  const [tituloEdit, setTituloEdit] = useState('')
-
   // Confirmación de eliminación
   const [convAEliminar, setConvAEliminar] = useState<ChatConversacion | null>(null)
   const [eliminando, setEliminando] = useState(false)
-
-  // Preview de system prompt (solo super-admin)
-  const [mostrarPreviewPrompt, setMostrarPreviewPrompt] = useState(false)
-  const esSuperAdmin = grupoActivo === 'ADMIN'
-  const systemPromptPreview = usuario?.menu
-    ?.flatMap((r) => r.funciones)
-    .find((f) => f.url === '/chat-usuario')
-    ?.system_prompt ?? null
 
   // Refs para auto-scroll
   const mensajesEndRef = useRef<HTMLDivElement>(null)
@@ -85,8 +71,6 @@ export default function PaginaChatUsuario() {
   useEffect(() => {
     setConvActivaId(null)
     setMensajes([])
-    setTituloActivo('')
-    setNombreModelo(null)
   }, [grupoActivo])
 
   // ── Carga de la conversación activa ─────────────────────────────────────
@@ -96,8 +80,6 @@ export default function PaginaChatUsuario() {
     try {
       const data = await chatApi.obtenerConversacion(id)
       setMensajes(data.mensajes || [])
-      setTituloActivo(data.titulo)
-      setNombreModelo(data.nombre_modelo || null)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Error al cargar conversación'
       setErrorConv(msg)
@@ -189,24 +171,6 @@ export default function PaginaChatUsuario() {
     }
   }
 
-  const iniciarEditarTitulo = () => {
-    setTituloEdit(tituloActivo)
-    setEditandoTitulo(true)
-  }
-
-  const guardarTitulo = async () => {
-    if (!convActivaId || !tituloEdit.trim()) {
-      setEditandoTitulo(false)
-      return
-    }
-    try {
-      await chatApi.renombrarConversacion(convActivaId, tituloEdit.trim())
-      setTituloActivo(tituloEdit.trim())
-      cargarLista()
-    } catch { /* error silencioso */ }
-    setEditandoTitulo(false)
-  }
-
   const confirmarEliminar = async () => {
     if (!convAEliminar) return
     setEliminando(true)
@@ -218,7 +182,6 @@ export default function PaginaChatUsuario() {
       if (convActivaId === idEliminado) {
         setConvActivaId(null)
         setMensajes([])
-        setTituloActivo('')
       }
       await cargarLista()
     } catch { /* */ }
@@ -292,51 +255,6 @@ export default function PaginaChatUsuario() {
           </div>
         ) : (
           <>
-            {/* Header con título y modelo */}
-            <div className="px-4 py-3 border-b border-borde flex items-center gap-2">
-              {editandoTitulo ? (
-                <>
-                  <input
-                    type="text"
-                    value={tituloEdit}
-                    onChange={(e) => setTituloEdit(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') guardarTitulo() }}
-                    autoFocus
-                    className="flex-1 px-2 py-1 text-sm border border-borde rounded bg-surface text-texto focus:border-primario focus:ring-1 focus:ring-primario outline-none"
-                  />
-                  <button onClick={guardarTitulo} className="p-1 text-exito hover:bg-green-50 rounded"><Check size={16} /></button>
-                  <button onClick={() => setEditandoTitulo(false)} className="p-1 text-texto-muted hover:bg-fondo rounded"><X size={16} /></button>
-                </>
-              ) : (
-                <>
-                  <h2 className="flex-1 text-base font-semibold text-texto truncate" title={tituloActivo}>
-                    {tituloActivo || t('titulo')}
-                  </h2>
-                  <button
-                    onClick={iniciarEditarTitulo}
-                    className="p-1 rounded hover:bg-fondo text-texto-muted"
-                    title="Renombrar"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                </>
-              )}
-              {nombreModelo && (
-                <span className="text-xs bg-primario/10 text-primario px-2 py-0.5 rounded ml-2 shrink-0">
-                  {nombreModelo}
-                </span>
-              )}
-              {esSuperAdmin && (
-                <button
-                  onClick={() => setMostrarPreviewPrompt((v) => !v)}
-                  className={`p-1 rounded hover:bg-fondo ml-1 shrink-0 ${mostrarPreviewPrompt ? 'text-primario' : 'text-texto-muted'}`}
-                  title="Ver system prompt activo"
-                >
-                  <ScrollText size={14} />
-                </button>
-              )}
-            </div>
-
             {/* Mensajes */}
             <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
               {cargandoConv ? (
@@ -373,19 +291,6 @@ export default function PaginaChatUsuario() {
             {errorConv && (
               <div className="px-4 py-2 text-sm text-error bg-red-50 border-t border-red-200">
                 {errorConv}
-              </div>
-            )}
-
-            {/* Preview system prompt (solo super-admin) */}
-            {mostrarPreviewPrompt && (
-              <div className="px-3 pt-3">
-                <div className="border border-borde rounded-lg p-3 bg-surface text-xs font-mono text-texto-muted whitespace-pre-wrap max-h-48 overflow-y-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-texto">System Prompt activo</span>
-                    <button onClick={() => setMostrarPreviewPrompt(false)} className="text-texto-muted hover:text-texto">✕</button>
-                  </div>
-                  {systemPromptPreview || '(sin system prompt configurado)'}
-                </div>
               </div>
             )}
 
