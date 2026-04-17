@@ -68,7 +68,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         actualizarMapaFunciones(ctx.menu)
         // Cargar traducciones de campos de BD del sistema
         const { setTraducciones } = await import('@/lib/traducir')
-        setTraducciones(ctx.traducciones ?? {}, ctx.locale ?? 'es')
+        const localeUsuario = ctx.locale ?? 'es'
+        setTraducciones(ctx.traducciones ?? {}, localeUsuario)
+        // Sincronizar NEXT_LOCALE cookie con el locale del usuario en BD.
+        // Si el cookie del browser difiere, actualizarlo y recargar para que
+        // next-intl cargue los mensajes estáticos del idioma correcto.
+        if (typeof document !== 'undefined') {
+          const cookieActual = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1]
+          if (cookieActual && cookieActual !== localeUsuario) {
+            document.cookie = `NEXT_LOCALE=${localeUsuario};path=/;max-age=31536000`
+            window.location.reload()
+            return ctx
+          } else if (!cookieActual) {
+            document.cookie = `NEXT_LOCALE=${localeUsuario};path=/;max-age=31536000`
+          }
+        }
         return ctx
       } catch (e: unknown) {
         const esUltimoIntento = intento === MAX_INTENTOS
