@@ -18,6 +18,7 @@ import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 import { abrirArchivoPorRuta } from '@/lib/extraer-texto'
 import { getDirectoryHandle, ensureReadPermission } from '@/lib/file-handle-store'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabModal = 'datos' | 'caracteristicas' | 'chunks'
 
@@ -306,9 +307,10 @@ export default function PaginaDocumentos() {
   const filtrados = documentos
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
       {/* Header */}
-      <div>
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
@@ -605,10 +607,13 @@ export default function PaginaDocumentos() {
 
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="secundario" onClick={() => setModal(false)}>
-                  Salir
+                  {tc('salir')}
+                </Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>
+                  {tc('grabarYSalir')}
                 </Boton>
                 <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>
-                  {tc('guardar')}
+                  {tc('grabar')}
                 </Boton>
               </div>
             </div>
@@ -652,10 +657,13 @@ export default function PaginaDocumentos() {
               )}
               <div className="flex gap-3 justify-end pt-2">
                 <Boton variante="secundario" onClick={() => setModal(false)}>
-                  Salir
+                  {tc('salir')}
+                </Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>
+                  {tc('grabarYSalir')}
                 </Boton>
                 <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>
-                  {tc('guardar')}
+                  {tc('grabar')}
                 </Boton>
               </div>
             </div>

@@ -11,6 +11,7 @@ import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '
 import { datosBasicosApi } from '@/lib/api'
 import type { CategoriaParametro, TipoParametro } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabId = 'categorias' | 'tipos'
 
@@ -73,7 +74,7 @@ export default function PaginaDatosBasicos() {
     setModalCat(true)
   }
 
-  const guardarCategoria = async () => {
+  const guardarCategoria = async (cerrar = true) => {
     if (!formCat.categoria_parametro || !formCat.nombre) {
       setErrorCat('El código y el nombre son obligatorios')
       return
@@ -93,7 +94,7 @@ export default function PaginaDatosBasicos() {
           descripcion: formCat.descripcion || undefined,
         })
       }
-      setModalCat(false)
+      if (cerrar) setModalCat(false)
       cargarCategorias()
     } catch (e) {
       setErrorCat(e instanceof Error ? e.message : 'Error al guardar')
@@ -150,7 +151,7 @@ export default function PaginaDatosBasicos() {
     setModalTipo(true)
   }
 
-  const guardarTipo = async () => {
+  const guardarTipo = async (cerrar = true) => {
     if (!formTipo.categoria_parametro || !formTipo.tipo_parametro || !formTipo.nombre) {
       setErrorTipo('La categoría, el código y el nombre son obligatorios')
       return
@@ -172,7 +173,7 @@ export default function PaginaDatosBasicos() {
           descripcion: formTipo.descripcion || undefined,
         })
       }
-      setModalTipo(false)
+      if (cerrar) setModalTipo(false)
       cargarTipos()
     } catch (e) {
       setErrorTipo(e instanceof Error ? e.message : 'Error al guardar')
@@ -198,9 +199,10 @@ export default function PaginaDatosBasicos() {
     : tipos
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
       {/* Encabezado */}
-      <div>
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">Datos Básicos</h2>
         <p className="text-sm text-texto-muted mt-1">Configuración de categorías y tipos de parámetros del sistema</p>
       </div>
@@ -480,11 +482,14 @@ export default function PaginaDatosBasicos() {
           )}
 
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalCat(false)}>
-              Cancelar
+            <Boton variante="secundario" onClick={() => setModalCat(false)}>
+              Salir
             </Boton>
-            <Boton variante="primario" onClick={guardarCategoria} cargando={guardandoCat}>
-              {catEditando ? 'Guardar cambios' : 'Crear categoría'}
+            <Boton variante="secundario" onClick={() => guardarCategoria(true)} cargando={guardandoCat}>
+              Grabar y Salir
+            </Boton>
+            <Boton variante="primario" onClick={() => guardarCategoria(false)} cargando={guardandoCat}>
+              {catEditando ? 'Grabar' : 'Crear categoría'}
             </Boton>
           </div>
         </div>
@@ -540,11 +545,14 @@ export default function PaginaDatosBasicos() {
           )}
 
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalTipo(false)}>
-              Cancelar
+            <Boton variante="secundario" onClick={() => setModalTipo(false)}>
+              Salir
             </Boton>
-            <Boton variante="primario" onClick={guardarTipo} cargando={guardandoTipo}>
-              {tipoEditando ? 'Guardar cambios' : 'Crear tipo'}
+            <Boton variante="secundario" onClick={() => guardarTipo(true)} cargando={guardandoTipo}>
+              Grabar y Salir
+            </Boton>
+            <Boton variante="primario" onClick={() => guardarTipo(false)} cargando={guardandoTipo}>
+              {tipoEditando ? 'Grabar' : 'Crear tipo'}
             </Boton>
           </div>
         </div>

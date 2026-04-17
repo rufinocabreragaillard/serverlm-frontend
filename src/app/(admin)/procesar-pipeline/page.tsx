@@ -26,6 +26,7 @@ import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 import { useColaRealtime } from '@/hooks/useColaRealtime'
 import type { UbicacionDoc, Documento } from '@/lib/tipos'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 
@@ -542,8 +543,9 @@ export default function PaginaCargaDocsUsuario() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">Carga tus Ubicaciones y Documentos</h2>
         <p className="text-sm text-texto-muted mt-1">Configura las ubicaciones y procesa tus documentos paso a paso.</p>
       </div>
@@ -1005,7 +1007,8 @@ export default function PaginaCargaDocsUsuario() {
           {errorUb && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorUb}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="secundario" onClick={() => setModalUb(false)}>Salir</Boton>
-            <Boton variante="primario" onClick={() => guardarUb(false)} cargando={guardandoUb}>Guardar</Boton>
+            <Boton variante="secundario" onClick={() => guardarUb(true)} cargando={guardandoUb}>Grabar y Salir</Boton>
+            <Boton variante="primario" onClick={() => guardarUb(false)} cargando={guardandoUb}>Grabar</Boton>
           </div>
         </div>
       </Modal>
@@ -1080,7 +1083,7 @@ export default function PaginaCargaDocsUsuario() {
                 <div className="border border-borde rounded-lg p-3 text-center"><p className="text-2xl font-bold text-primario">{resultadoSync.actualizadas}</p><p className="text-xs text-texto-muted">Actualizadas</p></div>
                 {resultadoSync.excluidas > 0 && <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-amber-600">{resultadoSync.excluidas}</p><p className="text-xs text-amber-700">Excluidas</p></div>}
               </div>
-              <div className="flex justify-end pt-1"><Boton variante="primario" onClick={cerrarModalCarga}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-1"><Boton variante="primario" onClick={cerrarModalCarga}>Salir</Boton></div>
             </>
           )}
         </div>
@@ -1103,7 +1106,7 @@ export default function PaginaCargaDocsUsuario() {
               </>)}
             </div>
             <div className="flex justify-end pt-2">
-              <Boton variante="contorno" onClick={() => setDocDetalle(null)}>Cerrar</Boton>
+              <Boton variante="contorno" onClick={() => setDocDetalle(null)}>Salir</Boton>
             </div>
           </div>
         )}

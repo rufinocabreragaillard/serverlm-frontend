@@ -29,14 +29,16 @@ import type {
   CaracteristicaDocumento,
   CategoriaConCaracteristicasDocs,
   EstadoCanonicoConversacion,
-  EstadoCanonicoCompromiso,
+  EstadoCanonicoTarea,
   TipoConversacion,
-  TipoCompromiso,
+  TipoTarea,
   EstadoConversacion,
-  EstadoCompromiso,
+  EstadoTarea,
+  CategoriaTarea,
+  TipoCanonicoTarea,
   Conversacion,
   ParticipanteConversacion,
-  Compromiso,
+  Tarea,
   UbicacionDoc,
   EstadoDoc,
   ColaEstadoDoc,
@@ -743,104 +745,124 @@ export const personasApi = {
     api.delete(`/personas/${id}/caracteristicas/${idCar}`),
 }
 
-// ─── Compromisos: Datos Básicos ──────────────────────────────────────────────
+// ─── Tareas: Datos Básicos ───────────────────────────────────────────────────
 
-export const compromisosDatosBasicosApi = {
+export const tareasDatosBasicosApi = {
   // Canónicos conversación
   listarCanonicosCnv: () =>
-    api.get<EstadoCanonicoConversacion[]>('/compromisos-datos-basicos/canonicos-conversacion').then((r) => r.data),
+    api.get<EstadoCanonicoConversacion[]>('/tareas-datos-basicos/canonicos-conversacion').then((r) => r.data),
   crearCanonicosCnv: (datos: Partial<EstadoCanonicoConversacion>) =>
-    api.post('/compromisos-datos-basicos/canonicos-conversacion', datos).then((r) => r.data),
+    api.post('/tareas-datos-basicos/canonicos-conversacion', datos).then((r) => r.data),
   actualizarCanonicosCnv: (codigo: string, datos: Partial<EstadoCanonicoConversacion>) =>
-    api.put(`/compromisos-datos-basicos/canonicos-conversacion/${codigo}`, datos).then((r) => r.data),
+    api.put(`/tareas-datos-basicos/canonicos-conversacion/${codigo}`, datos).then((r) => r.data),
   eliminarCanonicosCnv: (codigo: string) =>
-    api.delete(`/compromisos-datos-basicos/canonicos-conversacion/${codigo}`),
+    api.delete(`/tareas-datos-basicos/canonicos-conversacion/${codigo}`),
 
-  // Canónicos compromiso
-  listarCanonicosCmp: () =>
-    api.get<EstadoCanonicoCompromiso[]>('/compromisos-datos-basicos/canonicos-compromiso').then((r) => r.data),
-  crearCanonicosCmp: (datos: Partial<EstadoCanonicoCompromiso>) =>
-    api.post('/compromisos-datos-basicos/canonicos-compromiso', datos).then((r) => r.data),
-  actualizarCanonicosCmp: (codigo: string, datos: Partial<EstadoCanonicoCompromiso>) =>
-    api.put(`/compromisos-datos-basicos/canonicos-compromiso/${codigo}`, datos).then((r) => r.data),
-  eliminarCanonicosCmp: (codigo: string) =>
-    api.delete(`/compromisos-datos-basicos/canonicos-compromiso/${codigo}`),
+  // Canónicos tarea
+  listarCanonicosTar: () =>
+    api.get<EstadoCanonicoTarea[]>('/tareas-datos-basicos/canonicos-tarea').then((r) => r.data),
+  crearCanonicosTar: (datos: Partial<EstadoCanonicoTarea>) =>
+    api.post('/tareas-datos-basicos/canonicos-tarea', datos).then((r) => r.data),
+  actualizarCanonicosTar: (codigo: string, datos: Partial<EstadoCanonicoTarea>) =>
+    api.put(`/tareas-datos-basicos/canonicos-tarea/${codigo}`, datos).then((r) => r.data),
+  eliminarCanonicosTar: (codigo: string) =>
+    api.delete(`/tareas-datos-basicos/canonicos-tarea/${codigo}`),
+
+  // Categorías de tarea (globales)
+  listarCategorias: () =>
+    api.get<CategoriaTarea[]>('/tareas-datos-basicos/categorias').then((r) => r.data),
+  crearCategoria: (datos: Partial<CategoriaTarea>) =>
+    api.post('/tareas-datos-basicos/categorias', datos).then((r) => r.data),
+  actualizarCategoria: (codigo: string, datos: Partial<CategoriaTarea>) =>
+    api.put(`/tareas-datos-basicos/categorias/${codigo}`, datos).then((r) => r.data),
+  eliminarCategoria: (codigo: string) =>
+    api.delete(`/tareas-datos-basicos/categorias/${codigo}`),
+
+  // Tipos canónicos (globales)
+  listarTiposCanonicos: () =>
+    api.get<TipoCanonicoTarea[]>('/tareas-datos-basicos/tipos-canonicos').then((r) => r.data),
+  crearTipoCanonico: (datos: Partial<TipoCanonicoTarea>) =>
+    api.post('/tareas-datos-basicos/tipos-canonicos', datos).then((r) => r.data),
+  actualizarTipoCanonico: (codigo: string, datos: Partial<TipoCanonicoTarea>) =>
+    api.put(`/tareas-datos-basicos/tipos-canonicos/${codigo}`, datos).then((r) => r.data),
+  eliminarTipoCanonico: (codigo: string) =>
+    api.delete(`/tareas-datos-basicos/tipos-canonicos/${codigo}`),
 
   // Tipos conversación
   listarTiposCnv: () =>
-    api.get<TipoConversacion[]>('/compromisos-datos-basicos/tipos-conversacion').then((r) => r.data),
+    api.get<TipoConversacion[]>('/tareas-datos-basicos/tipos-conversacion').then((r) => r.data),
   crearTipoCnv: (datos: Partial<TipoConversacion>) =>
-    api.post('/compromisos-datos-basicos/tipos-conversacion', datos).then((r) => r.data),
+    api.post('/tareas-datos-basicos/tipos-conversacion', datos).then((r) => r.data),
   actualizarTipoCnv: (codigo: string, datos: Partial<TipoConversacion>) =>
-    api.put(`/compromisos-datos-basicos/tipos-conversacion/${codigo}`, datos).then((r) => r.data),
+    api.put(`/tareas-datos-basicos/tipos-conversacion/${codigo}`, datos).then((r) => r.data),
   eliminarTipoCnv: (codigo: string) =>
-    api.delete(`/compromisos-datos-basicos/tipos-conversacion/${codigo}`),
+    api.delete(`/tareas-datos-basicos/tipos-conversacion/${codigo}`),
 
-  // Tipos compromiso
-  listarTiposCmp: () =>
-    api.get<TipoCompromiso[]>('/compromisos-datos-basicos/tipos-compromiso').then((r) => r.data),
-  crearTipoCmp: (datos: Partial<TipoCompromiso>) =>
-    api.post('/compromisos-datos-basicos/tipos-compromiso', datos).then((r) => r.data),
-  actualizarTipoCmp: (codigo: string, datos: Partial<TipoCompromiso>) =>
-    api.put(`/compromisos-datos-basicos/tipos-compromiso/${codigo}`, datos).then((r) => r.data),
-  eliminarTipoCmp: (codigo: string) =>
-    api.delete(`/compromisos-datos-basicos/tipos-compromiso/${codigo}`),
+  // Tipos tarea
+  listarTiposTar: (categoria?: string) =>
+    api.get<TipoTarea[]>('/tareas-datos-basicos/tipos-tarea', { params: categoria ? { categoria } : {} }).then((r) => r.data),
+  crearTipoTar: (datos: Partial<TipoTarea>) =>
+    api.post('/tareas-datos-basicos/tipos-tarea', datos).then((r) => r.data),
+  actualizarTipoTar: (codigo: string, datos: Partial<TipoTarea>) =>
+    api.put(`/tareas-datos-basicos/tipos-tarea/${codigo}`, datos).then((r) => r.data),
+  eliminarTipoTar: (codigo: string) =>
+    api.delete(`/tareas-datos-basicos/tipos-tarea/${codigo}`),
 
   // Estados conversación
   listarEstadosCnv: (tipo?: string) =>
-    api.get<EstadoConversacion[]>('/compromisos-datos-basicos/estados-conversacion', { params: tipo ? { tipo } : {} }).then((r) => r.data),
+    api.get<EstadoConversacion[]>('/tareas-datos-basicos/estados-conversacion', { params: tipo ? { tipo } : {} }).then((r) => r.data),
   crearEstadoCnv: (datos: Partial<EstadoConversacion>) =>
-    api.post('/compromisos-datos-basicos/estados-conversacion', datos).then((r) => r.data),
+    api.post('/tareas-datos-basicos/estados-conversacion', datos).then((r) => r.data),
   actualizarEstadoCnv: (tipo: string, codigo: string, datos: Partial<EstadoConversacion>) =>
-    api.put(`/compromisos-datos-basicos/estados-conversacion/${tipo}/${codigo}`, datos).then((r) => r.data),
+    api.put(`/tareas-datos-basicos/estados-conversacion/${tipo}/${codigo}`, datos).then((r) => r.data),
   eliminarEstadoCnv: (tipo: string, codigo: string) =>
-    api.delete(`/compromisos-datos-basicos/estados-conversacion/${tipo}/${codigo}`),
+    api.delete(`/tareas-datos-basicos/estados-conversacion/${tipo}/${codigo}`),
 
-  // Estados compromiso
-  listarEstadosCmp: (tipo?: string) =>
-    api.get<EstadoCompromiso[]>('/compromisos-datos-basicos/estados-compromiso', { params: tipo ? { tipo } : {} }).then((r) => r.data),
-  crearEstadoCmp: (datos: Partial<EstadoCompromiso>) =>
-    api.post('/compromisos-datos-basicos/estados-compromiso', datos).then((r) => r.data),
-  actualizarEstadoCmp: (tipo: string, codigo: string, datos: Partial<EstadoCompromiso>) =>
-    api.put(`/compromisos-datos-basicos/estados-compromiso/${tipo}/${codigo}`, datos).then((r) => r.data),
-  eliminarEstadoCmp: (tipo: string, codigo: string) =>
-    api.delete(`/compromisos-datos-basicos/estados-compromiso/${tipo}/${codigo}`),
+  // Estados tarea
+  listarEstadosTar: (tipo?: string) =>
+    api.get<EstadoTarea[]>('/tareas-datos-basicos/estados-tarea', { params: tipo ? { tipo } : {} }).then((r) => r.data),
+  crearEstadoTar: (datos: Partial<EstadoTarea>) =>
+    api.post('/tareas-datos-basicos/estados-tarea', datos).then((r) => r.data),
+  actualizarEstadoTar: (tipo: string, codigo: string, datos: Partial<EstadoTarea>) =>
+    api.put(`/tareas-datos-basicos/estados-tarea/${tipo}/${codigo}`, datos).then((r) => r.data),
+  eliminarEstadoTar: (tipo: string, codigo: string) =>
+    api.delete(`/tareas-datos-basicos/estados-tarea/${tipo}/${codigo}`),
 }
 
-// ─── Compromisos: Operación ──────────────────────────────────────────────────
+// ─── Tareas: Operación ───────────────────────────────────────────────────────
 
-export const compromisosApi = {
+export const tareasApi = {
   // Conversaciones
   listarConversaciones: (params?: { tipo?: string; estado?: string }) =>
-    api.get<Conversacion[]>('/compromisos/conversaciones', { params }).then((r) => r.data),
+    api.get<Conversacion[]>('/tareas/conversaciones', { params }).then((r) => r.data),
   obtenerConversacion: (id: number) =>
-    api.get<Conversacion>(`/compromisos/conversaciones/${id}`).then((r) => r.data),
+    api.get<Conversacion>(`/tareas/conversaciones/${id}`).then((r) => r.data),
   crearConversacion: (datos: Partial<Conversacion>) =>
-    api.post('/compromisos/conversaciones', datos).then((r) => r.data),
+    api.post('/tareas/conversaciones', datos).then((r) => r.data),
   actualizarConversacion: (id: number, datos: Partial<Conversacion>) =>
-    api.put(`/compromisos/conversaciones/${id}`, datos).then((r) => r.data),
+    api.put(`/tareas/conversaciones/${id}`, datos).then((r) => r.data),
   eliminarConversacion: (id: number) =>
-    api.delete(`/compromisos/conversaciones/${id}`),
+    api.delete(`/tareas/conversaciones/${id}`),
 
   // Participantes
   listarParticipantes: (idConv: number) =>
-    api.get<ParticipanteConversacion[]>(`/compromisos/conversaciones/${idConv}/participantes`).then((r) => r.data),
+    api.get<ParticipanteConversacion[]>(`/tareas/conversaciones/${idConv}/participantes`).then((r) => r.data),
   agregarParticipante: (idConv: number, datos: Partial<ParticipanteConversacion>) =>
-    api.post(`/compromisos/conversaciones/${idConv}/participantes`, datos).then((r) => r.data),
+    api.post(`/tareas/conversaciones/${idConv}/participantes`, datos).then((r) => r.data),
   eliminarParticipante: (idConv: number, idPart: number) =>
-    api.delete(`/compromisos/conversaciones/${idConv}/participantes/${idPart}`),
+    api.delete(`/tareas/conversaciones/${idConv}/participantes/${idPart}`),
 
-  // Compromisos
-  listarCompromisos: (params?: { tipo?: string; estado?: string; prioridad?: string; conversacion?: number }) =>
-    api.get<Compromiso[]>('/compromisos/compromisos-lista', { params }).then((r) => r.data),
-  obtenerCompromiso: (id: number) =>
-    api.get<Compromiso>(`/compromisos/compromisos-lista/${id}`).then((r) => r.data),
-  crearCompromiso: (datos: Partial<Compromiso>) =>
-    api.post('/compromisos/compromisos-lista', datos).then((r) => r.data),
-  actualizarCompromiso: (id: number, datos: Partial<Compromiso>) =>
-    api.put(`/compromisos/compromisos-lista/${id}`, datos).then((r) => r.data),
-  eliminarCompromiso: (id: number) =>
-    api.delete(`/compromisos/compromisos-lista/${id}`),
+  // Tareas
+  listarTareas: (params?: { tipo?: string; estado?: string; prioridad?: string; conversacion?: number; categoria?: string }) =>
+    api.get<Tarea[]>('/tareas/tareas-lista', { params }).then((r) => r.data),
+  obtenerTarea: (id: number) =>
+    api.get<Tarea>(`/tareas/tareas-lista/${id}`).then((r) => r.data),
+  crearTarea: (datos: Partial<Tarea>) =>
+    api.post('/tareas/tareas-lista', datos).then((r) => r.data),
+  actualizarTarea: (id: number, datos: Partial<Tarea>) =>
+    api.put(`/tareas/tareas-lista/${id}`, datos).then((r) => r.data),
+  eliminarTarea: (id: number) =>
+    api.delete(`/tareas/tareas-lista/${id}`),
 }
 
 // ─── Estados Docs ──────────────────────────────────────────────────────────

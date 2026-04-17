@@ -68,20 +68,30 @@ export function useCrudPage<T, F extends Record<string, any>>(opts: UseCrudPageO
     setEditando(null)
   }
 
-  const guardar = async (datosCrear?: any, datosActualizar?: any) => {
+  const guardar = async (
+    datosCrear?: any,
+    datosActualizar?: any,
+    opcionesGuardado?: { cerrar?: boolean }
+  ) => {
+    const cerrar = opcionesGuardado?.cerrar !== false
     setGuardando(true)
     setError('')
     try {
       if (editando) {
         if (opts.actualizarFn) {
-          await opts.actualizarFn(opts.getId(editando), datosActualizar ?? form)
+          const actualizado = await opts.actualizarFn(opts.getId(editando), datosActualizar ?? form)
+          if (!cerrar && actualizado) setEditando(actualizado)
         }
       } else {
         if (opts.crearFn) {
-          await opts.crearFn(datosCrear ?? form)
+          const creado = await opts.crearFn(datosCrear ?? form)
+          if (!cerrar && creado) {
+            setEditando(creado)
+            setForm(opts.itemToForm(creado))
+          }
         }
       }
-      cerrarModal()
+      if (cerrar) cerrarModal()
       cargar()
     } catch (e) {
       setError(e instanceof Error ? e.message : t('errorAlGuardar'))

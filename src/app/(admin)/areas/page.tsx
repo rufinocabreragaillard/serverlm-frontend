@@ -10,6 +10,7 @@ import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '
 import { ubicacionesDocsApi } from '@/lib/api'
 import type { UbicacionDoc } from '@/lib/tipos'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 export default function PaginaAreas() {
   useAuth()
@@ -46,7 +47,7 @@ export default function PaginaAreas() {
     setModal(true)
   }
 
-  const guardar = async () => {
+  const guardar = async (cerrar = true) => {
     if (!editando) return
     if (!form.nombre_ubicacion.trim()) {
       setError(t('errorNombreObligatorio'))
@@ -58,7 +59,7 @@ export default function PaginaAreas() {
         nombre_ubicacion: form.nombre_ubicacion,
         alias_ubicacion: form.alias_ubicacion || undefined,
       })
-      setModal(false)
+      if (cerrar) setModal(false)
       cargar()
     } catch (e) {
       setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
@@ -78,8 +79,9 @@ export default function PaginaAreas() {
     : areas
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
           {t('subtitulo')}
@@ -161,11 +163,14 @@ export default function PaginaAreas() {
           )}
 
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModal(false)}>
-              {tc('cancelar')}
+            <Boton variante="secundario" onClick={() => setModal(false)}>
+              {tc('salir')}
             </Boton>
-            <Boton variante="primario" onClick={guardar} cargando={guardando}>
-              {tc('guardar')}
+            <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>
+              {tc('grabarYSalir')}
+            </Boton>
+            <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>
+              {tc('grabar')}
             </Boton>
           </div>
         </div>

@@ -23,6 +23,7 @@ import { abrirDocumento } from '@/lib/abrir-documento'
 import { TabPipelineTodo } from './_components/tab-pipeline-todo'
 import { ChatProcesar } from './_components/chat-procesar'
 import { useColaRealtime } from '@/hooks/useColaRealtime'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 
 /** Botón de acción con tooltip inferior */
@@ -962,8 +963,9 @@ function PaginaProcesarDocumentosInterna() {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full overflow-x-hidden">
-      <div>
+    <div className="relative flex flex-col gap-6 w-full overflow-x-hidden">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>

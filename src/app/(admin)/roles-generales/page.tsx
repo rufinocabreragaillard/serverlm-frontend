@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Rol, Grupo, Funcion, Aplicacion } from '@/lib/tipos'
 import { etiquetaTipo, varianteTipo, normalizarTipo } from '@/lib/tipo-elemento'
 import { Insignia } from '@/components/ui/insignia'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string } }
 
@@ -23,8 +24,9 @@ export default function PaginaRolesGenerales() {
   const [tab, setTab] = useState<Tab>('globales')
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
+    <div className="relative flex flex-col gap-6">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
           Administra roles transversales (sin grupo) y copia roles entre grupos

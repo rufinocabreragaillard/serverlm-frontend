@@ -7,6 +7,7 @@ import { FileText, Cpu, Tags, FolderTree, AlertTriangle, CheckCircle, Clock, Arr
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
 import { documentosApi, estadosDocsApi } from '@/lib/api'
 import type { Documento, EstadoDoc } from '@/lib/tipos'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 export default function PaginaDocumentosDashboard() {
   const t = useTranslations('documentosDashboard')
@@ -83,8 +84,9 @@ export default function PaginaDocumentosDashboard() {
   ]
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-texto-muted text-sm mt-1">
           {t('subtitulo')}

@@ -14,6 +14,7 @@ import type { UbicacionDoc } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 import { escanearDirectorio, escanearDirectorioSinHijos, soportaDirectoryPicker, type DirectorioEscaneado } from '@/lib/escanear-directorio'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 export default function PaginaUbicacionesDocs() {
   const { grupoActivo } = useAuth()
@@ -441,9 +442,10 @@ export default function PaginaUbicacionesDocs() {
   const diff = datosEscaneo ? calcularDiferencias() : null
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
       {/* Header */}
-      <div>
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>

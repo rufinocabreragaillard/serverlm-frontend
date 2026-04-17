@@ -8,7 +8,7 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { compromisosApi, compromisosDatosBasicosApi, usuariosApi } from '@/lib/api'
+import { tareasApi, tareasDatosBasicosApi, usuariosApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { exportarExcel } from '@/lib/exportar-excel'
 import type {
@@ -79,7 +79,7 @@ export default function PaginaConversaciones() {
   const cargarConversaciones = useCallback(async () => {
     try {
       setCargando(true)
-      const data = await compromisosApi.listarConversaciones()
+      const data = await tareasApi.listarConversaciones()
       setConversaciones(data)
     } catch (e: unknown) {
       console.error('Error al cargar conversaciones', e)
@@ -91,7 +91,7 @@ export default function PaginaConversaciones() {
   const cargarCatalogos = useCallback(async () => {
     try {
       const [t, u] = await Promise.all([
-        compromisosDatosBasicosApi.listarTiposCnv(),
+        tareasDatosBasicosApi.listarTiposCnv(),
         usuariosApi.listar(),
       ])
       setTipos(t)
@@ -107,7 +107,7 @@ export default function PaginaConversaciones() {
       return
     }
     try {
-      const data = await compromisosDatosBasicosApi.listarEstadosCnv(tipo)
+      const data = await tareasDatosBasicosApi.listarEstadosCnv(tipo)
       setEstados(data.filter((e) => e.activo))
     } catch (e: unknown) {
       console.error('Error al cargar estados', e)
@@ -117,7 +117,7 @@ export default function PaginaConversaciones() {
 
   const cargarParticipantes = useCallback(async (idConv: number) => {
     try {
-      const data = await compromisosApi.listarParticipantes(idConv)
+      const data = await tareasApi.listarParticipantes(idConv)
       setParticipantes(data)
     } catch (e: unknown) {
       console.error('Error al cargar participantes', e)
@@ -245,9 +245,9 @@ export default function PaginaConversaciones() {
       }
 
       if (editando) {
-        await compromisosApi.actualizarConversacion(editando.id_conversacion, datos)
+        await tareasApi.actualizarConversacion(editando.id_conversacion, datos)
       } else {
-        const nuevo = await compromisosApi.crearConversacion(datos)
+        const nuevo = await tareasApi.crearConversacion(datos)
         if (!cerrar && nuevo) {
           setEditando(nuevo)
           await cargarParticipantes(nuevo.id_conversacion)
@@ -270,7 +270,7 @@ export default function PaginaConversaciones() {
   const eliminar = async () => {
     if (confirmarEliminar == null) return
     try {
-      await compromisosApi.eliminarConversacion(confirmarEliminar)
+      await tareasApi.eliminarConversacion(confirmarEliminar)
       setConfirmarEliminar(null)
       await cargarConversaciones()
     } catch (e: unknown) {
@@ -284,7 +284,7 @@ export default function PaginaConversaciones() {
     if (!editando) return
     if (!nuevoParticipante.nombre_persona.trim()) return
     try {
-      await compromisosApi.agregarParticipante(editando.id_conversacion, {
+      await tareasApi.agregarParticipante(editando.id_conversacion, {
         nombre_persona: nuevoParticipante.nombre_persona.trim(),
         tipo_id_persona: nuevoParticipante.tipo_id_persona.trim() || undefined,
         id_persona: nuevoParticipante.id_persona.trim() || undefined,
@@ -299,7 +299,7 @@ export default function PaginaConversaciones() {
   const eliminarParticipante = async (idPart: number) => {
     if (!editando) return
     try {
-      await compromisosApi.eliminarParticipante(editando.id_conversacion, idPart)
+      await tareasApi.eliminarParticipante(editando.id_conversacion, idPart)
       await cargarParticipantes(editando.id_conversacion)
     } catch (e: unknown) {
       console.error('Error al eliminar participante', e)

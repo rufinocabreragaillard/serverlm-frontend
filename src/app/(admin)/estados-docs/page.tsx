@@ -12,6 +12,7 @@ import { TablaCrud, columnaCodigo, columnaNombre, columnaDescripcion, columnaEst
 import { estadosDocsApi } from '@/lib/api'
 import type { EstadoDoc } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabModal = 'datos' | 'prompt' | 'system_prompt'
 
@@ -107,8 +108,9 @@ export default function PaginaEstadosDocs() {
   ]
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-5xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>

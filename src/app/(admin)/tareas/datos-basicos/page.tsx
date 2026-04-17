@@ -8,27 +8,27 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { compromisosDatosBasicosApi } from '@/lib/api'
+import { tareasDatosBasicosApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { exportarExcel } from '@/lib/exportar-excel'
 import type {
   TipoConversacion,
-  TipoCompromiso,
+  TipoTarea,
   EstadoConversacion,
-  EstadoCompromiso,
+  EstadoTarea,
   EstadoCanonicoConversacion,
-  EstadoCanonicoCompromiso,
+  EstadoCanonicoTarea,
 } from '@/lib/tipos'
 
 type TabId =
   | 'tipos-conversacion'
   | 'estados-conversacion'
-  | 'tipos-compromiso'
-  | 'estados-compromiso'
+  | 'tipos-tarea'
+  | 'estados-tarea'
   | 'canonicos-conversacion'
-  | 'canonicos-compromiso'
+  | 'canonicos-tarea'
 
-export default function DatosBasicosCompromisosPage() {
+export default function DatosBasicosTareasPage() {
   const { grupoActivo } = useAuth()
   const [tabActiva, setTabActiva] = useState<TabId>('tipos-conversacion')
 
@@ -51,24 +51,24 @@ export default function DatosBasicosCompromisosPage() {
   const [errorEstadoCnv, setErrorEstadoCnv] = useState('')
   const [filtroTipoCnv, setFiltroTipoCnv] = useState('')
 
-  // ── Tipos Compromiso ───────────────────────────────────────────────────────
-  const [tiposCmp, setTiposCmp] = useState<TipoCompromiso[]>([])
-  const [cargandoTiposCmp, setCargandoTiposCmp] = useState(true)
-  const [modalTipoCmp, setModalTipoCmp] = useState(false)
-  const [tipoCmpEditando, setTipoCmpEditando] = useState<TipoCompromiso | null>(null)
-  const [formTipoCmp, setFormTipoCmp] = useState({ codigo_tipo_compromiso: '', nombre: '', descripcion: '' })
-  const [guardandoTipoCmp, setGuardandoTipoCmp] = useState(false)
-  const [errorTipoCmp, setErrorTipoCmp] = useState('')
+  // ── Tipos Tarea ───────────────────────────────────────────────────────
+  const [tiposTar, setTiposTar] = useState<TipoTarea[]>([])
+  const [cargandoTiposTar, setCargandoTiposTar] = useState(true)
+  const [modalTipoTar, setModalTipoTar] = useState(false)
+  const [tipoTarEditando, setTipoTarEditando] = useState<TipoTarea | null>(null)
+  const [formTipoTar, setFormTipoTar] = useState({ codigo_tipo_tarea: '', nombre: '', descripcion: '' })
+  const [guardandoTipoTar, setGuardandoTipoTar] = useState(false)
+  const [errorTipoTar, setErrorTipoTar] = useState('')
 
-  // ── Estados Compromiso ─────────────────────────────────────────────────────
-  const [estadosCmp, setEstadosCmp] = useState<EstadoCompromiso[]>([])
-  const [cargandoEstadosCmp, setCargandoEstadosCmp] = useState(true)
-  const [modalEstadoCmp, setModalEstadoCmp] = useState(false)
-  const [estadoCmpEditando, setEstadoCmpEditando] = useState<EstadoCompromiso | null>(null)
-  const [formEstadoCmp, setFormEstadoCmp] = useState({ codigo_tipo_compromiso: '', codigo_estado_compromiso: '', nombre: '', codigo_estado_canonico: '', orden: 0 })
-  const [guardandoEstadoCmp, setGuardandoEstadoCmp] = useState(false)
-  const [errorEstadoCmp, setErrorEstadoCmp] = useState('')
-  const [filtroTipoCmp, setFiltroTipoCmp] = useState('')
+  // ── Estados Tarea ─────────────────────────────────────────────────────
+  const [estadosTar, setEstadosTar] = useState<EstadoTarea[]>([])
+  const [cargandoEstadosTar, setCargandoEstadosTar] = useState(true)
+  const [modalEstadoTar, setModalEstadoTar] = useState(false)
+  const [estadoTarEditando, setEstadoTarEditando] = useState<EstadoTarea | null>(null)
+  const [formEstadoTar, setFormEstadoTar] = useState({ codigo_tipo_tarea: '', codigo_estado_tarea: '', nombre: '', codigo_estado_canonico: '', orden: 0 })
+  const [guardandoEstadoTar, setGuardandoEstadoTar] = useState(false)
+  const [errorEstadoTar, setErrorEstadoTar] = useState('')
+  const [filtroTipoTar, setFiltroTipoTar] = useState('')
 
   // ── Canonicos Conversacion ─────────────────────────────────────────────────
   const [canonicosCnv, setCanonicosCnv] = useState<EstadoCanonicoConversacion[]>([])
@@ -79,14 +79,14 @@ export default function DatosBasicosCompromisosPage() {
   const [guardandoCanCnv, setGuardandoCanCnv] = useState(false)
   const [errorCanCnv, setErrorCanCnv] = useState('')
 
-  // ── Canonicos Compromiso ───────────────────────────────────────────────────
-  const [canonicosCmp, setCanonicosCmp] = useState<EstadoCanonicoCompromiso[]>([])
-  const [cargandoCanonicosCmp, setCargandoCanonicosCmp] = useState(true)
-  const [modalCanCmp, setModalCanCmp] = useState(false)
-  const [canCmpEditando, setCanCmpEditando] = useState<EstadoCanonicoCompromiso | null>(null)
-  const [formCanCmp, setFormCanCmp] = useState({ codigo_estado_canonico: '', nombre: '' })
-  const [guardandoCanCmp, setGuardandoCanCmp] = useState(false)
-  const [errorCanCmp, setErrorCanCmp] = useState('')
+  // ── Canonicos Tarea ───────────────────────────────────────────────────
+  const [canonicosTar, setCanonicosTar] = useState<EstadoCanonicoTarea[]>([])
+  const [cargandoCanonicosTar, setCargandoCanonicosTar] = useState(true)
+  const [modalCanTar, setModalCanTar] = useState(false)
+  const [canTarEditando, setCanTarEditando] = useState<EstadoCanonicoTarea | null>(null)
+  const [formCanTar, setFormCanTar] = useState({ codigo_estado_canonico: '', nombre: '' })
+  const [guardandoCanTar, setGuardandoCanTar] = useState(false)
+  const [errorCanTar, setErrorCanTar] = useState('')
 
   // ── Eliminacion ────────────────────────────────────────────────────────────
   const [itemAEliminar, setItemAEliminar] = useState<{ tipo: string; item: Record<string, unknown> } | null>(null)
@@ -95,40 +95,40 @@ export default function DatosBasicosCompromisosPage() {
   // ── Carga ──────────────────────────────────────────────────────────────────
   const cargarTiposCnv = useCallback(async () => {
     setCargandoTiposCnv(true)
-    try { setTiposCnv(await compromisosDatosBasicosApi.listarTiposCnv()) } finally { setCargandoTiposCnv(false) }
+    try { setTiposCnv(await tareasDatosBasicosApi.listarTiposCnv()) } finally { setCargandoTiposCnv(false) }
   }, [])
 
   const cargarEstadosCnv = useCallback(async () => {
     setCargandoEstadosCnv(true)
-    try { setEstadosCnv(await compromisosDatosBasicosApi.listarEstadosCnv(filtroTipoCnv || undefined)) } finally { setCargandoEstadosCnv(false) }
+    try { setEstadosCnv(await tareasDatosBasicosApi.listarEstadosCnv(filtroTipoCnv || undefined)) } finally { setCargandoEstadosCnv(false) }
   }, [filtroTipoCnv])
 
-  const cargarTiposCmp = useCallback(async () => {
-    setCargandoTiposCmp(true)
-    try { setTiposCmp(await compromisosDatosBasicosApi.listarTiposCmp()) } finally { setCargandoTiposCmp(false) }
+  const cargarTiposTar = useCallback(async () => {
+    setCargandoTiposTar(true)
+    try { setTiposTar(await tareasDatosBasicosApi.listarTiposTar()) } finally { setCargandoTiposTar(false) }
   }, [])
 
-  const cargarEstadosCmp = useCallback(async () => {
-    setCargandoEstadosCmp(true)
-    try { setEstadosCmp(await compromisosDatosBasicosApi.listarEstadosCmp(filtroTipoCmp || undefined)) } finally { setCargandoEstadosCmp(false) }
-  }, [filtroTipoCmp])
+  const cargarEstadosTar = useCallback(async () => {
+    setCargandoEstadosTar(true)
+    try { setEstadosTar(await tareasDatosBasicosApi.listarEstadosTar(filtroTipoTar || undefined)) } finally { setCargandoEstadosTar(false) }
+  }, [filtroTipoTar])
 
   const cargarCanonicosCnv = useCallback(async () => {
     setCargandoCanonicosCnv(true)
-    try { setCanonicosCnv(await compromisosDatosBasicosApi.listarCanonicosCnv()) } finally { setCargandoCanonicosCnv(false) }
+    try { setCanonicosCnv(await tareasDatosBasicosApi.listarCanonicosCnv()) } finally { setCargandoCanonicosCnv(false) }
   }, [])
 
-  const cargarCanonicosCmp = useCallback(async () => {
-    setCargandoCanonicosCmp(true)
-    try { setCanonicosCmp(await compromisosDatosBasicosApi.listarCanonicosCmp()) } finally { setCargandoCanonicosCmp(false) }
+  const cargarCanonicosTar = useCallback(async () => {
+    setCargandoCanonicosTar(true)
+    try { setCanonicosTar(await tareasDatosBasicosApi.listarCanonicosTar()) } finally { setCargandoCanonicosTar(false) }
   }, [])
 
   useEffect(() => { cargarTiposCnv() }, [cargarTiposCnv, grupoActivo])
   useEffect(() => { cargarEstadosCnv() }, [cargarEstadosCnv, grupoActivo])
-  useEffect(() => { cargarTiposCmp() }, [cargarTiposCmp, grupoActivo])
-  useEffect(() => { cargarEstadosCmp() }, [cargarEstadosCmp, grupoActivo])
+  useEffect(() => { cargarTiposTar() }, [cargarTiposTar, grupoActivo])
+  useEffect(() => { cargarEstadosTar() }, [cargarEstadosTar, grupoActivo])
   useEffect(() => { cargarCanonicosCnv() }, [cargarCanonicosCnv])
-  useEffect(() => { cargarCanonicosCmp() }, [cargarCanonicosCmp])
+  useEffect(() => { cargarCanonicosTar() }, [cargarCanonicosTar])
 
   // ── CRUD Tipos Conversacion ────────────────────────────────────────────────
   const abrirNuevoTipoCnv = () => {
@@ -154,12 +154,12 @@ export default function DatosBasicosCompromisosPage() {
     setErrorTipoCnv('')
     try {
       if (tipoCnvEditando) {
-        await compromisosDatosBasicosApi.actualizarTipoCnv(tipoCnvEditando.codigo_tipo_conversacion, {
+        await tareasDatosBasicosApi.actualizarTipoCnv(tipoCnvEditando.codigo_tipo_conversacion, {
           nombre: formTipoCnv.nombre,
           descripcion: formTipoCnv.descripcion || undefined,
         })
       } else {
-        await compromisosDatosBasicosApi.crearTipoCnv({
+        await tareasDatosBasicosApi.crearTipoCnv({
           codigo_tipo_conversacion: formTipoCnv.codigo_tipo_conversacion.toUpperCase(),
           nombre: formTipoCnv.nombre,
           descripcion: formTipoCnv.descripcion || undefined,
@@ -176,7 +176,7 @@ export default function DatosBasicosCompromisosPage() {
 
   const toggleActivoTipoCnv = async (t: TipoConversacion) => {
     try {
-      await compromisosDatosBasicosApi.actualizarTipoCnv(t.codigo_tipo_conversacion, { activo: !t.activo })
+      await tareasDatosBasicosApi.actualizarTipoCnv(t.codigo_tipo_conversacion, { activo: !t.activo })
       cargarTiposCnv()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al cambiar estado')
@@ -213,7 +213,7 @@ export default function DatosBasicosCompromisosPage() {
     setErrorEstadoCnv('')
     try {
       if (estadoCnvEditando) {
-        await compromisosDatosBasicosApi.actualizarEstadoCnv(
+        await tareasDatosBasicosApi.actualizarEstadoCnv(
           estadoCnvEditando.codigo_tipo_conversacion,
           estadoCnvEditando.codigo_estado_conversacion,
           {
@@ -223,7 +223,7 @@ export default function DatosBasicosCompromisosPage() {
           }
         )
       } else {
-        await compromisosDatosBasicosApi.crearEstadoCnv({
+        await tareasDatosBasicosApi.crearEstadoCnv({
           codigo_tipo_conversacion: formEstadoCnv.codigo_tipo_conversacion,
           codigo_estado_conversacion: formEstadoCnv.codigo_estado_conversacion.toUpperCase(),
           nombre: formEstadoCnv.nombre,
@@ -242,127 +242,127 @@ export default function DatosBasicosCompromisosPage() {
 
   const toggleActivoEstadoCnv = async (e: EstadoConversacion) => {
     try {
-      await compromisosDatosBasicosApi.actualizarEstadoCnv(e.codigo_tipo_conversacion, e.codigo_estado_conversacion, { activo: !e.activo })
+      await tareasDatosBasicosApi.actualizarEstadoCnv(e.codigo_tipo_conversacion, e.codigo_estado_conversacion, { activo: !e.activo })
       cargarEstadosCnv()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error al cambiar estado')
     }
   }
 
-  // ── CRUD Tipos Compromiso ──────────────────────────────────────────────────
-  const abrirNuevoTipoCmp = () => {
-    setTipoCmpEditando(null)
-    setFormTipoCmp({ codigo_tipo_compromiso: '', nombre: '', descripcion: '' })
-    setErrorTipoCmp('')
-    setModalTipoCmp(true)
+  // ── CRUD Tipos Tarea ──────────────────────────────────────────────────
+  const abrirNuevoTipoTar = () => {
+    setTipoTarEditando(null)
+    setFormTipoTar({ codigo_tipo_tarea: '', nombre: '', descripcion: '' })
+    setErrorTipoTar('')
+    setModalTipoTar(true)
   }
 
-  const abrirEditarTipoCmp = (t: TipoCompromiso) => {
-    setTipoCmpEditando(t)
-    setFormTipoCmp({ codigo_tipo_compromiso: t.codigo_tipo_compromiso, nombre: t.nombre, descripcion: t.descripcion || '' })
-    setErrorTipoCmp('')
-    setModalTipoCmp(true)
+  const abrirEditarTipoTar = (t: TipoTarea) => {
+    setTipoTarEditando(t)
+    setFormTipoTar({ codigo_tipo_tarea: t.codigo_tipo_tarea, nombre: t.nombre, descripcion: t.descripcion || '' })
+    setErrorTipoTar('')
+    setModalTipoTar(true)
   }
 
-  const guardarTipoCmp = async () => {
-    if (!formTipoCmp.codigo_tipo_compromiso || !formTipoCmp.nombre) {
-      setErrorTipoCmp('El codigo y el nombre son obligatorios')
+  const guardarTipoTar = async () => {
+    if (!formTipoTar.codigo_tipo_tarea || !formTipoTar.nombre) {
+      setErrorTipoTar('El codigo y el nombre son obligatorios')
       return
     }
-    setGuardandoTipoCmp(true)
-    setErrorTipoCmp('')
+    setGuardandoTipoTar(true)
+    setErrorTipoTar('')
     try {
-      if (tipoCmpEditando) {
-        await compromisosDatosBasicosApi.actualizarTipoCmp(tipoCmpEditando.codigo_tipo_compromiso, {
-          nombre: formTipoCmp.nombre,
-          descripcion: formTipoCmp.descripcion || undefined,
+      if (tipoTarEditando) {
+        await tareasDatosBasicosApi.actualizarTipoTar(tipoTarEditando.codigo_tipo_tarea, {
+          nombre: formTipoTar.nombre,
+          descripcion: formTipoTar.descripcion || undefined,
         })
       } else {
-        await compromisosDatosBasicosApi.crearTipoCmp({
-          codigo_tipo_compromiso: formTipoCmp.codigo_tipo_compromiso.toUpperCase(),
-          nombre: formTipoCmp.nombre,
-          descripcion: formTipoCmp.descripcion || undefined,
+        await tareasDatosBasicosApi.crearTipoTar({
+          codigo_tipo_tarea: formTipoTar.codigo_tipo_tarea.toUpperCase(),
+          nombre: formTipoTar.nombre,
+          descripcion: formTipoTar.descripcion || undefined,
         })
       }
-      setModalTipoCmp(false)
-      cargarTiposCmp()
+      setModalTipoTar(false)
+      cargarTiposTar()
     } catch (e) {
-      setErrorTipoCmp(e instanceof Error ? e.message : 'Error al guardar')
+      setErrorTipoTar(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
-      setGuardandoTipoCmp(false)
+      setGuardandoTipoTar(false)
     }
   }
 
-  const toggleActivoTipoCmp = async (t: TipoCompromiso) => {
+  const toggleActivoTipoTar = async (t: TipoTarea) => {
     try {
-      await compromisosDatosBasicosApi.actualizarTipoCmp(t.codigo_tipo_compromiso, { activo: !t.activo })
-      cargarTiposCmp()
+      await tareasDatosBasicosApi.actualizarTipoTar(t.codigo_tipo_tarea, { activo: !t.activo })
+      cargarTiposTar()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al cambiar estado')
     }
   }
 
-  // ── CRUD Estados Compromiso ────────────────────────────────────────────────
-  const abrirNuevoEstadoCmp = () => {
-    setEstadoCmpEditando(null)
-    setFormEstadoCmp({ codigo_tipo_compromiso: filtroTipoCmp, codigo_estado_compromiso: '', nombre: '', codigo_estado_canonico: '', orden: 0 })
-    setErrorEstadoCmp('')
-    setModalEstadoCmp(true)
+  // ── CRUD Estados Tarea ────────────────────────────────────────────────
+  const abrirNuevoEstadoTar = () => {
+    setEstadoTarEditando(null)
+    setFormEstadoTar({ codigo_tipo_tarea: filtroTipoTar, codigo_estado_tarea: '', nombre: '', codigo_estado_canonico: '', orden: 0 })
+    setErrorEstadoTar('')
+    setModalEstadoTar(true)
   }
 
-  const abrirEditarEstadoCmp = (e: EstadoCompromiso) => {
-    setEstadoCmpEditando(e)
-    setFormEstadoCmp({
-      codigo_tipo_compromiso: e.codigo_tipo_compromiso,
-      codigo_estado_compromiso: e.codigo_estado_compromiso,
+  const abrirEditarEstadoTar = (e: EstadoTarea) => {
+    setEstadoTarEditando(e)
+    setFormEstadoTar({
+      codigo_tipo_tarea: e.codigo_tipo_tarea,
+      codigo_estado_tarea: e.codigo_estado_tarea,
       nombre: e.nombre,
       codigo_estado_canonico: e.codigo_estado_canonico,
       orden: e.orden,
     })
-    setErrorEstadoCmp('')
-    setModalEstadoCmp(true)
+    setErrorEstadoTar('')
+    setModalEstadoTar(true)
   }
 
-  const guardarEstadoCmp = async () => {
-    if (!formEstadoCmp.codigo_tipo_compromiso || !formEstadoCmp.codigo_estado_compromiso || !formEstadoCmp.nombre || !formEstadoCmp.codigo_estado_canonico) {
-      setErrorEstadoCmp('Tipo, codigo, nombre y estado canonico son obligatorios')
+  const guardarEstadoTar = async () => {
+    if (!formEstadoTar.codigo_tipo_tarea || !formEstadoTar.codigo_estado_tarea || !formEstadoTar.nombre || !formEstadoTar.codigo_estado_canonico) {
+      setErrorEstadoTar('Tipo, codigo, nombre y estado canonico son obligatorios')
       return
     }
-    setGuardandoEstadoCmp(true)
-    setErrorEstadoCmp('')
+    setGuardandoEstadoTar(true)
+    setErrorEstadoTar('')
     try {
-      if (estadoCmpEditando) {
-        await compromisosDatosBasicosApi.actualizarEstadoCmp(
-          estadoCmpEditando.codigo_tipo_compromiso,
-          estadoCmpEditando.codigo_estado_compromiso,
+      if (estadoTarEditando) {
+        await tareasDatosBasicosApi.actualizarEstadoTar(
+          estadoTarEditando.codigo_tipo_tarea,
+          estadoTarEditando.codigo_estado_tarea,
           {
-            nombre: formEstadoCmp.nombre,
-            codigo_estado_canonico: formEstadoCmp.codigo_estado_canonico,
-            orden: formEstadoCmp.orden,
+            nombre: formEstadoTar.nombre,
+            codigo_estado_canonico: formEstadoTar.codigo_estado_canonico,
+            orden: formEstadoTar.orden,
           }
         )
       } else {
-        await compromisosDatosBasicosApi.crearEstadoCmp({
-          codigo_tipo_compromiso: formEstadoCmp.codigo_tipo_compromiso,
-          codigo_estado_compromiso: formEstadoCmp.codigo_estado_compromiso.toUpperCase(),
-          nombre: formEstadoCmp.nombre,
-          codigo_estado_canonico: formEstadoCmp.codigo_estado_canonico,
-          orden: formEstadoCmp.orden,
+        await tareasDatosBasicosApi.crearEstadoTar({
+          codigo_tipo_tarea: formEstadoTar.codigo_tipo_tarea,
+          codigo_estado_tarea: formEstadoTar.codigo_estado_tarea.toUpperCase(),
+          nombre: formEstadoTar.nombre,
+          codigo_estado_canonico: formEstadoTar.codigo_estado_canonico,
+          orden: formEstadoTar.orden,
         })
       }
-      setModalEstadoCmp(false)
-      cargarEstadosCmp()
+      setModalEstadoTar(false)
+      cargarEstadosTar()
     } catch (e) {
-      setErrorEstadoCmp(e instanceof Error ? e.message : 'Error al guardar')
+      setErrorEstadoTar(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
-      setGuardandoEstadoCmp(false)
+      setGuardandoEstadoTar(false)
     }
   }
 
-  const toggleActivoEstadoCmp = async (e: EstadoCompromiso) => {
+  const toggleActivoEstadoTar = async (e: EstadoTarea) => {
     try {
-      await compromisosDatosBasicosApi.actualizarEstadoCmp(e.codigo_tipo_compromiso, e.codigo_estado_compromiso, { activo: !e.activo })
-      cargarEstadosCmp()
+      await tareasDatosBasicosApi.actualizarEstadoTar(e.codigo_tipo_tarea, e.codigo_estado_tarea, { activo: !e.activo })
+      cargarEstadosTar()
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error al cambiar estado')
     }
@@ -392,9 +392,9 @@ export default function DatosBasicosCompromisosPage() {
     setErrorCanCnv('')
     try {
       if (canCnvEditando) {
-        await compromisosDatosBasicosApi.actualizarCanonicosCnv(canCnvEditando.codigo_estado_canonico, { nombre: formCanCnv.nombre })
+        await tareasDatosBasicosApi.actualizarCanonicosCnv(canCnvEditando.codigo_estado_canonico, { nombre: formCanCnv.nombre })
       } else {
-        await compromisosDatosBasicosApi.crearCanonicosCnv({
+        await tareasDatosBasicosApi.crearCanonicosCnv({
           codigo_estado_canonico: formCanCnv.codigo_estado_canonico.toUpperCase(),
           nombre: formCanCnv.nombre,
         })
@@ -410,57 +410,57 @@ export default function DatosBasicosCompromisosPage() {
 
   const toggleActivoCanCnv = async (c: EstadoCanonicoConversacion) => {
     try {
-      await compromisosDatosBasicosApi.actualizarCanonicosCnv(c.codigo_estado_canonico, { activo: !c.activo })
+      await tareasDatosBasicosApi.actualizarCanonicosCnv(c.codigo_estado_canonico, { activo: !c.activo })
       cargarCanonicosCnv()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al cambiar estado')
     }
   }
 
-  // ── CRUD Canonicos Compromiso ──────────────────────────────────────────────
-  const abrirNuevoCanCmp = () => {
-    setCanCmpEditando(null)
-    setFormCanCmp({ codigo_estado_canonico: '', nombre: '' })
-    setErrorCanCmp('')
-    setModalCanCmp(true)
+  // ── CRUD Canonicos Tarea ──────────────────────────────────────────────
+  const abrirNuevoCanTar = () => {
+    setCanTarEditando(null)
+    setFormCanTar({ codigo_estado_canonico: '', nombre: '' })
+    setErrorCanTar('')
+    setModalCanTar(true)
   }
 
-  const abrirEditarCanCmp = (c: EstadoCanonicoCompromiso) => {
-    setCanCmpEditando(c)
-    setFormCanCmp({ codigo_estado_canonico: c.codigo_estado_canonico, nombre: c.nombre })
-    setErrorCanCmp('')
-    setModalCanCmp(true)
+  const abrirEditarCanTar = (c: EstadoCanonicoTarea) => {
+    setCanTarEditando(c)
+    setFormCanTar({ codigo_estado_canonico: c.codigo_estado_canonico, nombre: c.nombre })
+    setErrorCanTar('')
+    setModalCanTar(true)
   }
 
-  const guardarCanCmp = async () => {
-    if (!formCanCmp.codigo_estado_canonico || !formCanCmp.nombre) {
-      setErrorCanCmp('El codigo y el nombre son obligatorios')
+  const guardarCanTar = async () => {
+    if (!formCanTar.codigo_estado_canonico || !formCanTar.nombre) {
+      setErrorCanTar('El codigo y el nombre son obligatorios')
       return
     }
-    setGuardandoCanCmp(true)
-    setErrorCanCmp('')
+    setGuardandoCanTar(true)
+    setErrorCanTar('')
     try {
-      if (canCmpEditando) {
-        await compromisosDatosBasicosApi.actualizarCanonicosCmp(canCmpEditando.codigo_estado_canonico, { nombre: formCanCmp.nombre })
+      if (canTarEditando) {
+        await tareasDatosBasicosApi.actualizarCanonicosTar(canTarEditando.codigo_estado_canonico, { nombre: formCanTar.nombre })
       } else {
-        await compromisosDatosBasicosApi.crearCanonicosCmp({
-          codigo_estado_canonico: formCanCmp.codigo_estado_canonico.toUpperCase(),
-          nombre: formCanCmp.nombre,
+        await tareasDatosBasicosApi.crearCanonicosTar({
+          codigo_estado_canonico: formCanTar.codigo_estado_canonico.toUpperCase(),
+          nombre: formCanTar.nombre,
         })
       }
-      setModalCanCmp(false)
-      cargarCanonicosCmp()
+      setModalCanTar(false)
+      cargarCanonicosTar()
     } catch (e) {
-      setErrorCanCmp(e instanceof Error ? e.message : 'Error al guardar')
+      setErrorCanTar(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
-      setGuardandoCanCmp(false)
+      setGuardandoCanTar(false)
     }
   }
 
-  const toggleActivoCanCmp = async (c: EstadoCanonicoCompromiso) => {
+  const toggleActivoCanTar = async (c: EstadoCanonicoTarea) => {
     try {
-      await compromisosDatosBasicosApi.actualizarCanonicosCmp(c.codigo_estado_canonico, { activo: !c.activo })
-      cargarCanonicosCmp()
+      await tareasDatosBasicosApi.actualizarCanonicosTar(c.codigo_estado_canonico, { activo: !c.activo })
+      cargarCanonicosTar()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al cambiar estado')
     }
@@ -473,34 +473,34 @@ export default function DatosBasicosCompromisosPage() {
     try {
       switch (itemAEliminar.tipo) {
         case 'tipo-cnv':
-          await compromisosDatosBasicosApi.eliminarTipoCnv(itemAEliminar.item.codigo_tipo_conversacion as string)
+          await tareasDatosBasicosApi.eliminarTipoCnv(itemAEliminar.item.codigo_tipo_conversacion as string)
           cargarTiposCnv()
           break
         case 'estado-cnv':
-          await compromisosDatosBasicosApi.eliminarEstadoCnv(
+          await tareasDatosBasicosApi.eliminarEstadoCnv(
             itemAEliminar.item.codigo_tipo_conversacion as string,
             itemAEliminar.item.codigo_estado_conversacion as string
           )
           cargarEstadosCnv()
           break
         case 'tipo-cmp':
-          await compromisosDatosBasicosApi.eliminarTipoCmp(itemAEliminar.item.codigo_tipo_compromiso as string)
-          cargarTiposCmp()
+          await tareasDatosBasicosApi.eliminarTipoTar(itemAEliminar.item.codigo_tipo_tarea as string)
+          cargarTiposTar()
           break
         case 'estado-cmp':
-          await compromisosDatosBasicosApi.eliminarEstadoCmp(
-            itemAEliminar.item.codigo_tipo_compromiso as string,
-            itemAEliminar.item.codigo_estado_compromiso as string
+          await tareasDatosBasicosApi.eliminarEstadoTar(
+            itemAEliminar.item.codigo_tipo_tarea as string,
+            itemAEliminar.item.codigo_estado_tarea as string
           )
-          cargarEstadosCmp()
+          cargarEstadosTar()
           break
         case 'can-cnv':
-          await compromisosDatosBasicosApi.eliminarCanonicosCnv(itemAEliminar.item.codigo_estado_canonico as string)
+          await tareasDatosBasicosApi.eliminarCanonicosCnv(itemAEliminar.item.codigo_estado_canonico as string)
           cargarCanonicosCnv()
           break
         case 'can-cmp':
-          await compromisosDatosBasicosApi.eliminarCanonicosCmp(itemAEliminar.item.codigo_estado_canonico as string)
-          cargarCanonicosCmp()
+          await tareasDatosBasicosApi.eliminarCanonicosTar(itemAEliminar.item.codigo_estado_canonico as string)
+          cargarCanonicosTar()
           break
       }
       setItemAEliminar(null)
@@ -526,8 +526,8 @@ export default function DatosBasicosCompromisosPage() {
     <div className="flex flex-col gap-6 max-w-6xl">
       {/* Encabezado */}
       <div>
-        <h2 className="text-2xl font-bold text-texto">Datos Basicos - Compromisos</h2>
-        <p className="text-sm text-texto-muted mt-1">Configuracion de tipos, estados y estados canonicos para conversaciones y compromisos</p>
+        <h2 className="text-2xl font-bold text-texto">Datos Basicos - Tareas</h2>
+        <p className="text-sm text-texto-muted mt-1">Configuracion de tipos, estados y estados canonicos para conversaciones y tareas</p>
       </div>
 
       {/* Pestanas */}
@@ -535,10 +535,10 @@ export default function DatosBasicosCompromisosPage() {
         {([
           { id: 'tipos-conversacion' as TabId, label: 'Tipos Conversacion' },
           { id: 'estados-conversacion' as TabId, label: 'Estados Conversacion' },
-          { id: 'tipos-compromiso' as TabId, label: 'Tipos Compromiso' },
-          { id: 'estados-compromiso' as TabId, label: 'Estados Compromiso' },
+          { id: 'tipos-tarea' as TabId, label: 'Tipos Tarea' },
+          { id: 'estados-tarea' as TabId, label: 'Estados Tarea' },
           { id: 'canonicos-conversacion' as TabId, label: 'Canonicos Conversacion' },
-          { id: 'canonicos-compromiso' as TabId, label: 'Canonicos Compromiso' },
+          { id: 'canonicos-tarea' as TabId, label: 'Canonicos Tarea' },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -559,7 +559,7 @@ export default function DatosBasicosCompromisosPage() {
         <>
           <div className="flex items-center justify-between">
             <p className="text-sm text-texto-muted">
-              Define los tipos de conversacion disponibles en el modulo de compromisos
+              Define los tipos de conversacion disponibles en el modulo de tareas
             </p>
             <div className="flex gap-2">
               <Boton
@@ -748,36 +748,36 @@ export default function DatosBasicosCompromisosPage() {
         </>
       )}
 
-      {/* ── Tab: Tipos Compromiso ── */}
-      {tabActiva === 'tipos-compromiso' && (
+      {/* ── Tab: Tipos Tarea ── */}
+      {tabActiva === 'tipos-tarea' && (
         <>
           <div className="flex items-center justify-between">
             <p className="text-sm text-texto-muted">
-              Define los tipos de compromiso disponibles en el modulo
+              Define los tipos de tarea disponibles en el modulo
             </p>
             <div className="flex gap-2">
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(tiposCmp as unknown as Record<string, unknown>[], [
-                  { titulo: 'Codigo', campo: 'codigo_tipo_compromiso' },
+                onClick={() => exportarExcel(tiposTar as unknown as Record<string, unknown>[], [
+                  { titulo: 'Codigo', campo: 'codigo_tipo_tarea' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Descripcion', campo: 'descripcion' },
                   { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
-                ], 'tipos_compromiso')}
-                disabled={tiposCmp.length === 0}
+                ], 'tipos_tarea')}
+                disabled={tiposTar.length === 0}
               >
                 <Download size={15} />
                 Excel
               </Boton>
-              <Boton variante="primario" onClick={abrirNuevoTipoCmp}>
+              <Boton variante="primario" onClick={abrirNuevoTipoTar}>
                 <Plus size={16} />
                 Nuevo tipo
               </Boton>
             </div>
           </div>
 
-          {cargandoTiposCmp ? skeleton : (
+          {cargandoTiposTar ? skeleton : (
             <Tabla>
               <TablaCabecera>
                 <tr>
@@ -789,18 +789,18 @@ export default function DatosBasicosCompromisosPage() {
                 </tr>
               </TablaCabecera>
               <TablaCuerpo>
-                {tiposCmp.length === 0 ? (
+                {tiposTar.length === 0 ? (
                   <TablaFila>
                     <TablaTd className="text-center text-texto-muted py-8" colSpan={5 as never}>
-                      No hay tipos de compromiso registrados
+                      No hay tipos de tarea registrados
                     </TablaTd>
                   </TablaFila>
                 ) : (
-                  tiposCmp.map((t) => (
-                    <TablaFila key={t.codigo_tipo_compromiso}>
+                  tiposTar.map((t) => (
+                    <TablaFila key={t.codigo_tipo_tarea}>
                       <TablaTd>
                         <code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">
-                          {t.codigo_tipo_compromiso}
+                          {t.codigo_tipo_tarea}
                         </code>
                       </TablaTd>
                       <TablaTd className="font-medium">{t.nombre}</TablaTd>
@@ -808,7 +808,7 @@ export default function DatosBasicosCompromisosPage() {
                         {t.descripcion || <span className="text-texto-light">-</span>}
                       </TablaTd>
                       <TablaTd>
-                        <button onClick={() => toggleActivoTipoCmp(t)} title="Cambiar estado">
+                        <button onClick={() => toggleActivoTipoTar(t)} title="Cambiar estado">
                           <Insignia variante={t.activo ? 'exito' : 'error'}>
                             {t.activo ? 'Activo' : 'Inactivo'}
                           </Insignia>
@@ -816,7 +816,7 @@ export default function DatosBasicosCompromisosPage() {
                       </TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => abrirEditarTipoCmp(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar">
+                          <button onClick={() => abrirEditarTipoTar(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar">
                             <Pencil size={14} />
                           </button>
                           <button onClick={() => setItemAEliminar({ tipo: 'tipo-cmp', item: t as unknown as Record<string, unknown> })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar">
@@ -833,20 +833,20 @@ export default function DatosBasicosCompromisosPage() {
         </>
       )}
 
-      {/* ── Tab: Estados Compromiso ── */}
-      {tabActiva === 'estados-compromiso' && (
+      {/* ── Tab: Estados Tarea ── */}
+      {tabActiva === 'estados-tarea' && (
         <>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <p className="text-sm text-texto-muted">Filtrar por tipo:</p>
               <select
-                value={filtroTipoCmp}
-                onChange={(e) => setFiltroTipoCmp(e.target.value)}
+                value={filtroTipoTar}
+                onChange={(e) => setFiltroTipoTar(e.target.value)}
                 className="rounded-lg border border-borde bg-surface px-3 py-1.5 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
               >
                 <option value="">Todos</option>
-                {tiposCmp.filter((t) => t.activo).map((t) => (
-                  <option key={t.codigo_tipo_compromiso} value={t.codigo_tipo_compromiso}>
+                {tiposTar.filter((t) => t.activo).map((t) => (
+                  <option key={t.codigo_tipo_tarea} value={t.codigo_tipo_tarea}>
                     {t.nombre}
                   </option>
                 ))}
@@ -856,27 +856,27 @@ export default function DatosBasicosCompromisosPage() {
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(estadosCmp as unknown as Record<string, unknown>[], [
-                  { titulo: 'Tipo', campo: 'codigo_tipo_compromiso' },
-                  { titulo: 'Codigo', campo: 'codigo_estado_compromiso' },
+                onClick={() => exportarExcel(estadosTar as unknown as Record<string, unknown>[], [
+                  { titulo: 'Tipo', campo: 'codigo_tipo_tarea' },
+                  { titulo: 'Codigo', campo: 'codigo_estado_tarea' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Canonico', campo: 'codigo_estado_canonico' },
                   { titulo: 'Orden', campo: 'orden' },
                   { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
-                ], `estados_compromiso${filtroTipoCmp ? '_' + filtroTipoCmp : ''}`)}
-                disabled={estadosCmp.length === 0}
+                ], `estados_tarea${filtroTipoTar ? '_' + filtroTipoTar : ''}`)}
+                disabled={estadosTar.length === 0}
               >
                 <Download size={15} />
                 Excel
               </Boton>
-              <Boton variante="primario" onClick={abrirNuevoEstadoCmp}>
+              <Boton variante="primario" onClick={abrirNuevoEstadoTar}>
                 <Plus size={16} />
                 Nuevo estado
               </Boton>
             </div>
           </div>
 
-          {cargandoEstadosCmp ? skeleton : (
+          {cargandoEstadosTar ? skeleton : (
             <Tabla>
               <TablaCabecera>
                 <tr>
@@ -890,23 +890,23 @@ export default function DatosBasicosCompromisosPage() {
                 </tr>
               </TablaCabecera>
               <TablaCuerpo>
-                {estadosCmp.length === 0 ? (
+                {estadosTar.length === 0 ? (
                   <TablaFila>
                     <TablaTd className="text-center text-texto-muted py-8" colSpan={7 as never}>
-                      No hay estados de compromiso registrados
+                      No hay estados de tarea registrados
                     </TablaTd>
                   </TablaFila>
                 ) : (
-                  estadosCmp.map((e) => (
-                    <TablaFila key={`${e.codigo_tipo_compromiso}/${e.codigo_estado_compromiso}`}>
+                  estadosTar.map((e) => (
+                    <TablaFila key={`${e.codigo_tipo_tarea}/${e.codigo_estado_tarea}`}>
                       <TablaTd>
                         <code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">
-                          {e.codigo_tipo_compromiso}
+                          {e.codigo_tipo_tarea}
                         </code>
                       </TablaTd>
                       <TablaTd>
                         <code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">
-                          {e.codigo_estado_compromiso}
+                          {e.codigo_estado_tarea}
                         </code>
                       </TablaTd>
                       <TablaTd className="font-medium">{e.nombre}</TablaTd>
@@ -917,7 +917,7 @@ export default function DatosBasicosCompromisosPage() {
                       </TablaTd>
                       <TablaTd>{e.orden}</TablaTd>
                       <TablaTd>
-                        <button onClick={() => toggleActivoEstadoCmp(e)} title="Cambiar estado">
+                        <button onClick={() => toggleActivoEstadoTar(e)} title="Cambiar estado">
                           <Insignia variante={e.activo ? 'exito' : 'error'}>
                             {e.activo ? 'Activo' : 'Inactivo'}
                           </Insignia>
@@ -925,7 +925,7 @@ export default function DatosBasicosCompromisosPage() {
                       </TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => abrirEditarEstadoCmp(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar">
+                          <button onClick={() => abrirEditarEstadoTar(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar">
                             <Pencil size={14} />
                           </button>
                           <button onClick={() => setItemAEliminar({ tipo: 'estado-cmp', item: e as unknown as Record<string, unknown> })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar">
@@ -1022,35 +1022,35 @@ export default function DatosBasicosCompromisosPage() {
         </>
       )}
 
-      {/* ── Tab: Canonicos Compromiso ── */}
-      {tabActiva === 'canonicos-compromiso' && (
+      {/* ── Tab: Canonicos Tarea ── */}
+      {tabActiva === 'canonicos-tarea' && (
         <>
           <div className="flex items-center justify-between">
             <p className="text-sm text-texto-muted">
-              Estados canonicos globales para compromisos (no dependen de grupo)
+              Estados canonicos globales para tareas (no dependen de grupo)
             </p>
             <div className="flex gap-2">
               <Boton
                 variante="contorno"
                 tamano="sm"
-                onClick={() => exportarExcel(canonicosCmp as unknown as Record<string, unknown>[], [
+                onClick={() => exportarExcel(canonicosTar as unknown as Record<string, unknown>[], [
                   { titulo: 'Codigo', campo: 'codigo_estado_canonico' },
                   { titulo: 'Nombre', campo: 'nombre' },
                   { titulo: 'Estado', campo: 'activo', formato: (v) => v ? 'Activo' : 'Inactivo' },
-                ], 'canonicos_compromiso')}
-                disabled={canonicosCmp.length === 0}
+                ], 'canonicos_tarea')}
+                disabled={canonicosTar.length === 0}
               >
                 <Download size={15} />
                 Excel
               </Boton>
-              <Boton variante="primario" onClick={abrirNuevoCanCmp}>
+              <Boton variante="primario" onClick={abrirNuevoCanTar}>
                 <Plus size={16} />
                 Nuevo canonico
               </Boton>
             </div>
           </div>
 
-          {cargandoCanonicosCmp ? skeleton : (
+          {cargandoCanonicosTar ? skeleton : (
             <Tabla>
               <TablaCabecera>
                 <tr>
@@ -1061,14 +1061,14 @@ export default function DatosBasicosCompromisosPage() {
                 </tr>
               </TablaCabecera>
               <TablaCuerpo>
-                {canonicosCmp.length === 0 ? (
+                {canonicosTar.length === 0 ? (
                   <TablaFila>
                     <TablaTd className="text-center text-texto-muted py-8" colSpan={4 as never}>
-                      No hay estados canonicos de compromiso registrados
+                      No hay estados canonicos de tarea registrados
                     </TablaTd>
                   </TablaFila>
                 ) : (
-                  canonicosCmp.map((c) => (
+                  canonicosTar.map((c) => (
                     <TablaFila key={c.codigo_estado_canonico}>
                       <TablaTd>
                         <code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">
@@ -1077,7 +1077,7 @@ export default function DatosBasicosCompromisosPage() {
                       </TablaTd>
                       <TablaTd className="font-medium">{c.nombre}</TablaTd>
                       <TablaTd>
-                        <button onClick={() => toggleActivoCanCmp(c)} title="Cambiar estado">
+                        <button onClick={() => toggleActivoCanTar(c)} title="Cambiar estado">
                           <Insignia variante={c.activo ? 'exito' : 'error'}>
                             {c.activo ? 'Activo' : 'Inactivo'}
                           </Insignia>
@@ -1085,7 +1085,7 @@ export default function DatosBasicosCompromisosPage() {
                       </TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => abrirEditarCanCmp(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar">
+                          <button onClick={() => abrirEditarCanTar(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar">
                             <Pencil size={14} />
                           </button>
                           <button onClick={() => setItemAEliminar({ tipo: 'can-cmp', item: c as unknown as Record<string, unknown> })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar">
@@ -1214,64 +1214,64 @@ export default function DatosBasicosCompromisosPage() {
         </div>
       </Modal>
 
-      {/* ── Modal: Tipo Compromiso ── */}
+      {/* ── Modal: Tipo Tarea ── */}
       <Modal
-        abierto={modalTipoCmp}
-        alCerrar={() => setModalTipoCmp(false)}
-        titulo={tipoCmpEditando ? 'Editar tipo de compromiso' : 'Nuevo tipo de compromiso'}
+        abierto={modalTipoTar}
+        alCerrar={() => setModalTipoTar(false)}
+        titulo={tipoTarEditando ? 'Editar tipo de tarea' : 'Nuevo tipo de tarea'}
       >
         <div className="flex flex-col gap-4">
           <Input
             etiqueta="Codigo *"
-            value={formTipoCmp.codigo_tipo_compromiso}
-            onChange={(e) => setFormTipoCmp({ ...formTipoCmp, codigo_tipo_compromiso: e.target.value })}
-            disabled={!!tipoCmpEditando}
+            value={formTipoTar.codigo_tipo_tarea}
+            onChange={(e) => setFormTipoTar({ ...formTipoTar, codigo_tipo_tarea: e.target.value })}
+            disabled={!!tipoTarEditando}
             placeholder="TAREA"
           />
           <Input
             etiqueta="Nombre *"
-            value={formTipoCmp.nombre}
-            onChange={(e) => setFormTipoCmp({ ...formTipoCmp, nombre: e.target.value })}
+            value={formTipoTar.nombre}
+            onChange={(e) => setFormTipoTar({ ...formTipoTar, nombre: e.target.value })}
             placeholder="Tarea"
           />
           <Input
             etiqueta="Descripcion"
-            value={formTipoCmp.descripcion}
-            onChange={(e) => setFormTipoCmp({ ...formTipoCmp, descripcion: e.target.value })}
+            value={formTipoTar.descripcion}
+            onChange={(e) => setFormTipoTar({ ...formTipoTar, descripcion: e.target.value })}
             placeholder="Descripcion opcional"
           />
-          {errorTipoCmp && (
+          {errorTipoTar && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              <p className="text-sm text-error">{errorTipoCmp}</p>
+              <p className="text-sm text-error">{errorTipoTar}</p>
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalTipoCmp(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarTipoCmp} cargando={guardandoTipoCmp}>
-              {tipoCmpEditando ? 'Guardar cambios' : 'Crear tipo'}
+            <Boton variante="contorno" onClick={() => setModalTipoTar(false)}>Cancelar</Boton>
+            <Boton variante="primario" onClick={guardarTipoTar} cargando={guardandoTipoTar}>
+              {tipoTarEditando ? 'Guardar cambios' : 'Crear tipo'}
             </Boton>
           </div>
         </div>
       </Modal>
 
-      {/* ── Modal: Estado Compromiso ── */}
+      {/* ── Modal: Estado Tarea ── */}
       <Modal
-        abierto={modalEstadoCmp}
-        alCerrar={() => setModalEstadoCmp(false)}
-        titulo={estadoCmpEditando ? 'Editar estado de compromiso' : 'Nuevo estado de compromiso'}
+        abierto={modalEstadoTar}
+        alCerrar={() => setModalEstadoTar(false)}
+        titulo={estadoTarEditando ? 'Editar estado de tarea' : 'Nuevo estado de tarea'}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-texto">Tipo de compromiso *</label>
             <select
-              value={formEstadoCmp.codigo_tipo_compromiso}
-              onChange={(e) => setFormEstadoCmp({ ...formEstadoCmp, codigo_tipo_compromiso: e.target.value })}
-              disabled={!!estadoCmpEditando}
+              value={formEstadoTar.codigo_tipo_tarea}
+              onChange={(e) => setFormEstadoTar({ ...formEstadoTar, codigo_tipo_tarea: e.target.value })}
+              disabled={!!estadoTarEditando}
               className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60"
             >
               <option value="">Seleccionar tipo...</option>
-              {tiposCmp.filter((t) => t.activo).map((t) => (
-                <option key={t.codigo_tipo_compromiso} value={t.codigo_tipo_compromiso}>
+              {tiposTar.filter((t) => t.activo).map((t) => (
+                <option key={t.codigo_tipo_tarea} value={t.codigo_tipo_tarea}>
                   {t.nombre}
                 </option>
               ))}
@@ -1279,26 +1279,26 @@ export default function DatosBasicosCompromisosPage() {
           </div>
           <Input
             etiqueta="Codigo *"
-            value={formEstadoCmp.codigo_estado_compromiso}
-            onChange={(e) => setFormEstadoCmp({ ...formEstadoCmp, codigo_estado_compromiso: e.target.value })}
-            disabled={!!estadoCmpEditando}
+            value={formEstadoTar.codigo_estado_tarea}
+            onChange={(e) => setFormEstadoTar({ ...formEstadoTar, codigo_estado_tarea: e.target.value })}
+            disabled={!!estadoTarEditando}
             placeholder="PENDIENTE"
           />
           <Input
             etiqueta="Nombre *"
-            value={formEstadoCmp.nombre}
-            onChange={(e) => setFormEstadoCmp({ ...formEstadoCmp, nombre: e.target.value })}
+            value={formEstadoTar.nombre}
+            onChange={(e) => setFormEstadoTar({ ...formEstadoTar, nombre: e.target.value })}
             placeholder="Pendiente"
           />
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-texto">Estado canonico *</label>
             <select
-              value={formEstadoCmp.codigo_estado_canonico}
-              onChange={(e) => setFormEstadoCmp({ ...formEstadoCmp, codigo_estado_canonico: e.target.value })}
+              value={formEstadoTar.codigo_estado_canonico}
+              onChange={(e) => setFormEstadoTar({ ...formEstadoTar, codigo_estado_canonico: e.target.value })}
               className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
             >
               <option value="">Seleccionar canonico...</option>
-              {canonicosCmp.filter((c) => c.activo).map((c) => (
+              {canonicosTar.filter((c) => c.activo).map((c) => (
                 <option key={c.codigo_estado_canonico} value={c.codigo_estado_canonico}>
                   {c.nombre}
                 </option>
@@ -1308,19 +1308,19 @@ export default function DatosBasicosCompromisosPage() {
           <Input
             etiqueta="Orden"
             type="number"
-            value={String(formEstadoCmp.orden)}
-            onChange={(e) => setFormEstadoCmp({ ...formEstadoCmp, orden: parseInt(e.target.value) || 0 })}
+            value={String(formEstadoTar.orden)}
+            onChange={(e) => setFormEstadoTar({ ...formEstadoTar, orden: parseInt(e.target.value) || 0 })}
             placeholder="0"
           />
-          {errorEstadoCmp && (
+          {errorEstadoTar && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              <p className="text-sm text-error">{errorEstadoCmp}</p>
+              <p className="text-sm text-error">{errorEstadoTar}</p>
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalEstadoCmp(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarEstadoCmp} cargando={guardandoEstadoCmp}>
-              {estadoCmpEditando ? 'Guardar cambios' : 'Crear estado'}
+            <Boton variante="contorno" onClick={() => setModalEstadoTar(false)}>Cancelar</Boton>
+            <Boton variante="primario" onClick={guardarEstadoTar} cargando={guardandoEstadoTar}>
+              {estadoTarEditando ? 'Guardar cambios' : 'Crear estado'}
             </Boton>
           </div>
         </div>
@@ -1360,35 +1360,35 @@ export default function DatosBasicosCompromisosPage() {
         </div>
       </Modal>
 
-      {/* ── Modal: Canonico Compromiso ── */}
+      {/* ── Modal: Canonico Tarea ── */}
       <Modal
-        abierto={modalCanCmp}
-        alCerrar={() => setModalCanCmp(false)}
-        titulo={canCmpEditando ? 'Editar estado canonico de compromiso' : 'Nuevo estado canonico de compromiso'}
+        abierto={modalCanTar}
+        alCerrar={() => setModalCanTar(false)}
+        titulo={canTarEditando ? 'Editar estado canonico de tarea' : 'Nuevo estado canonico de tarea'}
       >
         <div className="flex flex-col gap-4">
           <Input
             etiqueta="Codigo *"
-            value={formCanCmp.codigo_estado_canonico}
-            onChange={(e) => setFormCanCmp({ ...formCanCmp, codigo_estado_canonico: e.target.value })}
-            disabled={!!canCmpEditando}
+            value={formCanTar.codigo_estado_canonico}
+            onChange={(e) => setFormCanTar({ ...formCanTar, codigo_estado_canonico: e.target.value })}
+            disabled={!!canTarEditando}
             placeholder="PENDIENTE"
           />
           <Input
             etiqueta="Nombre *"
-            value={formCanCmp.nombre}
-            onChange={(e) => setFormCanCmp({ ...formCanCmp, nombre: e.target.value })}
+            value={formCanTar.nombre}
+            onChange={(e) => setFormCanTar({ ...formCanTar, nombre: e.target.value })}
             placeholder="Pendiente"
           />
-          {errorCanCmp && (
+          {errorCanTar && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-              <p className="text-sm text-error">{errorCanCmp}</p>
+              <p className="text-sm text-error">{errorCanTar}</p>
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalCanCmp(false)}>Cancelar</Boton>
-            <Boton variante="primario" onClick={guardarCanCmp} cargando={guardandoCanCmp}>
-              {canCmpEditando ? 'Guardar cambios' : 'Crear canonico'}
+            <Boton variante="contorno" onClick={() => setModalCanTar(false)}>Cancelar</Boton>
+            <Boton variante="primario" onClick={guardarCanTar} cargando={guardandoCanTar}>
+              {canTarEditando ? 'Guardar cambios' : 'Crear canonico'}
             </Boton>
           </div>
         </div>

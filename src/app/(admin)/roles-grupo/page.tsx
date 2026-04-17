@@ -12,6 +12,7 @@ import { rolesApi, funcionesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Rol, Funcion } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
 
@@ -160,8 +161,9 @@ export default function PaginaRolesGrupo() {
   )
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">Roles del Grupo</h2>
         <p className="text-sm text-texto-muted mt-1">Gestión de roles y asignación de funciones del grupo activo</p>
       </div>
@@ -249,7 +251,7 @@ export default function PaginaRolesGrupo() {
               </div>
             </div>
             {errorRol && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorRol}</p></div>}
-            <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalRol(false)}>Salir</Boton><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardandoRol}>Guardar</Boton></div>
+            <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalRol(false)}>Salir</Boton><Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardandoRol}>Grabar y Salir</Boton><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardandoRol}>Grabar</Boton></div>
           </>)}
           {tabModalRol === 'funciones' && rolEditando && (
             <div className="flex flex-col gap-4">
@@ -300,7 +302,7 @@ export default function PaginaRolesGrupo() {
                 </div>
               ))}</div>}
               {errorRol && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorRol}</p></div>}
-              <div className="flex justify-end pt-2"><Boton variante="secundario" onClick={() => setModalRol(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="secundario" onClick={() => setModalRol(false)}>Salir</Boton></div>
             </div>
           )}
         </div>

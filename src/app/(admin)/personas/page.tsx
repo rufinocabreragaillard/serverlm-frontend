@@ -13,6 +13,7 @@ import { personasApi, tiposDocumentoPersonaApi, entidadesApi, categoriasCaractPe
 import type { Persona, TipoDocumentoPersona, Entidad, CategoriaConCaracteristicas, CaracteristicaPersona, TipoCaractPers } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabModal = 'datos' | 'caracteristicas'
 
@@ -253,8 +254,9 @@ export default function PaginaPersonas() {
   const entidadSeleccionada = entidades.find((e) => e.codigo_entidad === form.codigo_entidad)
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
@@ -410,8 +412,9 @@ export default function PaginaPersonas() {
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
 
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModal(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>{tc('guardar')}</Boton>
+                <Boton variante="secundario" onClick={() => setModal(false)}>{tc('salir')}</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>{tc('grabarYSalir')}</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>{tc('grabar')}</Boton>
               </div>
             </div>
           )}
@@ -505,8 +508,9 @@ export default function PaginaPersonas() {
                 })
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModal(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>{tc('guardar')}</Boton>
+                <Boton variante="secundario" onClick={() => setModal(false)}>{tc('salir')}</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>{tc('grabarYSalir')}</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>{tc('grabar')}</Boton>
               </div>
             </div>
           )}

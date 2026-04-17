@@ -21,6 +21,7 @@ import {
 } from '@/lib/api'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 function fmtUsd(n: number | undefined | null) {
   return `$${(Number(n) || 0).toFixed(4)}`
@@ -98,7 +99,8 @@ export default function PaginaLLMUso() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative p-6 space-y-6">
+      <BotonChat className="top-0 right-0" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">{t('titulo')}</h1>

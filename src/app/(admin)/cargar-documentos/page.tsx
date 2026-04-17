@@ -11,6 +11,7 @@ import { ubicacionesDocsApi, cargaDocumentosApi, parametrosApi } from '@/lib/api
 import { escanearArchivosDirectorio, soportaDirectoryPicker, type ArchivoEscaneado } from '@/lib/escanear-directorio'
 import { getDirectoryHandle as idbGetHandle, setDirectoryHandle as idbSetHandle, ensureReadPermission } from '@/lib/file-handle-store'
 import type { UbicacionDoc } from '@/lib/tipos'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 export default function PaginaCargarDocumentos() {
   const t = useTranslations('cargarDocumentos')
@@ -212,9 +213,10 @@ export default function PaginaCargarDocumentos() {
     : []
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="relative flex flex-col gap-6 max-w-4xl">
+      <BotonChat className="top-0 right-0" />
       {/* Header */}
-      <div>
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
           {t('subtitulo')}

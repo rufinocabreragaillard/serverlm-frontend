@@ -15,6 +15,7 @@ import { colaEstadosDocsApi, documentosApi, estadosDocsApi } from '@/lib/api'
 import type { ColaEstadoDoc, Documento, EstadoDoc } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 const ESTADO_CONFIG: Record<string, { variante: 'exito' | 'error' | 'advertencia' | 'neutro'; icono: typeof Clock }> = {
   PENDIENTE: { variante: 'neutro', icono: Clock },
@@ -178,9 +179,10 @@ export default function PaginaColaEstadosDocs() {
   const filtrados = cola
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
       {/* Header */}
-      <div>
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>

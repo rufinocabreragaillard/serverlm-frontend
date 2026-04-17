@@ -13,6 +13,7 @@ import { categoriasCaractPersApi, rolesApi } from '@/lib/api'
 import type { CategoriaCaractPers, TipoCaractPers, RolCaractPers, Rol } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabActiva = 'categorias' | 'tipos' | 'roles'
 
@@ -134,7 +135,7 @@ export default function PaginaCategoriasCaracteristica() {
     setModalCat(true)
   }
 
-  const guardarCat = async () => {
+  const guardarCat = async (cerrar = true) => {
     if (!formCat.nombre_cat_pers.trim()) {
       setErrorCat(t('errorNombreObligatorio'))
       return
@@ -158,7 +159,7 @@ export default function PaginaCategoriasCaracteristica() {
           editable_en_detalle_pers: formCat.editable_en_detalle_pers,
         })
       }
-      setModalCat(false)
+      if (cerrar) setModalCat(false)
       cargarCategorias()
     } catch (e) {
       setErrorCat(e instanceof Error ? e.message : tc('errorAlGuardar'))
@@ -194,7 +195,7 @@ export default function PaginaCategoriasCaracteristica() {
     setModalTipo(true)
   }
 
-  const guardarTipo = async () => {
+  const guardarTipo = async (cerrar = true) => {
     if (!catSeleccionada) return
     if (!formTipo.nombre_tipo_pers.trim()) {
       setErrorTipo(t('errorNombreObligatorio'))
@@ -214,7 +215,7 @@ export default function PaginaCategoriasCaracteristica() {
           nombre_tipo_pers: formTipo.nombre_tipo_pers,
         })
       }
-      setModalTipo(false)
+      if (cerrar) setModalTipo(false)
       cargarTipos()
     } catch (e) {
       setErrorTipo(e instanceof Error ? e.message : tc('errorAlGuardar'))
@@ -335,8 +336,9 @@ export default function PaginaCategoriasCaracteristica() {
   ]
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
@@ -585,8 +587,9 @@ export default function PaginaCategoriasCaracteristica() {
           )}
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalCat(false)}>{tc('cancelar')}</Boton>
-            <Boton variante="primario" onClick={guardarCat} cargando={guardandoCat}>{catEditando ? tc('guardar') : tc('crear')}</Boton>
+            <Boton variante="secundario" onClick={() => setModalCat(false)}>{tc('salir')}</Boton>
+            <Boton variante="secundario" onClick={() => guardarCat(true)} cargando={guardandoCat}>{tc('grabarYSalir')}</Boton>
+            <Boton variante="primario" onClick={() => guardarCat(false)} cargando={guardandoCat}>{catEditando ? tc('grabar') : tc('crear')}</Boton>
           </div>
         </div>
       </Modal>
@@ -602,8 +605,9 @@ export default function PaginaCategoriasCaracteristica() {
           )}
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalTipo(false)}>{tc('cancelar')}</Boton>
-            <Boton variante="primario" onClick={guardarTipo} cargando={guardandoTipo}>{tipoEditando ? tc('guardar') : tc('crear')}</Boton>
+            <Boton variante="secundario" onClick={() => setModalTipo(false)}>{tc('salir')}</Boton>
+            <Boton variante="secundario" onClick={() => guardarTipo(true)} cargando={guardandoTipo}>{tc('grabarYSalir')}</Boton>
+            <Boton variante="primario" onClick={() => guardarTipo(false)} cargando={guardandoTipo}>{tipoEditando ? tc('grabar') : tc('crear')}</Boton>
           </div>
         </div>
       </Modal>

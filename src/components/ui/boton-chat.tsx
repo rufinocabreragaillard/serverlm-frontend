@@ -1,26 +1,27 @@
 'use client'
 
 import { MessageSquare } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 interface BotonChatProps {
   className?: string
-  titulo?: string
 }
 
 /**
- * Botón de Chat deshabilitado para la esquina superior derecha de las páginas.
- * Queda visible pero no interactivo (se habilitará cuando esté la funcionalidad).
+ * Botón de Chat para la esquina superior derecha de las páginas.
+ * Navega a /chat-usuario al hacer clic.
  */
-export function BotonChat({ className, titulo = 'Chat (próximamente)' }: BotonChatProps) {
+export function BotonChat({ className }: BotonChatProps) {
+  const router = useRouter()
   return (
     <button
       type="button"
-      disabled
-      title={titulo}
-      aria-label={titulo}
+      onClick={() => router.push('/chat-usuario')}
+      title="Chat"
+      aria-label="Chat"
       className={cn(
-        'absolute top-0 right-0 z-10 inline-flex items-center gap-2 rounded-lg border border-borde bg-surface px-3 py-2 text-sm font-medium text-texto-muted opacity-60 cursor-not-allowed',
+        'absolute top-0 right-0 z-10 inline-flex items-center gap-2 rounded-lg border border-borde bg-surface px-3 py-2 text-sm font-medium text-texto hover:bg-primario-muy-claro hover:text-primario transition-colors',
         className,
       )}
     >

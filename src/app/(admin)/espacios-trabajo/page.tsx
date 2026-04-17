@@ -18,6 +18,7 @@ import {
   FolderOpen, Plus, Pencil, Trash2, Search, X, FileText,
   BookOpen, FolderPlus, CheckCircle2, Circle,
 } from 'lucide-react'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 // ─── Tipos de filtros (debe extender Record<string,unknown> para usePaginacion) ─
 interface Filtros extends Record<string, unknown> {
@@ -128,7 +129,7 @@ export default function EspaciosTrabajoPage() {
   }
 
   // ─── Guardar ────────────────────────────────────────────────────────────────
-  const guardar = async () => {
+  const guardar = async (cerrar = true) => {
     if (!form.nombre_espacio.trim()) { setError('El nombre es requerido'); return }
     setGuardando(true); setError('')
     try {
@@ -141,9 +142,10 @@ export default function EspaciosTrabajoPage() {
       if (editando) {
         await espaciosTrabajoApi.actualizar(editando.id_espacio, payload)
       } else {
-        await espaciosTrabajoApi.crear(payload)
+        const creado = await espaciosTrabajoApi.crear(payload)
+        if (!cerrar && creado) setEditando(creado)
       }
-      setModalAbierto(false)
+      if (cerrar) setModalAbierto(false)
       refetch()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al guardar')
@@ -223,7 +225,8 @@ export default function EspaciosTrabajoPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative p-6 space-y-6">
+      <BotonChat className="top-0 right-0" />
       {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -434,8 +437,9 @@ export default function EspaciosTrabajoPage() {
             {error && <p className="text-sm text-error">{error}</p>}
             <div className="flex justify-end gap-2 pt-2">
               <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-              <Boton variante="primario" onClick={guardar} cargando={guardando}>
-                {editando ? 'Guardar cambios' : 'Crear espacio'}
+              <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Grabar y Salir</Boton>
+              <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>
+                {editando ? 'Grabar' : 'Crear espacio'}
               </Boton>
             </div>
           </div>

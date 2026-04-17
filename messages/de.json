@@ -1,6 +1,9 @@
 {
   "common": {
     "guardar": "Speichern",
+    "grabar": "Speichern",
+    "grabarYSalir": "Speichern und Beenden",
+    "salir": "Beenden",
     "cancelar": "Abbrechen",
     "eliminar": "Löschen",
     "editar": "Bearbeiten",
@@ -11,7 +14,7 @@
     "confirmarEliminar": "{nombre} löschen?",
     "error": "Fehler",
     "exito": "Erfolg",
-    "cerrar": "Schließen",
+    "cerrar": "Beenden",
     "si": "Ja",
     "no": "Nein",
     "volver": "Zurück",

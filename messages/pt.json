@@ -1,6 +1,9 @@
 {
   "common": {
     "guardar": "Salvar",
+    "grabar": "Salvar",
+    "grabarYSalir": "Salvar e Sair",
+    "salir": "Sair",
     "cancelar": "Cancelar",
     "eliminar": "Eliminar",
     "editar": "Editar",
@@ -11,7 +14,7 @@
     "confirmarEliminar": "Eliminar {nombre}?",
     "error": "Erro",
     "exito": "Sucesso",
-    "cerrar": "Fechar",
+    "cerrar": "Sair",
     "si": "Sim",
     "no": "Não",
     "volver": "Voltar",

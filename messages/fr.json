@@ -1,6 +1,9 @@
 {
   "common": {
     "guardar": "Enregistrer",
+    "grabar": "Enregistrer",
+    "grabarYSalir": "Enregistrer et Quitter",
+    "salir": "Quitter",
     "cancelar": "Annuler",
     "eliminar": "Supprimer",
     "editar": "Modifier",
@@ -11,7 +14,7 @@
     "confirmarEliminar": "Supprimer {nombre} ?",
     "error": "Erreur",
     "exito": "Succès",
-    "cerrar": "Fermer",
+    "cerrar": "Quitter",
     "si": "Oui",
     "no": "Non",
     "volver": "Retour",

@@ -10,6 +10,7 @@ import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '
 import { auditoriaApi } from '@/lib/api'
 import type { RegistroAuditoria } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 export default function PaginaAuditoriaConfiguracion() {
   const t = useTranslations('auditoriaConfiguracion')
@@ -44,7 +45,8 @@ export default function PaginaAuditoriaConfiguracion() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl">
+    <div className="relative flex flex-col gap-6 max-w-6xl">
+      <BotonChat className="top-0 right-0" />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>

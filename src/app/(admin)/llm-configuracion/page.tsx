@@ -23,6 +23,7 @@ import {
   type LLMPrecio,
 } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 type Proveedor = 'anthropic' | 'google' | 'openai' | 'deepseek'
 
@@ -100,7 +101,7 @@ export default function PaginaLLMConfiguracion() {
     setModal(true)
   }
 
-  const guardar = async () => {
+  const guardar = async (cerrar = true) => {
     setError('')
     setGuardando(true)
     try {
@@ -126,7 +127,7 @@ export default function PaginaLLMConfiguracion() {
           activo: form.activo,
         })
       }
-      setModal(false)
+      if (cerrar) setModal(false)
       cargar()
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string } }; message?: string }
@@ -192,19 +193,20 @@ export default function PaginaLLMConfiguracion() {
     if (tab === 'precios') cargarPrecios()
   }, [tab, cargarPrecios])
 
-  const guardarPrecio = async () => {
+  const guardarPrecio = async (cerrar = true) => {
     if (!editandoPrecio) return
     await llmPreciosApi.upsert(editandoPrecio.proveedor, editandoPrecio.nombre_tecnico, {
       ...formPrecio,
       vigente_desde: new Date().toISOString().slice(0, 10),
       activo: true,
     })
-    setEditandoPrecio(null)
+    if (cerrar) setEditandoPrecio(null)
     cargarPrecios()
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="relative p-6 space-y-6">
+      <BotonChat className="top-0 right-0" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">{t('titulo')}</h1>
@@ -481,12 +483,15 @@ export default function PaginaLLMConfiguracion() {
             {error && <div className="text-sm text-red-600">{error}</div>}
 
             <div className="flex justify-end gap-2 pt-2">
-              <Boton variante="contorno" onClick={() => setModal(false)}>
-                {tc('cancelar')}
+              <Boton variante="secundario" onClick={() => setModal(false)}>
+                {tc('salir')}
               </Boton>
-              <Boton onClick={guardar} disabled={guardando}>
+              <Boton variante="secundario" onClick={() => guardar(true)} disabled={guardando}>
+                {tc('grabarYSalir')}
+              </Boton>
+              <Boton onClick={() => guardar(false)} disabled={guardando}>
                 {guardando && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                {tc('guardar')}
+                {tc('grabar')}
               </Boton>
             </div>
           </div>
@@ -517,10 +522,11 @@ export default function PaginaLLMConfiguracion() {
               ),
             )}
             <div className="flex justify-end gap-2 pt-2">
-              <Boton variante="contorno" onClick={() => setEditandoPrecio(null)}>
-                {tc('cancelar')}
+              <Boton variante="secundario" onClick={() => setEditandoPrecio(null)}>
+                {tc('salir')}
               </Boton>
-              <Boton onClick={guardarPrecio}>{tc('guardar')}</Boton>
+              <Boton variante="secundario" onClick={() => guardarPrecio(true)}>{tc('grabarYSalir')}</Boton>
+              <Boton onClick={() => guardarPrecio(false)}>{tc('grabar')}</Boton>
             </div>
           </div>
         </Modal>

@@ -11,6 +11,7 @@ import { tiposDocumentoPersonaApi } from '@/lib/api'
 import type { TipoDocumentoPersona } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
 import { useAuth } from '@/context/AuthContext'
+import { BotonChat } from '@/components/ui/boton-chat'
 
 export default function PaginaTiposDocumentoPersona() {
   const { grupoActivo } = useAuth()
@@ -39,8 +40,9 @@ export default function PaginaTiposDocumentoPersona() {
   const filtradosOrdenados = [...crud.filtrados].sort((a, b) => a.nombre.localeCompare(b.nombre))
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl">
-      <div>
+    <div className="relative flex flex-col gap-6 max-w-5xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28">
         <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
@@ -102,7 +104,20 @@ export default function PaginaTiposDocumentoPersona() {
             </div>
           )}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('cancelar')}</Boton>
+            <Boton variante="secundario" onClick={crud.cerrarModal}>{tc('salir')}</Boton>
+            <Boton
+              variante="secundario"
+              onClick={() => {
+                if (!crud.form.nombre.trim()) {
+                  crud.setError(t('errorNombreObligatorio'))
+                  return
+                }
+                crud.guardar(undefined, undefined, { cerrar: true })
+              }}
+              cargando={crud.guardando}
+            >
+              {tc('grabarYSalir')}
+            </Boton>
             <Boton
               variante="primario"
               onClick={() => {
@@ -110,11 +125,11 @@ export default function PaginaTiposDocumentoPersona() {
                   crud.setError(t('errorNombreObligatorio'))
                   return
                 }
-                crud.guardar()
+                crud.guardar(undefined, undefined, { cerrar: false })
               }}
               cargando={crud.guardando}
             >
-              {crud.editando ? tc('guardar') : tc('crear')}
+              {crud.editando ? tc('grabar') : tc('crear')}
             </Boton>
           </div>
         </div>
