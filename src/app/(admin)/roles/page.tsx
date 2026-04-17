@@ -657,8 +657,9 @@ export default function PaginaRoles() {
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalRol(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>{rolEditando ? tc('guardar') : t('crearRol')}</Boton>
+                <Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton>
               </div>
             </>
           )}
@@ -774,9 +775,7 @@ export default function PaginaRoles() {
               )}
 
               <div className="flex justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalRol(false)}>
-                  Cerrar
-                </Boton>
+                <Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton>
               </div>
             </div>
           )}
@@ -792,7 +791,7 @@ export default function PaginaRoles() {
                 onChange={(e) => setFormRol({ ...formRol, prompt: e.target.value })}
               />
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalRol(false)}>Salir</Boton><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>{tc('guardar')}</Boton></div>
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardando}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton></div>
             </div>
           )}
 
@@ -807,7 +806,7 @@ export default function PaginaRoles() {
                 onChange={(e) => setFormRol({ ...formRol, system_prompt: e.target.value })}
               />
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalRol(false)}>Salir</Boton><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>{tc('guardar')}</Boton></div>
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardando}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton></div>
             </div>
           )}
         </div>
@@ -852,8 +851,9 @@ export default function PaginaRoles() {
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalFuncion(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={() => guardarFuncion(false)} cargando={guardando}>{funcionEditando ? tc('guardar') : t('crearFuncion')}</Boton>
+                <Boton variante="primario" onClick={() => guardarFuncion(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardarFuncion(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Salir</Boton>
               </div>
             </>
           )}
@@ -890,7 +890,7 @@ export default function PaginaRoles() {
                 </div>
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex justify-end pt-2"><Boton variante="secundario" onClick={() => setModalFuncion(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalFuncion(false)}>Salir</Boton></div>
             </div>
           )}
 
@@ -935,8 +935,9 @@ export default function PaginaRoles() {
               </div>
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalFuncion(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={() => guardarFuncion(false)} cargando={guardando}>{tc('guardar')}</Boton>
+                <Boton variante="primario" onClick={() => guardarFuncion(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardarFuncion(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Salir</Boton>
               </div>
             </div>
           )}

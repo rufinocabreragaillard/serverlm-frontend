@@ -297,7 +297,7 @@ export default function PaginaUsuariosSemilla() {
   }
 
   // ── Guardar ────────────────────────────────────────────────────────────────
-  const guardar = async (): Promise<boolean> => {
+  const guardar = async (cerrar = false): Promise<boolean> => {
     setError('')
     if (!form.codigo_usuario || !form.nombre) {
       setError('El correo y el nombre son obligatorios')
@@ -333,6 +333,7 @@ export default function PaginaUsuariosSemilla() {
         })
       }
       cargarUsuarios()
+      if (cerrar) setModalAbierto(false)
       return true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al guardar')
@@ -674,10 +675,9 @@ export default function PaginaUsuariosSemilla() {
               )}
 
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={crearUsuarioSemilla} cargando={creandoSemilla}>
-                  Crear usuario semilla
-                </Boton>
+                <Boton variante="primario" onClick={crearUsuarioSemilla} cargando={creandoSemilla}>Guardar</Boton>
+                <Boton variante="secundario" onClick={crearUsuarioSemilla} cargando={creandoSemilla}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
               </div>
             </>
           )}
@@ -729,8 +729,9 @@ export default function PaginaUsuariosSemilla() {
           )}
 
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-            <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+            <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+            <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+            <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
           </div>
             </>
           )}
@@ -894,8 +895,9 @@ export default function PaginaUsuariosSemilla() {
                 </div>
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
               </div>
             </div>
           )}
@@ -1028,8 +1030,9 @@ export default function PaginaUsuariosSemilla() {
                 </div>
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
               </div>
             </div>
           )}

@@ -720,8 +720,9 @@ export default function PaginaGrupos() {
 
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalGrupo(false)}>Salir</Boton>
-            <Boton variante="primario" onClick={() => guardarGrupo(false)} cargando={guardando}>{grupoEditando ? tc('guardar') : t('crearGrupo')}</Boton>
+            <Boton variante="primario" onClick={() => guardarGrupo(false)} cargando={guardando}>Guardar</Boton>
+            <Boton variante="secundario" onClick={() => guardarGrupo(true)} cargando={guardando}>Guardar y Salir</Boton>
+            <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Salir</Boton>
           </div>
         </div>
       </Modal>
@@ -747,8 +748,9 @@ export default function PaginaGrupos() {
               )}
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalEntidad(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={() => guardarEntidad(false)} cargando={guardandoEntidad}>{entidadEditando ? tc('guardar') : t('crearEntidad')}</Boton>
+                <Boton variante="primario" onClick={() => guardarEntidad(false)} cargando={guardandoEntidad}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardarEntidad(true)} cargando={guardandoEntidad}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Salir</Boton>
               </div>
             </>
           )}
@@ -817,7 +819,7 @@ export default function PaginaGrupos() {
 
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <div className="flex justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalEntidad(false)}>Cerrar</Boton>
+                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Salir</Boton>
               </div>
             </>
           )}

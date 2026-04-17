@@ -295,7 +295,7 @@ export default function PaginaAplicaciones() {
               <label htmlFor="sidebar_ancho" className="text-sm text-texto cursor-pointer">Sidebar expandido al iniciar <span className="text-texto-muted">(desmarcar para apps de uso único como Chat)</span></label>
             </div>
             {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-            <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalApp(false)}>Salir</Boton><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>{appEditando ? tc('guardar') : t('crearApp')}</Boton></div>
+            <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarApp(true)} cargando={guardandoApp}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
           </>)}
           {tabModalApp === 'funciones' && appEditando && (
             <div className="flex flex-col gap-4">
@@ -375,7 +375,7 @@ export default function PaginaAplicaciones() {
                   ))}
                 </ul>
               )}
-              <div className="flex justify-end pt-2"><Boton variante="secundario" onClick={() => setModalApp(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
             </div>
           )}
           {tabModalApp === 'prompt' && appEditando && (
@@ -388,7 +388,7 @@ export default function PaginaAplicaciones() {
                 onChange={(e) => setFormApp({ ...formApp, prompt: e.target.value })}
               />
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalApp(false)}>Salir</Boton><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>{tc('guardar')}</Boton></div>
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarApp(true)} cargando={guardandoApp}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
             </div>
           )}
           {tabModalApp === 'system_prompt' && appEditando && (
@@ -401,7 +401,7 @@ export default function PaginaAplicaciones() {
                 onChange={(e) => setFormApp({ ...formApp, system_prompt: e.target.value })}
               />
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="secundario" onClick={() => setModalApp(false)}>Salir</Boton><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>{tc('guardar')}</Boton></div>
+              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarApp(true)} cargando={guardandoApp}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
             </div>
           )}
           {tabModalApp === 'grupos' && appEditando && (
@@ -428,7 +428,7 @@ export default function PaginaAplicaciones() {
                 </div>
               ))}</div>}
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-              <div className="flex justify-end pt-2"><Boton variante="secundario" onClick={() => setModalApp(false)}>Cerrar</Boton></div>
+              <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
             </div>
           )}
         </div>

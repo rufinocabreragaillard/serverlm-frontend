@@ -278,7 +278,7 @@ export default function PaginaUsuarios() {
   }
 
   // ── Guardar datos ──────────────────────────────────────────────────────────
-  const guardar = async (): Promise<boolean> => {
+  const guardar = async (cerrar = false): Promise<boolean> => {
     setError('')
     if (!form.codigo_usuario || !form.nombre) {
       setError('El correo y el nombre son obligatorios')
@@ -321,6 +321,7 @@ export default function PaginaUsuarios() {
         cargarGruposUsuario(form.codigo_usuario)
       }
       cargar()
+      if (cerrar) setModalAbierto(false)
       return true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al guardar')
@@ -736,8 +737,9 @@ export default function PaginaUsuarios() {
                     </div>
                   )}
                   <div className="flex gap-3 justify-end pt-2">
-                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
-                    <Boton variante="primario" onClick={async () => { if (await guardar()) setTabActiva('inicializacion') }} cargando={guardando}>Siguiente</Boton>
+                    <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                    <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
                   </div>
                 </div>
               ) : (
@@ -805,8 +807,9 @@ export default function PaginaUsuarios() {
                     </div>
                   )}
                   <div className="flex gap-3 justify-end pt-2">
-                    <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                    <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
+                    <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                    <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
                   </div>
                 </div>
               )}
@@ -922,9 +925,9 @@ export default function PaginaUsuarios() {
                 </div>
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="secundario" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
-                <Boton variante="primario" onClick={async () => { if (await guardar()) setTabActiva('entidades') }} cargando={guardando}>Siguiente</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
               </div>
             </div>
           )}
@@ -1036,10 +1039,9 @@ export default function PaginaUsuarios() {
                 </div>
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
-                <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
-                <Boton variante="primario" onClick={() => setTabActiva('roles')}>Siguiente</Boton>
-                <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
               </div>
             </div>
           )}
@@ -1172,9 +1174,9 @@ export default function PaginaUsuarios() {
                 </div>
               )}
               <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cancelar')}</Boton>
-                <Boton variante="primario" onClick={guardar} cargando={guardando}>Guardar</Boton>
-                <Boton variante="primario" onClick={async () => { if (await guardar()) setModalAbierto(false) }} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
+                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
               </div>
             </div>
           )}

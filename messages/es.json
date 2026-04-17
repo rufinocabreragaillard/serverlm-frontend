@@ -1,6 +1,9 @@
 {
   "common": {
     "guardar": "Guardar",
+    "grabar": "Guardar",
+    "grabarYSalir": "Guardar y Salir",
+    "salir": "Salir",
     "cancelar": "Cancelar",
     "eliminar": "Eliminar",
     "editar": "Editar",
@@ -11,7 +14,7 @@
     "confirmarEliminar": "¿Eliminar {nombre}?",
     "error": "Error",
     "exito": "Éxito",
-    "cerrar": "Cerrar",
+    "cerrar": "Salir",
     "si": "Sí",
     "no": "No",
     "volver": "Volver",
@@ -843,7 +846,7 @@
     "etiquetaDescripcion": "Descripción",
     "placeholderDescripcion": "Descripción del rol...",
     "crearRol": "Crear rol",
-    "guardarRol": "Guardar",
+    "guardarRol": "Grabar",
     "buscarFuncionPlaceholder": "Buscar función por nombre o código...",
     "asignarFuncion": "Asignar función",
     "asignar": "Asignar",
