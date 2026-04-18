@@ -576,6 +576,8 @@ export interface Proceso {
   nombre_proceso: string
   descripcion: string | null
   tipo_entidad: string
+  tipo: string
+  orden: number
   activo: boolean
   prompt?: string | null
   system_prompt?: string | null
@@ -587,8 +589,68 @@ export const procesosApi = {
   listar: (tipoEntidad?: string) =>
     api.get<Proceso[]>('/procesos', { params: tipoEntidad ? { tipo_entidad: tipoEntidad } : undefined }).then((r) => r.data),
   obtener: (codigo: string) => api.get<Proceso>(`/procesos/${codigo}`).then((r) => r.data),
-  actualizar: (codigo: string, data: { n_parallel?: number; nombre_proceso?: string; descripcion?: string }) =>
+  actualizar: (codigo: string, data: { n_parallel?: number; nombre_proceso?: string; descripcion?: string; tipo?: string; orden?: number }) =>
     api.patch<Proceso>(`/procesos/${codigo}`, data).then((r) => r.data),
+  reordenar: (orden: { codigo_proceso: string; orden: number }[]) =>
+    api.put('/procesos/reordenar', orden).then((r) => r.data),
+}
+
+// ─── Procesos del Grupo ──────────────────────────────────────────────────────
+
+export interface ProcesoGrupo {
+  id_proceso_grupo: number
+  codigo_grupo: string
+  codigo_entidad: string
+  codigo_proceso_grupo: string
+  nombre_proceso_grupo: string
+  descripcion: string | null
+  tipo: string
+  orden: number
+  alias: string | null
+  prompt: string | null
+  system_prompt: string | null
+  ayuda: string | null
+}
+
+export const procesosGrupoApi = {
+  listar: (codigoEntidad?: string) =>
+    api.get<ProcesoGrupo[]>('/procesos-grupo', { params: codigoEntidad ? { codigo_entidad: codigoEntidad } : undefined }).then((r) => r.data),
+  obtener: (id: number) => api.get<ProcesoGrupo>(`/procesos-grupo/${id}`).then((r) => r.data),
+  crear: (data: Partial<ProcesoGrupo>) => api.post<ProcesoGrupo>('/procesos-grupo', data).then((r) => r.data),
+  actualizar: (id: number, data: Partial<ProcesoGrupo>) =>
+    api.put<ProcesoGrupo>(`/procesos-grupo/${id}`, data).then((r) => r.data),
+  eliminar: (id: number) => api.delete(`/procesos-grupo/${id}`),
+  reordenar: (orden: { id_proceso_grupo: number; orden: number }[]) =>
+    api.put('/procesos-grupo/reordenar', orden).then((r) => r.data),
+}
+
+// ─── Tareas del Grupo ────────────────────────────────────────────────────────
+
+export interface TareaGrupo {
+  id_tarea_grupo: number
+  codigo_grupo: string
+  codigo_entidad: string
+  codigo_tarea_grupo: string
+  nombre_tarea_grupo: string
+  descripcion: string | null
+  tipo: string
+  orden: number
+  alias: string | null
+  prompt: string | null
+  system_prompt: string | null
+  ayuda: string | null
+}
+
+export const tareasGrupoApi = {
+  listar: (codigoEntidad?: string) =>
+    api.get<TareaGrupo[]>('/tareas-grupo', { params: codigoEntidad ? { codigo_entidad: codigoEntidad } : undefined }).then((r) => r.data),
+  obtener: (id: number) => api.get<TareaGrupo>(`/tareas-grupo/${id}`).then((r) => r.data),
+  crear: (data: Partial<TareaGrupo>) => api.post<TareaGrupo>('/tareas-grupo', data).then((r) => r.data),
+  actualizar: (id: number, data: Partial<TareaGrupo>) =>
+    api.put<TareaGrupo>(`/tareas-grupo/${id}`, data).then((r) => r.data),
+  eliminar: (id: number) => api.delete(`/tareas-grupo/${id}`),
+  reordenar: (orden: { id_tarea_grupo: number; orden: number }[]) =>
+    api.put('/tareas-grupo/reordenar', orden).then((r) => r.data),
 }
 
 // ─── Tipos Documento Persona ─────────────────────────────────────────────────

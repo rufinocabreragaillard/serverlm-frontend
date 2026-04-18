@@ -380,7 +380,7 @@ export default function PaginaGrupos() {
             g.nombre.toLowerCase().includes(busquedaGrupos.toLowerCase()) ||
             g.codigo_grupo.toLowerCase().includes(busquedaGrupos.toLowerCase())
           ).sort((a, b) => {
-            const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'PRUEBAS' ? 1 : n === 'ADMINISTRADOR' ? 2 : 3 }
+            const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'TEST' ? 1 : n === 'ADMINISTRADOR' ? 2 : 3 }
             const dt = peso(a.tipo) - peso(b.tipo)
             return dt !== 0 ? dt : a.nombre.localeCompare(b.nombre)
           }).map((g) => (

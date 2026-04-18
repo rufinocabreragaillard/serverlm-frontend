@@ -1,0 +1,306 @@
+'use client'
+
+import { ChevronUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Modal } from '@/components/ui/modal'
+import { ModalConfirmar } from '@/components/ui/modal-confirmar'
+import { Boton } from '@/components/ui/boton'
+import { BarraHerramientas } from '@/components/ui/barra-herramientas'
+import { TablaCrud, columnaNombre } from '@/components/ui/tabla-crud'
+import { Insignia } from '@/components/ui/insignia'
+import { tareasGrupoApi } from '@/lib/api'
+import type { TareaGrupo } from '@/lib/api'
+import { useCrudPage } from '@/hooks/useCrudPage'
+import { BotonChat } from '@/components/ui/boton-chat'
+import {
+  TIPOS_ELEMENTO_SIN_RESTRINGIDO,
+  etiquetaTipo,
+  varianteTipo,
+} from '@/lib/tipo-elemento'
+
+const selectClass =
+  'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50'
+
+type FormTarea = {
+  nombre_tarea_grupo: string
+  descripcion: string
+  tipo: string
+  alias: string
+  ayuda: string
+}
+
+export default function PaginaTareasGrupo() {
+  const t = useTranslations('tareasGrupo')
+  const tc = useTranslations('common')
+
+  const crud = useCrudPage<TareaGrupo, FormTarea>({
+    cargarFn: () => tareasGrupoApi.listar(),
+    crearFn: (f) =>
+      tareasGrupoApi.crear({
+        nombre_tarea_grupo: f.nombre_tarea_grupo.trim(),
+        descripcion: f.descripcion?.trim() || undefined,
+        tipo: f.tipo,
+        alias: f.alias?.trim() || undefined,
+        ayuda: f.ayuda?.trim() || undefined,
+      } as Partial<TareaGrupo>),
+    actualizarFn: (id, f) =>
+      tareasGrupoApi.actualizar(Number(id), {
+        nombre_tarea_grupo: f.nombre_tarea_grupo?.trim(),
+        descripcion: f.descripcion?.trim() || undefined,
+        tipo: f.tipo,
+        alias: f.alias?.trim() || undefined,
+        ayuda: f.ayuda?.trim() || undefined,
+      } as Partial<TareaGrupo>),
+    eliminarFn: (id) => tareasGrupoApi.eliminar(Number(id)).then(() => {}),
+    getId: (p) => String(p.id_tarea_grupo),
+    camposBusqueda: (p) => [p.codigo_tarea_grupo, p.nombre_tarea_grupo, p.descripcion ?? '', p.tipo],
+    formInicial: { nombre_tarea_grupo: '', descripcion: '', tipo: 'USUARIO', alias: '', ayuda: '' },
+    itemToForm: (p) => ({
+      nombre_tarea_grupo: p.nombre_tarea_grupo,
+      descripcion: p.descripcion ?? '',
+      tipo: p.tipo ?? 'USUARIO',
+      alias: p.alias ?? '',
+      ayuda: p.ayuda ?? '',
+    }),
+  })
+
+  const filtradosOrdenados = [...crud.filtrados].sort(
+    (a, b) => (a.orden ?? 0) - (b.orden ?? 0) || a.nombre_tarea_grupo.localeCompare(b.nombre_tarea_grupo),
+  )
+
+  const mover = async (index: number, direccion: 'arriba' | 'abajo') => {
+    const lista = [...filtradosOrdenados]
+    const swap = direccion === 'arriba' ? index - 1 : index + 1
+    if (swap < 0 || swap >= lista.length) return
+
+    const ordenA = lista[index].orden ?? 0
+    const ordenB = lista[swap].orden ?? 0
+    const a = { ...lista[index], orden: ordenB }
+    const b = { ...lista[swap], orden: ordenA }
+    lista[index] = b
+    lista[swap] = a
+
+    try {
+      await tareasGrupoApi.reordenar(
+        lista.map((p) => ({ id_tarea_grupo: p.id_tarea_grupo, orden: p.orden ?? 0 })),
+      )
+      crud.cargar()
+    } catch {
+      crud.cargar()
+    }
+  }
+
+  return (
+    <div className="relative flex flex-col gap-6 max-w-5xl">
+      <BotonChat className="top-0 right-0" />
+      <div className="pr-28 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+          <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
+        </div>
+        <Boton variante="primario" onClick={crud.abrirNuevo}>
+          <Plus size={16} /> {t('nuevo')}
+        </Boton>
+      </div>
+
+      <BarraHerramientas
+        busqueda={crud.busqueda}
+        onBusqueda={crud.setBusqueda}
+        placeholderBusqueda={t('buscarPlaceholder')}
+        excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
+        excelColumnas={[
+          { titulo: t('colCodigo'), campo: 'codigo_tarea_grupo' },
+          { titulo: t('colNombre'), campo: 'nombre_tarea_grupo' },
+          { titulo: t('colTipo'), campo: 'tipo' },
+          { titulo: t('colOrden'), campo: 'orden' },
+          { titulo: t('colDescripcion'), campo: 'descripcion' },
+        ]}
+        excelNombreArchivo="tareas-grupo"
+      />
+
+      <TablaCrud
+        columnas={[
+          {
+            titulo: t('colOrden'),
+            render: (p: TareaGrupo) => {
+              const idx = filtradosOrdenados.findIndex((x) => x.id_tarea_grupo === p.id_tarea_grupo)
+              return (
+                <div className="flex items-center gap-1">
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => mover(idx, 'arriba')}
+                      disabled={idx === 0 || !!crud.busqueda}
+                      className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30"
+                      title={tc('subir')}
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => mover(idx, 'abajo')}
+                      disabled={idx === filtradosOrdenados.length - 1 || !!crud.busqueda}
+                      className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30"
+                      title={tc('bajar')}
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </div>
+                  <span className="text-xs text-texto-muted w-4 text-center">{p.orden}</span>
+                </div>
+              )
+            },
+          },
+          columnaNombre<TareaGrupo>(t('colNombre'), (p) => p.nombre_tarea_grupo),
+          {
+            titulo: t('colTipo'),
+            render: (p: TareaGrupo) => (
+              <Insignia variante={varianteTipo(p.tipo)}>{etiquetaTipo(p.tipo)}</Insignia>
+            ),
+          },
+          {
+            titulo: t('colDescripcion'),
+            render: (p: TareaGrupo) => (
+              <span className="text-sm text-texto-muted line-clamp-2">{p.descripcion ?? ''}</span>
+            ),
+          },
+          {
+            titulo: t('colCodigo'),
+            render: (p: TareaGrupo) => (
+              <span className="text-xs text-texto-muted font-mono">{p.codigo_tarea_grupo}</span>
+            ),
+          },
+          {
+            titulo: tc('acciones'),
+            render: (p: TareaGrupo) => (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  crud.setConfirmacion(p)
+                }}
+                className="p-1 rounded text-error hover:bg-error/10 transition-colors"
+                title={tc('eliminar')}
+              >
+                <Trash2 size={16} />
+              </button>
+            ),
+          },
+        ]}
+        items={filtradosOrdenados}
+        cargando={crud.cargando}
+        getId={(p) => String(p.id_tarea_grupo)}
+        onEditar={crud.abrirEditar}
+        textoVacio={t('sinTareas')}
+      />
+
+      <Modal
+        abierto={crud.modal}
+        alCerrar={crud.cerrarModal}
+        titulo={
+          crud.editando
+            ? t('editarTitulo', { nombre: crud.editando.nombre_tarea_grupo })
+            : t('nuevoTitulo')
+        }
+        className="max-w-lg"
+      >
+        <div className="flex flex-col gap-4 min-w-[400px]">
+          <Input
+            etiqueta={t('etiquetaNombre')}
+            value={crud.form.nombre_tarea_grupo}
+            onChange={(e) => crud.updateForm('nombre_tarea_grupo', e.target.value)}
+            placeholder={t('placeholderNombre')}
+            autoFocus
+          />
+
+          <Textarea
+            etiqueta={t('etiquetaDescripcion')}
+            value={crud.form.descripcion}
+            onChange={(e) => crud.updateForm('descripcion', e.target.value)}
+            placeholder={t('placeholderDescripcion')}
+            rows={3}
+          />
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">{t('etiquetaTipo')}</label>
+            <select
+              className={selectClass}
+              value={crud.form.tipo}
+              onChange={(e) => crud.updateForm('tipo', e.target.value)}
+            >
+              {TIPOS_ELEMENTO_SIN_RESTRINGIDO.map((tp) => (
+                <option key={tp} value={tp}>{etiquetaTipo(tp)}</option>
+              ))}
+            </select>
+          </div>
+
+          <Input
+            etiqueta={t('etiquetaAlias')}
+            value={crud.form.alias}
+            onChange={(e) => crud.updateForm('alias', e.target.value)}
+          />
+
+          <Textarea
+            etiqueta={t('etiquetaAyuda')}
+            value={crud.form.ayuda}
+            onChange={(e) => crud.updateForm('ayuda', e.target.value)}
+            rows={2}
+          />
+
+          {crud.editando && (
+            <Input
+              etiqueta={t('etiquetaCodigo')}
+              value={crud.editando.codigo_tarea_grupo}
+              onChange={() => {}}
+              disabled
+            />
+          )}
+
+          {crud.error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              <p className="text-sm text-error">{crud.error}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3 justify-end pt-2">
+            <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('salir')}</Boton>
+            <Boton
+              variante="secundario"
+              onClick={() => {
+                if (!crud.form.nombre_tarea_grupo.trim()) {
+                  crud.setError(t('errorNombreObligatorio'))
+                  return
+                }
+                crud.guardar(undefined, undefined, { cerrar: true })
+              }}
+              cargando={crud.guardando}
+            >
+              {tc('grabarYSalir')}
+            </Boton>
+            <Boton
+              variante="primario"
+              onClick={() => {
+                if (!crud.form.nombre_tarea_grupo.trim()) {
+                  crud.setError(t('errorNombreObligatorio'))
+                  return
+                }
+                crud.guardar(undefined, undefined, { cerrar: false })
+              }}
+              cargando={crud.guardando}
+            >
+              {tc('grabar')}
+            </Boton>
+          </div>
+        </div>
+      </Modal>
+
+      <ModalConfirmar
+        abierto={!!crud.confirmacion}
+        alCerrar={() => crud.setConfirmacion(null)}
+        alConfirmar={crud.ejecutarEliminacion}
+        cargando={crud.eliminando}
+        titulo={tc('eliminar')}
+        mensaje={t('confirmarEliminar', { nombre: crud.confirmacion?.nombre_tarea_grupo ?? '' })}
+      />
+    </div>
+  )
+}

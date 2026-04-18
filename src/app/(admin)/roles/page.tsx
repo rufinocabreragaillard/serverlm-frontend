@@ -625,7 +625,7 @@ export default function PaginaRoles() {
                   <select value={formRol.codigo_aplicacion_origen} onChange={(e) => setFormRol({ ...formRol, codigo_aplicacion_origen: e.target.value })} className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
                     <option value="">— sin asignar —</option>
                     {[...todasApps].sort((a, b) => {
-                      const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'PRUEBAS' ? 1 : n === 'ADMINISTRADOR' ? 2 : 3 }
+                      const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'TEST' ? 1 : n === 'ADMINISTRADOR' ? 2 : 3 }
                       const ta = peso(a.tipo)
                       const tb = peso(b.tipo)
                       if (ta !== tb) return ta - tb

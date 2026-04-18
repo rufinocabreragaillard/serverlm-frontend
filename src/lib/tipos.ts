@@ -9,7 +9,7 @@ export interface Grupo {
   codigo_grupo: string
   nombre: string
   descripcion?: string
-  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'PRUEBAS' | 'RESTRINGIDO'
+  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'RESTRINGIDO'
   prompt?: string | null
   system_prompt?: string | null
 }
@@ -51,7 +51,7 @@ export interface UsuarioContexto {
   alias?: string | null
   locale?: string          // Locale preferido (es, en, fr-CA, etc.)
   activo: boolean
-  tipo?: 'ADMINISTRADOR' | 'USUARIO' | 'PRUEBAS' | 'RESTRINGIDO' | null
+  tipo?: 'ADMINISTRADOR' | 'USUARIO' | 'TEST' | 'RESTRINGIDO' | null
   grupo_activo: string
   nombre_grupo?: string
   grupos: GrupoResumen[]
@@ -118,7 +118,7 @@ export interface Usuario {
   nombre: string
   alias?: string
   locale?: string          // Locale preferido (es, en, fr-CA, etc.)
-  tipo?: 'ADMINISTRADOR' | 'USUARIO' | 'PRUEBAS' | 'RESTRINGIDO' | null
+  tipo?: 'ADMINISTRADOR' | 'USUARIO' | 'TEST' | 'RESTRINGIDO' | null
   telefono?: string
   fono_verificado?: boolean
   descripcion?: string
@@ -170,7 +170,7 @@ export interface Rol {
   funcion_por_defecto?: string
   codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
   orden?: number
-  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'PRUEBAS' | 'RESTRINGIDO'
+  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'RESTRINGIDO'
   prompt?: string | null
   system_prompt?: string | null
   inicial?: boolean
@@ -185,7 +185,7 @@ export interface Funcion {
   alias_de_funcion?: string
   icono_de_funcion?: string
   codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
-  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'PRUEBAS' | 'RESTRINGIDO'
+  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'RESTRINGIDO'
   id_modelo?: number | null  // FK a registro_llm. NULL = sin LLM
   prompt?: string | null
   system_prompt?: string | null  // instrucciones extra al LLM
@@ -230,7 +230,7 @@ export interface Aplicacion {
   codigo_aplicacion: string
   nombre: string
   descripcion?: string
-  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'PRUEBAS' | 'RESTRINGIDO'
+  tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'RESTRINGIDO'
   sidebar_ancho?: boolean
   orden?: number
   prompt?: string | null
