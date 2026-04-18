@@ -203,7 +203,7 @@ export default function PaginaDatosBasicos() {
       <BotonChat className="top-0 right-0" />
       {/* Encabezado */}
       <div className="pr-28">
-        <h2 className="text-2xl font-bold text-texto">Datos Básicos</h2>
+        <h2 className="page-heading">Datos Básicos</h2>
         <p className="text-sm text-texto-muted mt-1">Configuración de categorías y tipos de parámetros del sistema</p>
       </div>
 

@@ -251,7 +251,7 @@ export default function PaginaParametros() {
     <div className="relative flex flex-col gap-6 max-w-3xl">
       <BotonChat />
       <div>
-        <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+        <h2 className="page-heading">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 

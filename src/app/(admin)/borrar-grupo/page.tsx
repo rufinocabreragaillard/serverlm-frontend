@@ -77,7 +77,7 @@ export default function PaginaBorrarGrupo() {
   return (
     <div className="flex flex-col gap-6 max-w-3xl">
       <div>
-        <h2 className="text-2xl font-bold text-texto">Borrar Grupo Completo</h2>
+        <h2 className="page-heading">Borrar Grupo Completo</h2>
         <p className="text-sm text-texto-muted mt-1">
           Elimina permanentemente un grupo junto con todas sus entidades, usuarios, documentos, roles y parámetros.
           Esta acción es irreversible.

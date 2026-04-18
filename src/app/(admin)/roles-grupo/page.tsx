@@ -164,7 +164,7 @@ export default function PaginaRolesGrupo() {
     <div className="relative flex flex-col gap-6 max-w-6xl">
       <BotonChat className="top-0 right-0" />
       <div className="pr-28">
-        <h2 className="text-2xl font-bold text-texto">Roles del Grupo</h2>
+        <h2 className="page-heading">Roles del Grupo</h2>
         <p className="text-sm text-texto-muted mt-1">Gestión de roles y asignación de funciones del grupo activo</p>
       </div>
 

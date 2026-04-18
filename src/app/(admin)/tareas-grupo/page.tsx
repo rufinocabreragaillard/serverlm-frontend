@@ -97,7 +97,7 @@ export default function PaginaTareasGrupo() {
       <BotonChat className="top-0 right-0" />
       <div className="pr-28 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+          <h2 className="page-heading">{t('titulo')}</h2>
           <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
         </div>
         <Boton variante="primario" onClick={crud.abrirNuevo}>

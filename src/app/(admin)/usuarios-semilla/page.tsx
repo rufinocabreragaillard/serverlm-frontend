@@ -538,7 +538,7 @@ export default function PaginaUsuariosSemilla() {
       <BotonChat />
       <div className="flex items-center justify-between pr-28">
         <div>
-          <h2 className="text-2xl font-bold text-texto">Usuarios Semilla</h2>
+          <h2 className="page-heading">Usuarios Semilla</h2>
           <p className="text-sm text-texto-muted mt-1">
             Gestión global de usuarios administradores iniciales por grupo. Sin filtro de grupo activo.
           </p>

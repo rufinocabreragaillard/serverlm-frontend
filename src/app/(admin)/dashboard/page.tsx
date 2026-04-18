@@ -96,7 +96,7 @@ export default function PaginaDashboard() {
       <BotonChat className="top-0 right-0" />
       {/* Bienvenida */}
       <div className="pr-28">
-        <h2 className="text-2xl font-bold text-texto">{saludo}, {nombre}</h2>
+        <h2 className="page-heading">{saludo}, {nombre}</h2>
         <p className="text-texto-muted text-sm mt-1">
           {t('grupo')}: <span className="font-medium text-primario">{usuario?.grupo_activo}</span>
           {' · '}{t('entidad')}: <span className="font-medium text-primario">{usuario?.entidad_activa}</span>

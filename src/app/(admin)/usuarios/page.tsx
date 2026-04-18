@@ -540,7 +540,7 @@ export default function PaginaUsuarios() {
       {/* Encabezado */}
       <div className="flex items-center justify-between pr-28">
         <div>
-          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+          <h2 className="page-heading">{t('titulo')}</h2>
           <p className="text-sm text-texto-muted mt-1">Gestión de usuarios del sistema</p>
         </div>
         <Boton variante="primario" onClick={abrirNuevo}>

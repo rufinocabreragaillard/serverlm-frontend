@@ -232,7 +232,7 @@ export default function EspaciosTrabajoPage() {
         <div className="flex items-center gap-3">
           <FolderOpen className="text-primario" size={28} />
           <div>
-            <h1 className="text-2xl font-bold text-texto">Espacios de Trabajo</h1>
+            <h1 className="page-heading">Espacios de Trabajo</h1>
             <p className="text-sm text-texto-muted">
               Agrupa documentos en espacios temporales o guardados
             </p>

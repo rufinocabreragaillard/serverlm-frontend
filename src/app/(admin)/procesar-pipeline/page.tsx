@@ -548,7 +548,7 @@ export default function PaginaCargaDocsUsuario() {
     <div className="relative flex flex-col gap-6 max-w-6xl">
       <BotonChat className="top-0 right-0" />
       <div className="pr-28">
-        <h2 className="text-2xl font-bold text-texto">Carga tus Ubicaciones y Documentos</h2>
+        <h2 className="page-heading">Carga tus Ubicaciones y Documentos</h2>
         <p className="text-sm text-texto-muted mt-1">Configura las ubicaciones y procesa tus documentos paso a paso.</p>
       </div>
 
@@ -801,7 +801,7 @@ export default function PaginaCargaDocsUsuario() {
             {/* Contadores */}
             <div className="grid grid-cols-3 gap-4 pt-1">
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-2xl font-bold text-texto">{totalDocs}</span>
+                <span className="page-heading">{totalDocs}</span>
                 <span className="text-xs text-texto-muted">Documentos totales</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">

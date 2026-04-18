@@ -349,7 +349,7 @@ export default function PaginaGrupos() {
       <BotonChat className="top-0 right-0" />
       <div className="flex items-center justify-between pr-28">
         <div>
-          <h2 className="text-2xl font-bold text-texto">{t('titulo')}</h2>
+          <h2 className="page-heading">{t('titulo')}</h2>
           <p className="text-sm text-texto-muted mt-1">Gestion de grupos, entidades y usuarios asociados</p>
         </div>
         <Boton variante="primario" onClick={abrirNuevoGrupo}><Plus size={16} />{t('nuevoGrupo')}</Boton>

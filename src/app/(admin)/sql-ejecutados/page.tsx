@@ -75,7 +75,7 @@ export default function PaginaSqlEjecutados() {
     <div className="flex flex-col gap-6 max-w-[1400px]">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-texto">Visor de SQL Ejecutados</h2>
+        <h2 className="page-heading">Visor de SQL Ejecutados</h2>
         <p className="text-sm text-texto-muted mt-1">
           Ring-buffer con las últimas ~1000 operaciones SQL capturadas por el backend.
         </p>

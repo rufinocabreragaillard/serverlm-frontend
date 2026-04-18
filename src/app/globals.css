@@ -7,3 +7,9 @@ body {
   color: #1A1E2E;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+@layer components {
+  .page-heading {
+    @apply text-xl font-semibold text-texto;
+  }
+}
