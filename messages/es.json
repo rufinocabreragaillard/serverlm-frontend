@@ -247,9 +247,12 @@
     "parametroEliminado": "Parámetro eliminado",
     "eliminarTitulo": "Eliminar parámetro",
     "eliminarConfirm": "¿Estás seguro de eliminar el parámetro {cat} / {tipo}? Esta acción no se puede deshacer.",
-    "tooltipReplica": "R: Se replica a grupos nuevos al crearlos",
-    "tooltipVisible": "V: Visible en el mantenedor de parámetros por grupo",
-    "tooltipEditable": "E: Editable por los administradores de grupo"
+    "tooltipReplica": "Se replica a grupos nuevos al crearlos",
+    "tooltipVisible": "Visible en el mantenedor de parámetros por grupo",
+    "tooltipEditable": "Editable por los administradores de grupo",
+    "labelReplica": "Réplica",
+    "labelVisible": "Visible",
+    "labelEditable": "Editable"
   },
   "personas": {
     "titulo": "Personas",
@@ -1008,6 +1011,7 @@
     "sinProcesos": "No se encontraron procesos",
     "colCodigo": "Código",
     "colNombre": "Nombre",
+    "colFuncion": "Función",
     "colTipo": "Tipo",
     "colOrden": "Orden",
     "colTipoEntidad": "Tipo entidad",
@@ -1020,6 +1024,9 @@
     "etiquetaDescripcion": "Descripción",
     "placeholderDescripcion": "Descripción del proceso",
     "etiquetaTipo": "Tipo",
+    "etiquetaFuncion": "Función",
+    "sinFuncion": "— Sin función asignada —",
+    "descFuncion": "Define en qué pantalla aparece este proceso. Si queda sin asignar, no se listará en ninguna pantalla.",
     "etiquetaTipoEntidad": "Tipo de entidad",
     "descTipoEntidad": "El tipo de entidad no puede modificarse desde el frontend.",
     "etiquetaParalelo": "Ejecución en paralelo (n_parallel)",

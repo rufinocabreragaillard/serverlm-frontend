@@ -247,9 +247,12 @@
     "parametroEliminado": "Parameter deleted",
     "eliminarTitulo": "Delete parameter",
     "eliminarConfirm": "Are you sure you want to delete parameter {cat} / {tipo}? This action cannot be undone.",
-    "tooltipReplica": "R: Replicated to new groups when created",
-    "tooltipVisible": "V: Visible in the group parameters manager",
-    "tooltipEditable": "E: Editable by group administrators"
+    "tooltipReplica": "Replicated to new groups when created",
+    "tooltipVisible": "Visible in the group parameters manager",
+    "tooltipEditable": "Editable by group administrators",
+    "labelReplica": "Replica",
+    "labelVisible": "Visible",
+    "labelEditable": "Editable"
   },
   "tiposDocumentoPersona": {
     "titulo": "Person Document Types",
@@ -1008,6 +1011,7 @@
     "sinProcesos": "No processes found",
     "colCodigo": "Code",
     "colNombre": "Name",
+    "colFuncion": "Function",
     "colTipo": "Type",
     "colOrden": "Order",
     "colTipoEntidad": "Entity type",
@@ -1020,6 +1024,9 @@
     "etiquetaDescripcion": "Description",
     "placeholderDescripcion": "Process description",
     "etiquetaTipo": "Type",
+    "etiquetaFuncion": "Function",
+    "sinFuncion": "— No function assigned —",
+    "descFuncion": "Defines which screen lists this process. If left unassigned, it will not appear on any screen.",
     "etiquetaTipoEntidad": "Entity type",
     "descTipoEntidad": "The entity type cannot be modified from the frontend.",
     "etiquetaParalelo": "Parallel execution (n_parallel)",

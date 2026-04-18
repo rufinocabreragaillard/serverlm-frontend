@@ -138,15 +138,15 @@ export default function PaginaParametrosGenerales() {
                     <div className="flex items-center gap-2 shrink-0">
                       <label className="flex items-center gap-1 text-xs text-texto-muted cursor-pointer select-none" title={t('tooltipReplica')}>
                         <input type="checkbox" checked={p.replica ?? false} onChange={(e) => { e.stopPropagation(); toggleFlag(p, 'replica') }} className="rounded border-borde text-primario focus:ring-primario h-3.5 w-3.5 cursor-pointer" />
-                        R
+                        {t('labelReplica')}
                       </label>
                       <label className="flex items-center gap-1 text-xs text-texto-muted cursor-pointer select-none" title={t('tooltipVisible')}>
                         <input type="checkbox" checked={p.visible ?? true} onChange={(e) => { e.stopPropagation(); toggleFlag(p, 'visible') }} className="rounded border-borde text-primario focus:ring-primario h-3.5 w-3.5 cursor-pointer" />
-                        V
+                        {t('labelVisible')}
                       </label>
                       <label className="flex items-center gap-1 text-xs text-texto-muted cursor-pointer select-none" title={t('tooltipEditable')}>
                         <input type="checkbox" checked={p.editable ?? true} onChange={(e) => { e.stopPropagation(); toggleFlag(p, 'editable') }} className="rounded border-borde text-primario focus:ring-primario h-3.5 w-3.5 cursor-pointer" />
-                        E
+                        {t('labelEditable')}
                       </label>
                     </div>
                     <button onClick={(e) => { const input = (e.currentTarget.parentElement?.querySelector('input[type=text]') as HTMLInputElement); if (input) guardarInline(p.categoria_parametro, p.tipo_parametro, input.value, { replica: p.replica, visible: p.visible, editable: p.editable }) }} disabled={guardando === key} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors shrink-0" title={tc('guardar')}><Save size={14} /></button>
