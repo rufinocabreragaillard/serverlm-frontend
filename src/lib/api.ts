@@ -939,10 +939,10 @@ export const tareasDatosBasicosApi = {
     api.get<TipoTarea[]>('/tareas-datos-basicos/tipos-tarea', { params: categoria ? { categoria } : {} }).then((r) => r.data),
   crearTipoTar: (datos: Partial<TipoTarea>) =>
     api.post('/tareas-datos-basicos/tipos-tarea', datos).then((r) => r.data),
-  actualizarTipoTar: (codigo: string, datos: Partial<TipoTarea>) =>
-    api.put(`/tareas-datos-basicos/tipos-tarea/${codigo}`, datos).then((r) => r.data),
-  eliminarTipoTar: (codigo: string) =>
-    api.delete(`/tareas-datos-basicos/tipos-tarea/${codigo}`),
+  actualizarTipoTar: (categoria: string, codigo: string, datos: Partial<TipoTarea>) =>
+    api.put(`/tareas-datos-basicos/tipos-tarea/${categoria}/${codigo}`, datos).then((r) => r.data),
+  eliminarTipoTar: (categoria: string, codigo: string) =>
+    api.delete(`/tareas-datos-basicos/tipos-tarea/${categoria}/${codigo}`),
 
   // Estados conversación
   listarEstadosCnv: (tipo?: string) =>

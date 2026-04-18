@@ -1,6 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
@@ -18,16 +18,34 @@ import { tareasDatosBasicosApi } from '@/lib/api'
 import type { CategoriaTarea } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
 import { BotonChat } from '@/components/ui/boton-chat'
+import { cn } from '@/lib/utils'
 
 type FormCategoriaTarea = {
   codigo_categoria_tarea: string
   nombre_categoria_tarea: string
   descripcion_categoria_tarea: string
+  ayuda: string
+  generacion: string
+  programa: string
+  prompt: string
+  system_prompt: string
+}
+
+type TabModal = 'datos' | 'prompt' | 'system_prompt'
+
+const FORM_INICIAL: FormCategoriaTarea = {
+  codigo_categoria_tarea: '',
+  nombre_categoria_tarea: '',
+  descripcion_categoria_tarea: '',
+  ayuda: '',
+  generacion: '',
+  programa: '',
+  prompt: '',
+  system_prompt: '',
 }
 
 export default function PaginaCategoriasTarea() {
-  const t = useTranslations('categoriasTarea')
-  const tc = useTranslations('common')
+  const [tabModal, setTabModal] = useState<TabModal>('datos')
 
   const crud = useCrudPage<CategoriaTarea, FormCategoriaTarea>({
     cargarFn: () => tareasDatosBasicosApi.listarCategorias(),
@@ -36,63 +54,88 @@ export default function PaginaCategoriasTarea() {
         codigo_categoria_tarea: f.codigo_categoria_tarea.trim() || undefined,
         nombre_categoria_tarea: f.nombre_categoria_tarea.trim(),
         descripcion_categoria_tarea: f.descripcion_categoria_tarea.trim() || undefined,
+        ayuda: f.ayuda.trim() || undefined,
+        generacion: f.generacion.trim() || undefined,
+        programa: f.programa.trim() || undefined,
+        prompt: f.prompt.trim() || undefined,
+        system_prompt: f.system_prompt.trim() || undefined,
       }) as Promise<CategoriaTarea>,
     actualizarFn: (id, f) =>
       tareasDatosBasicosApi.actualizarCategoria(id, {
         nombre_categoria_tarea: f.nombre_categoria_tarea?.trim(),
         descripcion_categoria_tarea: f.descripcion_categoria_tarea?.trim() || undefined,
+        ayuda: f.ayuda?.trim() || undefined,
+        generacion: f.generacion?.trim() || undefined,
+        programa: f.programa?.trim() || undefined,
+        prompt: f.prompt?.trim() || undefined,
+        system_prompt: f.system_prompt?.trim() || undefined,
       }) as Promise<CategoriaTarea>,
     eliminarFn: async (id) => { await tareasDatosBasicosApi.eliminarCategoria(id) },
     getId: (c) => c.codigo_categoria_tarea,
     camposBusqueda: (c) => [c.codigo_categoria_tarea, c.nombre_categoria_tarea, c.descripcion_categoria_tarea ?? ''],
-    formInicial: { codigo_categoria_tarea: '', nombre_categoria_tarea: '', descripcion_categoria_tarea: '' },
+    formInicial: FORM_INICIAL,
     itemToForm: (c) => ({
       codigo_categoria_tarea: c.codigo_categoria_tarea,
       nombre_categoria_tarea: c.nombre_categoria_tarea,
       descripcion_categoria_tarea: c.descripcion_categoria_tarea ?? '',
+      ayuda: (c as any).ayuda ?? '',
+      generacion: (c as any).generacion ?? '',
+      programa: (c as any).programa ?? '',
+      prompt: (c as any).prompt ?? '',
+      system_prompt: (c as any).system_prompt ?? '',
     }),
   })
+
+  useEffect(() => {
+    if (crud.modal) setTabModal('datos')
+  }, [crud.modal])
 
   const filtradosOrdenados = [...crud.filtrados].sort((a, b) =>
     a.nombre_categoria_tarea.localeCompare(b.nombre_categoria_tarea),
   )
 
+  const tabs: { key: TabModal; label: string }[] = [
+    { key: 'datos', label: 'Datos' },
+    { key: 'prompt', label: 'Prompt' },
+    { key: 'system_prompt', label: 'System Prompt' },
+  ]
+
   return (
     <div className="relative flex flex-col gap-6 max-w-5xl">
       <BotonChat className="top-0 right-0" />
       <div className="pr-28">
-        <h2 className="page-heading">{t('titulo')}</h2>
-        <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
+        <h2 className="page-heading">Categorías de Tarea</h2>
+        <p className="text-sm text-texto-muted mt-1">Categorías globales para clasificar los tipos de tarea</p>
       </div>
 
       <BarraHerramientas
         busqueda={crud.busqueda}
         onBusqueda={crud.setBusqueda}
-        placeholderBusqueda={t('buscarPlaceholder')}
+        placeholderBusqueda="Buscar categoría..."
         onNuevo={crud.abrirNuevo}
-        textoNuevo={t('nuevaCategoria')}
+        textoNuevo="Nueva Categoría"
         excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
         excelColumnas={[
-          { titulo: t('colCodigo'), campo: 'codigo_categoria_tarea' },
-          { titulo: t('colNombre'), campo: 'nombre_categoria_tarea' },
-          { titulo: t('colDescripcion'), campo: 'descripcion_categoria_tarea' },
-          { titulo: t('colEstado'), campo: 'activo' },
+          { titulo: 'Código', campo: 'codigo_categoria_tarea' },
+          { titulo: 'Nombre', campo: 'nombre_categoria_tarea' },
+          { titulo: 'Descripción', campo: 'descripcion_categoria_tarea' },
+          { titulo: 'Estado', campo: 'activo' },
         ]}
         excelNombreArchivo="categorias-tarea"
       />
 
       <TablaCrud
         columnas={[
-          columnaCodigo<CategoriaTarea>(t('colCodigo'), (c) => c.codigo_categoria_tarea),
-          columnaNombre<CategoriaTarea>(t('colNombre'), (c) => c.nombre_categoria_tarea),
-          columnaDescripcion<CategoriaTarea>(t('colDescripcion'), (c) => c.descripcion_categoria_tarea),
+          columnaCodigo<CategoriaTarea>('Código', (c) => c.codigo_categoria_tarea),
+          columnaNombre<CategoriaTarea>('Nombre', (c) => c.nombre_categoria_tarea),
+          columnaDescripcion<CategoriaTarea>('Descripción', (c) => c.descripcion_categoria_tarea),
           {
-            titulo: t('colEstado'),
+            titulo: 'Estado',
             render: (c: CategoriaTarea) =>
               c.activo ? (
-                <Insignia variante="exito">{tc('activo')}</Insignia>
+                <Insignia variante="exito">Activo</Insignia>
               ) : (
-                <Insignia variante="neutro">{tc('inactivo')}</Insignia>
+                <Insignia variante="neutro">Inactivo</Insignia>
               ),
           },
         ]}
@@ -101,7 +144,7 @@ export default function PaginaCategoriasTarea() {
         getId={(c) => c.codigo_categoria_tarea}
         onEditar={crud.abrirEditar}
         onEliminar={crud.setConfirmacion}
-        textoVacio={t('sinCategorias')}
+        textoVacio="Sin categorías"
       />
 
       {/* Modal crear/editar */}
@@ -110,36 +153,99 @@ export default function PaginaCategoriasTarea() {
         alCerrar={crud.cerrarModal}
         titulo={
           crud.editando
-            ? t('editarTitulo', { nombre: crud.editando.nombre_categoria_tarea })
-            : t('nuevoTitulo')
+            ? `Editar: ${crud.editando.nombre_categoria_tarea}`
+            : 'Nueva Categoría de Tarea'
         }
-        className="max-w-lg"
+        className="max-w-2xl"
       >
-        <div className="flex flex-col gap-4 min-w-[400px]">
-          <Input
-            etiqueta={t('etiquetaCodigo')}
-            value={crud.form.codigo_categoria_tarea}
-            onChange={(e) => crud.updateForm('codigo_categoria_tarea', e.target.value)}
-            placeholder={t('placeholderCodigo')}
-            disabled={!!crud.editando}
-            autoFocus={!crud.editando}
-          />
+        {/* Tabs */}
+        <div className="flex border-b border-borde mb-4">
+          {tabs.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTabModal(key)}
+              className={cn(
+                'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                tabModal === key
+                  ? 'border-primario text-primario'
+                  : 'border-transparent text-texto-muted hover:text-texto'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <Input
-            etiqueta={t('etiquetaNombre')}
-            value={crud.form.nombre_categoria_tarea}
-            onChange={(e) => crud.updateForm('nombre_categoria_tarea', e.target.value)}
-            placeholder={t('placeholderNombre')}
-            autoFocus={!!crud.editando}
-          />
+        <div className="flex flex-col gap-4 min-w-[500px]">
+          {/* Tab Datos */}
+          {tabModal === 'datos' && (
+            <>
+              <Input
+                etiqueta="Código"
+                value={crud.form.codigo_categoria_tarea}
+                onChange={(e) => crud.updateForm('codigo_categoria_tarea', e.target.value)}
+                placeholder="Se genera automáticamente"
+                disabled={!!crud.editando}
+                autoFocus={!crud.editando}
+              />
+              <Input
+                etiqueta="Nombre"
+                value={crud.form.nombre_categoria_tarea}
+                onChange={(e) => crud.updateForm('nombre_categoria_tarea', e.target.value)}
+                placeholder="Nombre de la categoría"
+                autoFocus={!!crud.editando}
+              />
+              <Textarea
+                etiqueta="Descripción"
+                value={crud.form.descripcion_categoria_tarea}
+                onChange={(e) => crud.updateForm('descripcion_categoria_tarea', e.target.value)}
+                placeholder="Descripción de la categoría"
+                rows={3}
+              />
+              <Textarea
+                etiqueta="Ayuda"
+                value={crud.form.ayuda}
+                onChange={(e) => crud.updateForm('ayuda', e.target.value)}
+                placeholder="Texto de ayuda para el usuario"
+                rows={2}
+              />
+              <Input
+                etiqueta="Generación"
+                value={crud.form.generacion}
+                onChange={(e) => crud.updateForm('generacion', e.target.value)}
+                placeholder="Tipo de generación (ej. LLM, automatica, manual)"
+              />
+              <Input
+                etiqueta="Programa"
+                value={crud.form.programa}
+                onChange={(e) => crud.updateForm('programa', e.target.value)}
+                placeholder="Programa o script asociado"
+              />
+            </>
+          )}
 
-          <Textarea
-            etiqueta={t('etiquetaDescripcion')}
-            value={crud.form.descripcion_categoria_tarea}
-            onChange={(e) => crud.updateForm('descripcion_categoria_tarea', e.target.value)}
-            placeholder={t('placeholderDescripcion')}
-            rows={3}
-          />
+          {/* Tab Prompt */}
+          {tabModal === 'prompt' && (
+            <Textarea
+              etiqueta="Prompt"
+              value={crud.form.prompt}
+              onChange={(e) => crud.updateForm('prompt', e.target.value)}
+              placeholder="Prompt principal para el LLM..."
+              rows={14}
+            />
+          )}
+
+          {/* Tab System Prompt */}
+          {tabModal === 'system_prompt' && (
+            <Textarea
+              etiqueta="System Prompt"
+              value={crud.form.system_prompt}
+              onChange={(e) => crud.updateForm('system_prompt', e.target.value)}
+              placeholder="Instrucciones de sistema para el LLM..."
+              rows={14}
+            />
+          )}
 
           {crud.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
@@ -149,33 +255,35 @@ export default function PaginaCategoriasTarea() {
 
           <div className="flex gap-3 justify-end pt-2">
             <Boton variante="contorno" onClick={crud.cerrarModal}>
-              {tc('salir')}
+              Salir
             </Boton>
             <Boton
               variante="secundario"
               onClick={() => {
                 if (!crud.form.nombre_categoria_tarea.trim()) {
-                  crud.setError(t('errorNombreObligatorio'))
+                  crud.setError('El nombre es obligatorio')
+                  setTabModal('datos')
                   return
                 }
                 crud.guardar(undefined, undefined, { cerrar: true })
               }}
               cargando={crud.guardando}
             >
-              {tc('grabarYSalir')}
+              Grabar y Salir
             </Boton>
             <Boton
               variante="primario"
               onClick={() => {
                 if (!crud.form.nombre_categoria_tarea.trim()) {
-                  crud.setError(t('errorNombreObligatorio'))
+                  crud.setError('El nombre es obligatorio')
+                  setTabModal('datos')
                   return
                 }
                 crud.guardar(undefined, undefined, { cerrar: false })
               }}
               cargando={crud.guardando}
             >
-              {crud.editando ? tc('grabar') : tc('crear')}
+              {crud.editando ? 'Grabar' : 'Crear'}
             </Boton>
           </div>
         </div>
@@ -185,13 +293,13 @@ export default function PaginaCategoriasTarea() {
         abierto={!!crud.confirmacion}
         alCerrar={() => crud.setConfirmacion(null)}
         alConfirmar={crud.ejecutarEliminacion}
-        titulo={t('eliminarTitulo')}
+        titulo="Eliminar Categoría"
         mensaje={
           crud.confirmacion
-            ? t('eliminarConfirm', { nombre: crud.confirmacion.nombre_categoria_tarea })
+            ? `¿Eliminar la categoría "${crud.confirmacion.nombre_categoria_tarea}"?`
             : ''
         }
-        textoConfirmar={tc('eliminar')}
+        textoConfirmar="Eliminar"
         variante="peligro"
         cargando={crud.eliminando}
       />
