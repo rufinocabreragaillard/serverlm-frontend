@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   Languages, RefreshCw, Play, CheckCircle2, AlertCircle,
-  Globe, Plus, Trash2, Loader2,
+  Globe, Plus, Trash2, Loader2, XCircle,
 } from 'lucide-react'
 import { traduccionesApi } from '@/lib/api'
 import { Boton } from '@/components/ui/boton'
@@ -31,7 +31,7 @@ function BadgeActivo({ activo, esBase }: { activo: boolean; esBase: boolean }) {
 }
 
 // Barra de progreso de generación
-function BarraProgreso({ estado }: { estado: EstadoTraducciones }) {
+function BarraProgreso({ estado, onCancelar }: { estado: EstadoTraducciones; onCancelar: () => void }) {
   const prog = estado.progreso
   if (!estado.generando && !prog?.idiomas_ok?.length) return null
 
@@ -44,9 +44,16 @@ function BarraProgreso({ estado }: { estado: EstadoTraducciones }) {
     <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
       <div className="flex items-center gap-2 mb-2">
         <Loader2 size={14} className="text-blue-600 animate-spin shrink-0" />
-        <p className="text-sm font-medium text-blue-800">
+        <p className="text-sm font-medium text-blue-800 flex-1">
           Generando traducciones…{actual ? ` procesando ${actual.toUpperCase()}` : ''}
         </p>
+        <button
+          onClick={onCancelar}
+          className="flex items-center gap-1 text-xs text-blue-600 hover:text-red-600 transition-colors"
+          title="Detener y resetear el estado de generación"
+        >
+          <XCircle size={14} /> Cancelar
+        </button>
       </div>
       {/* Barra */}
       <div className="w-full bg-blue-100 rounded-full h-2 mb-2">
@@ -128,10 +135,27 @@ export default function TraduccionesPage() {
         clearInterval(pollingRef.current!)
         pollingRef.current = null
         const total = Object.values(data.conteos_por_locale ?? {}).reduce((a, b) => a + b, 0)
-        setResultadoGen(`Generación completada. ${total.toLocaleString()} traducciones en BD.`)
+        if (total > 0) {
+          setResultadoGen(`Generación completada. ${total.toLocaleString()} traducciones en BD.`)
+        } else {
+          setErrorGen('La generación terminó pero no se guardaron traducciones. Revisa los logs del servidor.')
+        }
       }
     }, 2500)
   }, [cargarEstado])
+
+  // Cancelar / resetear estado GENERANDO atascado
+  const cancelarGeneracion = async () => {
+    try {
+      await traduccionesApi.cancelar()
+      detenerPolling()
+      await cargarEstado()
+      setErrorGen('')
+      setResultadoGen(null)
+    } catch (e: unknown) {
+      setErrorGen(e instanceof Error ? e.message : 'Error al cancelar')
+    }
+  }
 
   const detenerPolling = useCallback(() => {
     if (pollingRef.current) {

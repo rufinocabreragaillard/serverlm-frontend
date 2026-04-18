@@ -1198,6 +1198,10 @@ export const traduccionesApi = {
       { modo, idiomas },
       { timeout: 30_000 }  // 30s — solo esperar la respuesta 202
     ).then((r) => r.data),
+
+  // Resetea el estado GENERANDO (para desatascar una generación fallida)
+  cancelar: () =>
+    api.post<{ status: string; mensaje: string }>('/traducciones/cancelar').then((r) => r.data),
 }
 
 // ─── Espacios de Trabajo ─────────────────────────────────────────────────────
