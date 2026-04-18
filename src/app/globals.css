@@ -12,4 +12,7 @@ body {
   .page-heading {
     @apply text-xl font-semibold text-texto;
   }
+  .modal-heading {
+    @apply text-base font-bold text-texto;
+  }
 }
