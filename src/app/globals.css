@@ -24,6 +24,6 @@ body {
   }
   /* Título de ventanas emergentes / modales (modal.tsx) */
   .modal-heading {
-    @apply text-base font-bold text-texto;
+    @apply text-lg font-normal text-texto;
   }
 }
