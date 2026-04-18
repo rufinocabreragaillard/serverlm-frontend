@@ -12,7 +12,8 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Paginador } from '@/components/ui/paginador'
 import { usePaginacion } from '@/hooks/usePaginacion'
-import { documentosApi, categoriasCaractDocsApi, estadosDocsApi } from '@/lib/api'
+import { documentosApi, categoriasCaractDocsApi } from '@/lib/api'
+import { getEstadosDocs } from '@/lib/catalogos'
 import type { Documento, CategoriaConCaracteristicasDocs, CaracteristicaDocumento, TipoCaractDocs, EstadoDoc } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
@@ -116,7 +117,7 @@ export default function PaginaDocumentos() {
 
   // ── Carga auxiliares (estados, usados en el selector del modal) ────────
   useEffect(() => {
-    estadosDocsApi.listar().then(setEstados).catch(() => setEstados([]))
+    getEstadosDocs().then(setEstados).catch(() => setEstados([]))
   }, [])
   // Alias: después de crear/editar/eliminar, refrescar la página actual.
   const cargar = refetch

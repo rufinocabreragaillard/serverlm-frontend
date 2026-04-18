@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { FileText, Cpu, Tags, FolderTree, AlertTriangle, CheckCircle, Clock, ArrowRight } from 'lucide-react'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
-import { documentosApi, estadosDocsApi } from '@/lib/api'
+import { documentosApi } from '@/lib/api'
+import { getEstadosDocs } from '@/lib/catalogos'
 import type { Documento, EstadoDoc } from '@/lib/tipos'
 import { BotonChat } from '@/components/ui/boton-chat'
 
@@ -22,7 +23,7 @@ export default function PaginaDocumentosDashboard() {
       try {
         const [docs, ests] = await Promise.all([
           documentosApi.listar(),
-          estadosDocsApi.listar(),
+          getEstadosDocs(),
         ])
         setDocumentos(docs)
         setEstados(ests)

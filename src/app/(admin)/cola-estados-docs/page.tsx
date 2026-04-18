@@ -11,7 +11,8 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Paginador } from '@/components/ui/paginador'
 import { usePaginacion } from '@/hooks/usePaginacion'
-import { colaEstadosDocsApi, documentosApi, estadosDocsApi } from '@/lib/api'
+import { colaEstadosDocsApi, documentosApi } from '@/lib/api'
+import { getEstadosDocs } from '@/lib/catalogos'
 import type { ColaEstadoDoc, Documento, EstadoDoc } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
@@ -77,7 +78,7 @@ export default function PaginaColaEstadosDocs() {
 
   // ── Carga auxiliares (la cola es paginada server-side) ───────────────────
   useEffect(() => {
-    Promise.all([documentosApi.listar(), estadosDocsApi.listar()])
+    Promise.all([documentosApi.listar(), getEstadosDocs()])
       .then(([d, e]) => { setDocumentos(d); setEstados(e) })
       .catch(() => { /* noop */ })
   }, [])

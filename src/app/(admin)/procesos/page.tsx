@@ -1,10 +1,10 @@
 'use client'
 
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
-import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Boton } from '@/components/ui/boton'
 import { BarraHerramientas } from '@/components/ui/barra-herramientas'
 import {
@@ -14,9 +14,11 @@ import {
 } from '@/components/ui/tabla-crud'
 import { Insignia } from '@/components/ui/insignia'
 import { procesosApi } from '@/lib/api'
+import { invalidarCatalogo } from '@/lib/catalogos'
 import type { Proceso } from '@/lib/api'
 import { useCrudPage } from '@/hooks/useCrudPage'
 import { BotonChat } from '@/components/ui/boton-chat'
+import { TIPOS_ELEMENTO, etiquetaTipo, varianteTipo } from '@/lib/tipo-elemento'
 
 const selectClass =
   'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50'
@@ -25,6 +27,7 @@ type FormProceso = {
   nombre_proceso: string
   descripcion: string
   tipo_entidad: string
+  tipo: string
   n_parallel: number
 }
 
@@ -34,26 +37,52 @@ export default function PaginaProcesos() {
 
   const crud = useCrudPage<Proceso, FormProceso>({
     cargarFn: () => procesosApi.listar(),
-    actualizarFn: (id, f) =>
-      procesosApi.actualizar(id, {
+    actualizarFn: async (id, f) => {
+      const r = await procesosApi.actualizar(id, {
         nombre_proceso: f.nombre_proceso?.trim(),
         descripcion: f.descripcion?.trim() || undefined,
         n_parallel: f.n_parallel,
-      }),
+        tipo: f.tipo,
+      })
+      invalidarCatalogo('procesosDocs')
+      return r
+    },
     getId: (p) => p.codigo_proceso,
-    camposBusqueda: (p) => [p.codigo_proceso, p.nombre_proceso, p.tipo_entidad],
-    formInicial: { nombre_proceso: '', descripcion: '', tipo_entidad: '', n_parallel: 1 },
+    camposBusqueda: (p) => [p.codigo_proceso, p.nombre_proceso, p.tipo_entidad, p.tipo],
+    formInicial: { nombre_proceso: '', descripcion: '', tipo_entidad: '', tipo: 'USUARIO', n_parallel: 1 },
     itemToForm: (p) => ({
       nombre_proceso: p.nombre_proceso,
       descripcion: p.descripcion ?? '',
       tipo_entidad: p.tipo_entidad,
+      tipo: p.tipo ?? 'USUARIO',
       n_parallel: p.n_parallel,
     }),
   })
 
-  const filtradosOrdenados = [...crud.filtrados].sort((a, b) =>
-    a.nombre_proceso.localeCompare(b.nombre_proceso),
+  const filtradosOrdenados = [...crud.filtrados].sort(
+    (a, b) => (a.orden ?? 0) - (b.orden ?? 0) || a.nombre_proceso.localeCompare(b.nombre_proceso),
   )
+
+  const moverProceso = async (index: number, direccion: 'arriba' | 'abajo') => {
+    const lista = [...filtradosOrdenados]
+    const swap = direccion === 'arriba' ? index - 1 : index + 1
+    if (swap < 0 || swap >= lista.length) return
+
+    const ordenA = lista[index].orden ?? 0
+    const ordenB = lista[swap].orden ?? 0
+    const a = { ...lista[index], orden: ordenB }
+    const b = { ...lista[swap], orden: ordenA }
+    lista[index] = b
+    lista[swap] = a
+
+    try {
+      await procesosApi.reordenar(lista.map((p) => ({ codigo_proceso: p.codigo_proceso, orden: p.orden ?? 0 })))
+      invalidarCatalogo('procesosDocs')
+      crud.cargar()
+    } catch {
+      crud.cargar()
+    }
+  }
 
   return (
     <div className="relative flex flex-col gap-6 max-w-5xl">
@@ -72,6 +101,8 @@ export default function PaginaProcesos() {
           { titulo: t('colCodigo'), campo: 'codigo_proceso' },
           { titulo: t('colNombre'), campo: 'nombre_proceso' },
           { titulo: t('colTipoEntidad'), campo: 'tipo_entidad' },
+          { titulo: t('colTipo'), campo: 'tipo' },
+          { titulo: t('colOrden'), campo: 'orden' },
           { titulo: t('colParalelo'), campo: 'n_parallel' },
           { titulo: t('colEstado'), campo: 'activo' },
         ]}
@@ -80,8 +111,43 @@ export default function PaginaProcesos() {
 
       <TablaCrud
         columnas={[
+          {
+            titulo: t('colOrden'),
+            render: (p: Proceso) => {
+              const idx = filtradosOrdenados.findIndex((x) => x.codigo_proceso === p.codigo_proceso)
+              return (
+                <div className="flex items-center gap-1">
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => moverProceso(idx, 'arriba')}
+                      disabled={idx === 0 || !!crud.busqueda}
+                      className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30"
+                      title={tc('subir')}
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => moverProceso(idx, 'abajo')}
+                      disabled={idx === filtradosOrdenados.length - 1 || !!crud.busqueda}
+                      className="p-0.5 rounded hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors disabled:opacity-30"
+                      title={tc('bajar')}
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </div>
+                  <span className="text-xs text-texto-muted w-4 text-center">{p.orden}</span>
+                </div>
+              )
+            },
+          },
           columnaCodigo<Proceso>(t('colCodigo'), (p) => p.codigo_proceso),
           columnaNombre<Proceso>(t('colNombre'), (p) => p.nombre_proceso),
+          {
+            titulo: t('colTipo'),
+            render: (p: Proceso) => (
+              <Insignia variante={varianteTipo(p.tipo)}>{etiquetaTipo(p.tipo)}</Insignia>
+            ),
+          },
           {
             titulo: t('colTipoEntidad'),
             render: (p: Proceso) => (
@@ -147,6 +213,21 @@ export default function PaginaProcesos() {
             placeholder={t('placeholderDescripcion')}
             rows={3}
           />
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-texto">{t('etiquetaTipo')}</label>
+            <select
+              className={selectClass}
+              value={crud.form.tipo}
+              onChange={(e) => crud.updateForm('tipo', e.target.value)}
+            >
+              {TIPOS_ELEMENTO.map((tp) => (
+                <option key={tp} value={tp}>
+                  {etiquetaTipo(tp)}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-texto">{t('etiquetaTipoEntidad')}</label>

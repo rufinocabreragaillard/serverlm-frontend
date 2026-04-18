@@ -13,6 +13,7 @@ import {
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { authApi, actualizarMapaFunciones, setOverrideSesion, clearOverridesSesion } from '@/lib/api'
+import { invalidarTodosLosCatalogos } from '@/lib/catalogos'
 import type { UsuarioContexto } from '@/lib/tipos'
 
 const PUBLIC_ROUTES = ['/login', '/auth/callback', '/auth/reset-password']
@@ -237,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     clearOverridesSesion()
+    invalidarTodosLosCatalogos()
     await supabase.auth.signOut()
     setUsuario(null)
     actualizarMapaFunciones()

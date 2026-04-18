@@ -12,7 +12,8 @@ import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Modal } from '@/components/ui/modal'
-import { documentosApi, ubicacionesDocsApi, colaEstadosDocsApi, estadosDocsApi, procesosApi, parametrosApi } from '@/lib/api'
+import { documentosApi, ubicacionesDocsApi, colaEstadosDocsApi, procesosApi, parametrosApi } from '@/lib/api'
+import { getEstadosDocs, getProcesosDocs } from '@/lib/catalogos'
 import type { Proceso as ProcesoCatalogo } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Documento, ColaEstadoDoc, EstadoDoc, CategoriaConCaracteristicasDocs } from '@/lib/tipos'
@@ -239,7 +240,7 @@ function PaginaProcesarDocumentosInterna() {
     try {
       const [c, e] = await Promise.all([
         colaEstadosDocsApi.listar(),
-        estadosDocsApi.listar(),
+        getEstadosDocs(),
       ])
       setColaBackend(c)
       setEstadosDocs(e)
@@ -295,10 +296,10 @@ function PaginaProcesarDocumentosInterna() {
     setErrorCargaInicial(false)
     try {
       const [procsRaw, u, nivelParam, estados] = await Promise.all([
-        procesosApi.listar('DOCUMENTOS'),
+        getProcesosDocs(),
         ubicacionesDocsApi.listar().catch(() => []),
         parametrosApi.obtenerValor('DOCUMENTOS', 'NIVELES_DIRECTORIO').catch(() => null),
-        estadosDocsApi.listar().catch(() => []),
+        getEstadosDocs().catch(() => []),
       ])
       setEstadosDocs(estados as EstadoDoc[])
       if (nivelParam?.valor != null) {

@@ -10,6 +10,7 @@ import { Boton } from '@/components/ui/boton'
 import { BarraHerramientas } from '@/components/ui/barra-herramientas'
 import { TablaCrud, columnaCodigo, columnaNombre, columnaDescripcion, columnaEstado } from '@/components/ui/tabla-crud'
 import { estadosDocsApi } from '@/lib/api'
+import { invalidarCatalogo } from '@/lib/catalogos'
 import type { EstadoDoc } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
 import { BotonChat } from '@/components/ui/boton-chat'
@@ -29,18 +30,29 @@ export default function PaginaEstadosDocs() {
     system_prompt: string
   }>({
     cargarFn: estadosDocsApi.listar,
-    crearFn: (f) => estadosDocsApi.crear({
-      codigo_estado_doc: f.codigo_estado_doc.toUpperCase().replace(/\s+/g, '_'),
-      nombre_estado: f.nombre_estado,
-      descripcion: f.descripcion || undefined,
-    }),
-    actualizarFn: (id, f) => estadosDocsApi.actualizar(id, {
-      nombre_estado: f.nombre_estado,
-      descripcion: f.descripcion || undefined,
-      prompt: f.prompt || undefined,
-      system_prompt: f.system_prompt || undefined,
-    }),
-    eliminarFn: async (id: string) => { await estadosDocsApi.desactivar(id) },
+    crearFn: async (f) => {
+      const r = await estadosDocsApi.crear({
+        codigo_estado_doc: f.codigo_estado_doc.toUpperCase().replace(/\s+/g, '_'),
+        nombre_estado: f.nombre_estado,
+        descripcion: f.descripcion || undefined,
+      })
+      invalidarCatalogo('estadosDocs')
+      return r
+    },
+    actualizarFn: async (id, f) => {
+      const r = await estadosDocsApi.actualizar(id, {
+        nombre_estado: f.nombre_estado,
+        descripcion: f.descripcion || undefined,
+        prompt: f.prompt || undefined,
+        system_prompt: f.system_prompt || undefined,
+      })
+      invalidarCatalogo('estadosDocs')
+      return r
+    },
+    eliminarFn: async (id: string) => {
+      await estadosDocsApi.desactivar(id)
+      invalidarCatalogo('estadosDocs')
+    },
     getId: (e) => e.codigo_estado_doc,
     camposBusqueda: (e) => [e.codigo_estado_doc, e.nombre_estado],
     formInicial: { codigo_estado_doc: '', nombre_estado: '', descripcion: '', prompt: '', system_prompt: '' },
@@ -90,6 +102,7 @@ export default function PaginaEstadosDocs() {
           // Switch to edit mode with new record
           crud.abrirEditar(nuevo)
         }
+        invalidarCatalogo('estadosDocs')
         crud.cargar()
       } catch (e) {
         crud.setError(e instanceof Error ? e.message : tc('errorAlGuardar'))
