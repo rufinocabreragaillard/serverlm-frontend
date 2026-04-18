@@ -306,15 +306,15 @@ export default function PaginaCargarDocumentos() {
           {/* Contadores */}
           <div className="grid grid-cols-3 gap-3">
             <div className="border border-borde rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-green-600">{datosEscaneo.archivosConMatch.length}</p>
+              <p className="stat-number text-green-600">{datosEscaneo.archivosConMatch.length}</p>
               <p className="text-xs text-texto-muted">{t('aCargar')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-amber-600">{datosEscaneo.archivosEnNoHabilitadas.length}</p>
+              <p className="stat-number text-amber-600">{datosEscaneo.archivosEnNoHabilitadas.length}</p>
               <p className="text-xs text-texto-muted">{t('enInhabilitadas')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-texto-muted">
+              <p className="stat-number text-texto-muted">
                 {datosEscaneo.archivos.length - datosEscaneo.archivosConMatch.length - datosEscaneo.archivosEnNoHabilitadas.length}
               </p>
               <p className="text-xs text-texto-muted">{t('sinUbicacion')}</p>
@@ -413,15 +413,15 @@ export default function PaginaCargarDocumentos() {
 
           <div className="grid grid-cols-3 gap-3">
             <div className="border border-borde rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-green-600">{resultado.insertados}</p>
+              <p className="stat-number text-green-600">{resultado.insertados}</p>
               <p className="text-xs text-texto-muted">{t('nuevos')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-primario">{resultado.actualizados}</p>
+              <p className="stat-number text-primario">{resultado.actualizados}</p>
               <p className="text-xs text-texto-muted">{t('actualizados')}</p>
             </div>
             <div className="border border-borde rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-texto-muted">{resultado.total}</p>
+              <p className="stat-number text-texto-muted">{resultado.total}</p>
               <p className="text-xs text-texto-muted">{t('totalProcesados')}</p>
             </div>
           </div>

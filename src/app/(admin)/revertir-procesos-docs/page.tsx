@@ -568,7 +568,7 @@ export default function PaginaRevertirProcesarDocs() {
   return (
     <div className="flex flex-col gap-6 w-full overflow-x-hidden">
       <div>
-        <h2 className="text-xl font-semibold text-texto">Revertir Procesos Docs.</h2>
+        <h2 className="page-heading">Revertir Procesos Docs.</h2>
         <p className="text-sm text-texto-muted mt-1">Revierte documentos a estados anteriores del pipeline (ej. VECTORIZADO → CHUNKEADO, ESCANEADO → METADATA).</p>
       </div>
 

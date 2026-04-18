@@ -634,7 +634,7 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
                   backgroundColor: progresoRevertir.estado === 'listo' ? '#F0FDF4' : '#fff',
                 }}
               >
-                <span className="text-2xl font-bold" style={{ color: '#22C55E' }}>
+                <span className="stat-number" style={{ color: '#22C55E' }}>
                   {progresoRevertir.estado === 'esperando'
                     ? ((conteosPorEstado['VECTORIZADO'] ?? 0) + (conteosPorEstado['NO_VECTORIZADO'] ?? 0))
                     : progresoRevertir.total}
@@ -663,7 +663,7 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
                 className="w-24 h-24 rounded-full flex flex-col items-center justify-center border-4"
                 style={{ borderColor: '#84CC16', backgroundColor: progresoRevertir.estado === 'listo' ? '#F7FEE7' : '#fff' }}
               >
-                <span className="text-2xl font-bold" style={{ color: '#84CC16' }}>
+                <span className="stat-number" style={{ color: '#84CC16' }}>
                   {progresoRevertir.estado === 'listo' ? progresoRevertir.revertidos : '—'}
                 </span>
                 <span className="text-[9px] font-semibold uppercase tracking-wide text-texto-muted">
@@ -732,7 +732,7 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
             return (
               <div key={estado.codigo} className="flex flex-col items-center gap-1 py-2">
                 <span
-                  className="text-2xl font-bold tabular-nums"
+                  className="stat-number tabular-nums"
                   style={{ color: count > 0 ? estado.color : '#9CA3AF' }}
                 >
                   {count}

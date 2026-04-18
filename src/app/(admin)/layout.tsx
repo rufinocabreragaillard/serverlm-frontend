@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {accesoPermitido ? children : (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-texto-muted">
               <ShieldAlert className="h-16 w-16 text-red-400" />
-              <h2 className="text-xl font-semibold text-texto">{t('sinAcceso')}</h2>
+              <h2 className="page-heading">{t('sinAcceso')}</h2>
               <p className="text-sm max-w-md text-center">{t('sinAccesoMsg')}</p>
               <button
                 onClick={() => router.push('/dashboard')}

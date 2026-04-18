@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-fondo p-6">
         <div className="w-full max-w-md bg-surface rounded-2xl border border-borde shadow-sm p-8 text-center">
-          <h1 className="text-2xl font-bold text-texto mb-2">Enlace no válido</h1>
+          <h1 className="auth-heading mb-2">Enlace no válido</h1>
           <p className="text-sm text-texto-muted mb-6">
             El enlace de recuperación ha expirado o no es válido. Solicita uno nuevo desde la página de inicio de sesión.
           </p>
@@ -133,14 +133,14 @@ export default function ResetPasswordPage() {
           {exito ? (
             <div className="flex flex-col items-center gap-4 text-center">
               <CheckCircle size={48} className="text-green-500" />
-              <h1 className="text-2xl font-bold text-texto">Contraseña actualizada</h1>
+              <h1 className="auth-heading">Contraseña actualizada</h1>
               <p className="text-sm text-texto-muted">
                 Tu contraseña ha sido actualizada correctamente. Serás redirigido al login...
               </p>
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-texto mb-1">Nueva contraseña</h1>
+              <h1 className="auth-heading mb-1">Nueva contraseña</h1>
               <p className="text-sm text-texto-muted mb-8">
                 Ingresa tu nueva contraseña
               </p>

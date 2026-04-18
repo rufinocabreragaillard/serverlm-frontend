@@ -142,7 +142,7 @@ export default function PaginaLogin() {
                   <ArrowLeft size={14} />
                   {t('volverLogin')}
                 </button>
-                <h1 className="text-2xl font-bold text-texto mb-1">{t('recuperarTitulo')}</h1>
+                <h1 className="auth-heading mb-1">{t('recuperarTitulo')}</h1>
                 <p className="text-sm text-texto-muted mb-8">
                   {t('recuperarSubtitulo')}
                 </p>
@@ -185,7 +185,7 @@ export default function PaginaLogin() {
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-bold text-texto mb-1">{t('titulo')}</h1>
+                <h1 className="auth-heading mb-1">{t('titulo')}</h1>
                 <p className="text-sm text-texto-muted mb-8">
                   {t('subtitulo')}
                 </p>

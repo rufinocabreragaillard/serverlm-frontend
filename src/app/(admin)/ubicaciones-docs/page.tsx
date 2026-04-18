@@ -710,20 +710,20 @@ export default function PaginaUbicacionesDocs() {
               {diff && (
                 <div className={`grid ${diff.excluidas > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-3`}>
                   <div className="border border-borde rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-green-600">{diff.nuevas}</p>
+                    <p className="stat-number text-green-600">{diff.nuevas}</p>
                     <p className="text-xs text-texto-muted">Nuevas</p>
                   </div>
                   <div className="border border-borde rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-red-600">{diff.aEliminar}</p>
+                    <p className="stat-number text-red-600">{diff.aEliminar}</p>
                     <p className="text-xs text-texto-muted">A eliminar</p>
                   </div>
                   <div className="border border-borde rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-texto-muted">{diff.sinCambio}</p>
+                    <p className="stat-number text-texto-muted">{diff.sinCambio}</p>
                     <p className="text-xs text-texto-muted">Sin cambio</p>
                   </div>
                   {diff.excluidas > 0 && (
                     <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-amber-600">{diff.excluidas}</p>
+                      <p className="stat-number text-amber-600">{diff.excluidas}</p>
                       <p className="text-xs text-amber-700">Excluidas</p>
                     </div>
                   )}
@@ -804,20 +804,20 @@ export default function PaginaUbicacionesDocs() {
 
               <div className={`grid ${resultadoSync.excluidas > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-3`}>
                 <div className="border border-borde rounded-lg p-3 text-center">
-                  <p className="text-2xl font-bold text-green-600">{resultadoSync.insertadas}</p>
+                  <p className="stat-number text-green-600">{resultadoSync.insertadas}</p>
                   <p className="text-xs text-texto-muted">Insertadas</p>
                 </div>
                 <div className="border border-borde rounded-lg p-3 text-center">
-                  <p className="text-2xl font-bold text-red-600">{resultadoSync.eliminadas}</p>
+                  <p className="stat-number text-red-600">{resultadoSync.eliminadas}</p>
                   <p className="text-xs text-texto-muted">Eliminadas</p>
                 </div>
                 <div className="border border-borde rounded-lg p-3 text-center">
-                  <p className="text-2xl font-bold text-primario">{resultadoSync.actualizadas}</p>
+                  <p className="stat-number text-primario">{resultadoSync.actualizadas}</p>
                   <p className="text-xs text-texto-muted">Actualizadas</p>
                 </div>
                 {resultadoSync.excluidas > 0 && (
                   <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-amber-600">{resultadoSync.excluidas}</p>
+                    <p className="stat-number text-amber-600">{resultadoSync.excluidas}</p>
                     <p className="text-xs text-amber-700">Excluidas</p>
                   </div>
                 )}

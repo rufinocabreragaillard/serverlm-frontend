@@ -125,17 +125,17 @@ export default function PaginaLLMUso() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="text-xs text-gray-500 uppercase">{t('mesActual')}</div>
-            <div className="text-2xl font-semibold text-[#074B91] mt-1">{resumen.mes}</div>
+            <div className="stat-number text-[#074B91] mt-1">{resumen.mes}</div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="text-xs text-gray-500 uppercase">{t('llamadas')}</div>
-            <div className="text-2xl font-semibold text-gray-900 mt-1">
+            <div className="stat-number text-gray-900 mt-1">
               {fmtInt(resumen.total_llamadas)}
             </div>
           </div>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="text-xs text-gray-500 uppercase">{t('costoTotal')}</div>
-            <div className="text-2xl font-semibold text-gray-900 mt-1">
+            <div className="stat-number text-gray-900 mt-1">
               {fmtUsd(resumen.total_costo_usd)}
             </div>
           </div>

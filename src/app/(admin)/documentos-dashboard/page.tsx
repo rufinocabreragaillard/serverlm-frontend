@@ -110,7 +110,7 @@ export default function PaginaDocumentosDashboard() {
                 {cargando ? (
                   <div className="h-8 w-16 bg-borde rounded animate-pulse" />
                 ) : (
-                  <span className="text-3xl font-bold text-texto">{t.valor}</span>
+                  <span className="stat-value text-texto">{t.valor}</span>
                 )}
               </TarjetaContenido>
             </Tarjeta>

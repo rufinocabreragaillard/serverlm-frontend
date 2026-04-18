@@ -123,7 +123,7 @@ export default function PaginaDashboard() {
                   {cargando ? (
                     <div className="h-8 w-16 bg-borde rounded animate-pulse" />
                   ) : (
-                    <span className="text-3xl font-bold text-texto">{card.valor}</span>
+                    <span className="stat-value text-texto">{card.valor}</span>
                   )}
                   <p className="text-xs text-texto-muted mt-1 flex items-center gap-1">
                     <TrendingUp size={12} />

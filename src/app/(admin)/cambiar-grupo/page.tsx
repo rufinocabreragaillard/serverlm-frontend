@@ -69,7 +69,7 @@ export default function CambiarGrupoPage() {
 
   return (
     <div className="max-w-md mx-auto mt-12 p-6 bg-surface rounded-xl border border-borde shadow-sm">
-      <h1 className="text-xl font-semibold text-texto mb-1">Cambiar de Grupo</h1>
+      <h1 className="page-heading mb-1">Cambiar de Grupo</h1>
       <p className="text-sm text-texto-muted mb-6">
         Grupo actual:{' '}
         <span className="font-medium text-texto">{grupoActualNombre}</span>

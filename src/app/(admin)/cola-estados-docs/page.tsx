@@ -428,11 +428,11 @@ export default function PaginaColaEstadosDocs() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="border border-borde rounded-lg p-3 text-center">
-                  <p className="text-2xl font-bold text-green-600">{resultadoInit.encolados}</p>
+                  <p className="stat-number text-green-600">{resultadoInit.encolados}</p>
                   <p className="text-xs text-texto-muted">{t('encolados')}</p>
                 </div>
                 <div className="border border-borde rounded-lg p-3 text-center">
-                  <p className="text-2xl font-bold text-texto-muted">{resultadoInit.omitidos}</p>
+                  <p className="stat-number text-texto-muted">{resultadoInit.omitidos}</p>
                   <p className="text-xs text-texto-muted">{t('omitidos')}</p>
                 </div>
               </div>
