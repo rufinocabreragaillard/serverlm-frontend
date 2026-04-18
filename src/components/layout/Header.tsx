@@ -183,9 +183,9 @@ export function Header({ titulo }: { titulo?: string }) {
     <>
       <header className="h-16 bg-surface border-b border-borde flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center gap-4">
-          {usuario?.nombre_aplicacion && (
+          {(usuario?.alias_aplicacion || usuario?.nombre_aplicacion) && (
             <span className="app-name">
-              {tr('aplicaciones', 'nombre',usuario.aplicacion_activa || '', usuario.nombre_aplicacion || '')}
+              {usuario.alias_aplicacion || tr('aplicaciones', 'nombre', usuario.aplicacion_activa || '', usuario.nombre_aplicacion || '')}
             </span>
           )}
         </div>

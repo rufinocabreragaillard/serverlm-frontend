@@ -31,7 +31,7 @@ export default function PaginaAplicaciones() {
   // ── Modal Aplicacion ──────────────────────────────────────────────────────
   const [modalApp, setModalApp] = useState(false)
   const [appEditando, setAppEditando] = useState<Aplicacion | null>(null)
-  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; descripcion: string; tipo: TipoElemento; sidebar_ancho: boolean; prompt: string; system_prompt: string }>({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'USUARIO', sidebar_ancho: true, prompt: '', system_prompt: '' })
+  const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; alias: string; descripcion: string; tipo: TipoElemento; sidebar_ancho: boolean; prompt: string; system_prompt: string }>({ codigo_aplicacion: '', nombre: '', alias: '', descripcion: '', tipo: 'USUARIO', sidebar_ancho: true, prompt: '', system_prompt: '' })
   const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos' | 'prompt' | 'system_prompt'>('datos')
   const [guardandoApp, setGuardandoApp] = useState(false)
   const [errorApp, setErrorApp] = useState('')
@@ -97,18 +97,18 @@ export default function PaginaAplicaciones() {
 
   // ── Aplicacion: CRUD ──────────────────────────────────────────────────────
   const abrirNuevaApp = () => {
-    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', descripcion: '', tipo: 'USUARIO', sidebar_ancho: true, prompt: '', system_prompt: '' })
+    setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', alias: '', descripcion: '', tipo: 'USUARIO', sidebar_ancho: true, prompt: '', system_prompt: '' })
     setErrorApp(''); setTabModalApp('datos'); setModalApp(true)
   }
   const abrirEditarApp = (a: Aplicacion) => {
-    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, descripcion: a.descripcion || '', tipo: normalizarTipo(a.tipo), sidebar_ancho: a.sidebar_ancho !== false, prompt: (a as Record<string, unknown>).prompt as string || '', system_prompt: (a as Record<string, unknown>).system_prompt as string || '' })
+    setAppEditando(a); setFormApp({ codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, alias: a.alias || '', descripcion: a.descripcion || '', tipo: normalizarTipo(a.tipo), sidebar_ancho: a.sidebar_ancho !== false, prompt: (a as Record<string, unknown>).prompt as string || '', system_prompt: (a as Record<string, unknown>).system_prompt as string || '' })
     setErrorApp(''); setTabModalApp('datos'); cargarFuncionesApp(a.codigo_aplicacion); cargarGruposApp(a.codigo_aplicacion); setModalApp(true)
   }
   const guardarApp = async (cerrar: boolean) => {
     if (!formApp.codigo_aplicacion || !formApp.nombre) { setErrorApp('Codigo y nombre son obligatorios'); return }
     setGuardandoApp(true)
     try {
-      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo, sidebar_ancho: formApp.sidebar_ancho, prompt: formApp.prompt || undefined, system_prompt: formApp.system_prompt || undefined }) }
+      if (appEditando) { await aplicacionesApi.actualizar(appEditando.codigo_aplicacion, { nombre: formApp.nombre, alias: formApp.alias || undefined, descripcion: formApp.descripcion || undefined, tipo: formApp.tipo, sidebar_ancho: formApp.sidebar_ancho, prompt: formApp.prompt || undefined, system_prompt: formApp.system_prompt || undefined }) }
       else {
         const nuevo = await aplicacionesApi.crear(formApp)
         if (!cerrar) {
@@ -261,7 +261,7 @@ export default function PaginaAplicaciones() {
       </Tabla>
 
       {/* ── MODAL APLICACION ── */}
-      <Modal abierto={modalApp} alCerrar={() => setModalApp(false)} titulo={appEditando ? `Editar aplicacion: ${appEditando.nombre}` : 'Nueva aplicacion'} className="max-w-2xl">
+      <Modal abierto={modalApp} alCerrar={() => setModalApp(false)} titulo={appEditando ? `Editar aplicacion: ${appEditando.nombre}` : 'Nueva aplicacion'} className="max-w-2xl min-h-[680px]">
         <div className="flex flex-col gap-4">
           {appEditando && (
             <div className="flex border-b border-borde -mx-1 overflow-x-auto">
@@ -281,6 +281,7 @@ export default function PaginaAplicaciones() {
           {tabModalApp === 'datos' && (<>
             <Input etiqueta={t('etiquetaCodigo')} value={formApp.codigo_aplicacion} onChange={(e) => setFormApp({ ...formApp, codigo_aplicacion: e.target.value.toUpperCase() })} disabled={!!appEditando} placeholder={t('placeholderCodigo')} />
             <Input etiqueta={t('etiquetaNombre')} value={formApp.nombre} onChange={(e) => setFormApp({ ...formApp, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
+            <Input etiqueta="Alias (nombre corto para la barra superior)" value={formApp.alias} onChange={(e) => setFormApp({ ...formApp, alias: e.target.value })} placeholder="Ej: Documentos" />
             <div>
               <label className="block text-sm font-medium text-texto mb-1">Tipo *</label>
               <select value={formApp.tipo} onChange={(e) => setFormApp({ ...formApp, tipo: e.target.value as TipoElemento })} className={selectClass}>
