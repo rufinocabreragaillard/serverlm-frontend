@@ -75,6 +75,11 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
   const [filtroLibre, setFiltroLibre] = useState<string>('')
   const ubicDropdownRef = useRef<HTMLDivElement>(null)
 
+  // Modo reversa
+  const [revertir, setRevertir] = useState(false)
+  const [progresoRevertir, setProgresoRevertir] = useState<{ total: number; revertidos: number; estado: 'esperando' | 'activo' | 'listo' | 'error' }>({ total: 0, revertidos: 0, estado: 'esperando' })
+  const [mensajeRevertir, setMensajeRevertir] = useState('')
+
   // Estadísticas por estado (Cambio 4)
   const [conteosPorEstado, setConteosPorEstado] = useState<Record<string, number>>({})
 
@@ -275,6 +280,40 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
     return true
   }
 
+  const ejecutarRevertir = async () => {
+    setMensajeError('')
+    setMensajeRevertir('')
+    abortRef.current = false
+    setEjecutando(true)
+    setTiempoInicio(Date.now())
+    setTiempoTranscurrido(0)
+    setProgresoRevertir({ total: 0, revertidos: 0, estado: 'activo' })
+    try {
+      const params: Record<string, unknown> = { codigo_estado_doc: 'VECTORIZADO', activo: true }
+      if (ubicacionSel) params.codigo_ubicacion = ubicacionSel
+      if (filtroLibre.trim()) params.q = filtroLibre.trim()
+      const topeNum = tope ? parseInt(tope) : 0
+      const docsRaw = await documentosApi.listar(params as Parameters<typeof documentosApi.listar>[0])
+      const docs = topeNum > 0 ? docsRaw.slice(0, topeNum) : docsRaw
+      if (docs.length === 0) {
+        setProgresoRevertir({ total: 0, revertidos: 0, estado: 'listo' })
+        setMensajeRevertir('No hay documentos en estado VECTORIZADO con los filtros aplicados.')
+        return
+      }
+      setProgresoRevertir({ total: docs.length, revertidos: 0, estado: 'activo' })
+      const ids = docs.map((d) => d.codigo_documento)
+      const resultado = await documentosApi.revertirEstado(ids, 'VECTORIZADO', 'CHUNKEADO')
+      setProgresoRevertir({ total: docs.length, revertidos: resultado.revertidos, estado: 'listo' })
+      setMensajeRevertir(`${resultado.revertidos} documento(s) revertidos de VECTORIZADO → CHUNKEADO.`)
+    } catch (e) {
+      setProgresoRevertir((prev) => ({ ...prev, estado: 'error' }))
+      setMensajeError(e instanceof Error ? e.message : 'Error al revertir estado')
+    } finally {
+      setEjecutando(false)
+      await cargarConteos()
+    }
+  }
+
   const ejecutarPipeline = async () => {
     setMensajeError('')
     abortRef.current = false
@@ -445,6 +484,29 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
           </div>
         </div>
 
+        {/* Checkbox Revertir */}
+        <div className="flex items-center gap-3 pt-1 border-t border-borde">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={revertir}
+              onChange={(e) => {
+                setRevertir(e.target.checked)
+                setMensajeRevertir('')
+                setProgresoRevertir({ total: 0, revertidos: 0, estado: 'esperando' })
+              }}
+              disabled={ejecutando}
+              className="w-4 h-4 rounded border-borde text-amber-600 focus:ring-amber-500 disabled:opacity-50"
+            />
+            <span className="text-sm font-medium text-texto">Revertir</span>
+          </label>
+          {revertir && (
+            <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+              Cambiará documentos <strong>VECTORIZADO → CHUNKEADO</strong> (solo UPDATE, sin reprocesar)
+            </span>
+          )}
+        </div>
+
         {/* Segunda fila: Paralelo + Tope + Filtro libre */}
         <div className="flex items-end gap-4 flex-wrap">
           <div className="flex flex-col gap-1.5">
@@ -520,48 +582,119 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
         </div>
       )}
 
-      {/* ── Pipeline visual — círculos ─────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-0 flex-wrap">
-        {PASOS.map((paso, i) => {
-          const prog = progresos[paso.key]
-          return (
-            <div key={paso.key} className="flex items-center">
-              <CirculoProgreso
-                nombre={paso.nombre}
-                total={prog.total}
-                completados={prog.completados}
-                estado={prog.estado}
-                colorDisco={paso.colorDisco}
-                size={99}
-              />
-              {i < PASOS.length - 1 && (
-                <div className="flex items-center self-center px-1">
-                  <svg width="48" height="24" viewBox="0 0 48 24">
-                    <line x1="0" y1="12" x2="34" y2="12" stroke="#9CA3AF" strokeWidth="6" strokeLinecap="round" />
-                    <polygon points="30,4 46,12 30,20" fill="#9CA3AF" />
-                  </svg>
-                </div>
-              )}
+      {/* ── Pipeline visual ────────────────────────────────────────────────── */}
+      {!revertir ? (
+        /* Modo normal: 4 círculos hacia adelante */
+        <div className="flex items-center justify-center gap-0 flex-wrap">
+          {PASOS.map((paso, i) => {
+            const prog = progresos[paso.key]
+            return (
+              <div key={paso.key} className="flex items-center">
+                <CirculoProgreso
+                  nombre={paso.nombre}
+                  total={prog.total}
+                  completados={prog.completados}
+                  estado={prog.estado}
+                  colorDisco={paso.colorDisco}
+                  size={99}
+                />
+                {i < PASOS.length - 1 && (
+                  <div className="flex items-center self-center px-1">
+                    <svg width="48" height="24" viewBox="0 0 48 24">
+                      <line x1="0" y1="12" x2="34" y2="12" stroke="#9CA3AF" strokeWidth="6" strokeLinecap="round" />
+                      <polygon points="30,4 46,12 30,20" fill="#9CA3AF" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        /* Modo reversa: indicador VECTORIZADO ← CHUNKEADO */
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-4">
+            {/* Círculo VECTORIZADO (origen) */}
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`w-24 h-24 rounded-full flex flex-col items-center justify-center border-4 ${progresoRevertir.estado === 'activo' ? 'animate-pulse' : ''}`}
+                style={{
+                  borderColor: '#22C55E',
+                  backgroundColor: progresoRevertir.estado === 'listo' ? '#F0FDF4' : '#fff',
+                }}
+              >
+                <span className="text-2xl font-bold" style={{ color: '#22C55E' }}>
+                  {progresoRevertir.estado === 'esperando'
+                    ? (conteosPorEstado['VECTORIZADO'] ?? 0)
+                    : progresoRevertir.total}
+                </span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-texto-muted">docs</span>
+              </div>
+              <span className="text-xs font-semibold uppercase" style={{ color: '#22C55E' }}>VECTORIZADO</span>
             </div>
-          )
-        })}
-      </div>
 
-      {(ejecutando || todosListos) && (
+            {/* Flecha reversa ← */}
+            <div className="flex items-center self-center">
+              <svg width="64" height="24" viewBox="0 0 64 24">
+                <line x1="64" y1="12" x2="18" y2="12" stroke="#F59E0B" strokeWidth="6" strokeLinecap="round" />
+                <polygon points="22,4 6,12 22,20" fill="#F59E0B" />
+              </svg>
+            </div>
+
+            {/* Círculo CHUNKEADO (destino) */}
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className="w-24 h-24 rounded-full flex flex-col items-center justify-center border-4"
+                style={{ borderColor: '#84CC16', backgroundColor: progresoRevertir.estado === 'listo' ? '#F7FEE7' : '#fff' }}
+              >
+                <span className="text-2xl font-bold" style={{ color: '#84CC16' }}>
+                  {progresoRevertir.estado === 'listo' ? progresoRevertir.revertidos : '—'}
+                </span>
+                <span className="text-[9px] font-semibold uppercase tracking-wide text-texto-muted">
+                  {progresoRevertir.estado === 'listo' ? 'ok' : 'destino'}
+                </span>
+              </div>
+              <span className="text-xs font-semibold uppercase" style={{ color: '#84CC16' }}>CHUNKEADO</span>
+            </div>
+          </div>
+
+          {/* Mensaje resultado / progreso */}
+          {mensajeRevertir && (
+            <div className={`text-sm px-4 py-2 rounded-lg border ${progresoRevertir.estado === 'listo' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+              {mensajeRevertir}
+            </div>
+          )}
+        </div>
+      )}
+
+      {(ejecutando || todosListos || (revertir && progresoRevertir.estado === 'listo')) && (
         <p className="text-center text-sm text-texto-muted">
           {ejecutando
             ? `Tiempo transcurrido: ${formatTiempo(tiempoTranscurrido)}`
-            : `Pipeline completado en ${formatTiempo(tiempoTranscurrido)}`}
+            : `Completado en ${formatTiempo(tiempoTranscurrido)}`}
         </p>
       )}
 
       <div className="flex gap-3 justify-center">
-        <Boton variante="primario" onClick={ejecutarPipeline} disabled={ejecutando}>
-          Procesar
-        </Boton>
-        <Boton variante="peligro" onClick={detener} disabled={!ejecutando}>
-          Cancelar
-        </Boton>
+        {!revertir ? (
+          <>
+            <Boton variante="primario" onClick={ejecutarPipeline} disabled={ejecutando}>
+              Procesar
+            </Boton>
+            <Boton variante="peligro" onClick={detener} disabled={!ejecutando}>
+              Cancelar
+            </Boton>
+          </>
+        ) : (
+          <Boton
+            variante="primario"
+            onClick={ejecutarRevertir}
+            disabled={ejecutando}
+            className="bg-amber-600 hover:bg-amber-700 border-amber-600"
+          >
+            {ejecutando ? 'Revirtiendo…' : 'Revertir VECTORIZADO → CHUNKEADO'}
+          </Boton>
+        )}
       </div>
 
       {/* ── Estadísticas por estado (Cambio 4) ────────────────────────────── */}
