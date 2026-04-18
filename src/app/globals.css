@@ -8,14 +8,22 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/* ============================================================
+   CLASES DE TIPOGRAFÍA CENTRALIZADAS
+   Para cambiar estilos de texto, editar SOLO este archivo.
+   NUNCA hardcodear text-xl, font-bold, etc. en los componentes.
+   ============================================================ */
 @layer components {
+  /* Nombre de la app en la barra superior (Header.tsx) */
+  .app-name {
+    @apply text-2xl font-bold text-gray-500;
+  }
+  /* Título principal de cada página (h1/h2) */
   .page-heading {
     @apply text-xl font-semibold text-texto;
   }
+  /* Título de ventanas emergentes / modales (modal.tsx) */
   .modal-heading {
     @apply text-base font-bold text-texto;
-  }
-  .app-name {
-    @apply text-2xl font-bold text-gray-500;
   }
 }
