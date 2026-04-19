@@ -22,7 +22,8 @@ type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nom
 export default function PaginaRoles() {
   const t = useTranslations('roles')
   const tc = useTranslations('common')
-  const { grupoActivo, aplicacionActiva } = useAuth()
+  const { grupoActivo, aplicacionActiva, usuario } = useAuth()
+  const esUsuarioTest = normalizarTipo(usuario?.tipo) === 'TEST'
   const [roles, setRoles] = useState<Rol[]>([])
   const [funciones, setFunciones] = useState<Funcion[]>([])
   const [cargando, setCargando] = useState(true)
@@ -299,17 +300,26 @@ export default function PaginaRoles() {
 
   // Listas filtradas: por orden cuando no hay búsqueda, por app+nombre cuando hay búsqueda
   const rolesFiltrados = roles
-    .filter((r) => r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase()))
+    .filter((r) => {
+      if (esUsuarioTest && normalizarTipo(r.tipo) === 'RESTRINGIDO') return false
+      return r.nombre.toLowerCase().includes(busquedaRoles.toLowerCase()) || r.codigo_rol.toLowerCase().includes(busquedaRoles.toLowerCase()) || (r.alias_de_rol || '').toLowerCase().includes(busquedaRoles.toLowerCase())
+    })
     .sort(busquedaRoles ? compararPorAppYNombre : (a, b) => (a.orden ?? 0) - (b.orden ?? 0))
 
   const funcionesFiltradas = funciones
     .filter((f) => f.nombre.toLowerCase().includes(busquedaFunciones.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaFunciones.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busquedaFunciones.toLowerCase()))
     .sort(compararPorAppYNombre)
 
-  // Funciones disponibles para asignar (excluir las ya asignadas)
-  const funcionesDisponibles = funciones.filter((f) =>
-    !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion)
-  )
+  // Funciones disponibles para asignar (excluir ya asignadas y filtrar por tipo de rol)
+  const funcionesDisponibles = (() => {
+    const sinAsignar = funciones.filter((f) => !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion))
+    if (!rolEditando) return sinAsignar
+    const tipoRol = normalizarTipo(rolEditando.tipo)
+    if (tipoRol === 'RESTRINGIDO') return sinAsignar.filter((f) => normalizarTipo(f.tipo) === 'RESTRINGIDO')
+    if (tipoRol === 'ADMINISTRADOR') return sinAsignar.filter((f) => normalizarTipo(f.tipo) !== 'RESTRINGIDO')
+    if (tipoRol === 'USUARIO') return sinAsignar.filter((f) => normalizarTipo(f.tipo) === 'USUARIO')
+    return sinAsignar
+  })()
 
   // Filtro de búsqueda para el selector de funciones del rol
   const funcionesRolFiltradas = funcionesDisponibles.filter((f) =>
@@ -749,6 +759,14 @@ export default function PaginaRoles() {
           {/* Tab Funciones asignadas */}
           {tabModalRol === 'funciones' && rolEditando && (
             <div className="flex flex-col gap-4">
+              {/* Aviso filtro por tipo de rol */}
+              {(() => {
+                const tipoRol = normalizarTipo(rolEditando.tipo)
+                if (tipoRol === 'RESTRINGIDO') return <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">Solo funciones de tipo <strong>Restringido</strong> pueden asignarse a este rol.</div>
+                if (tipoRol === 'ADMINISTRADOR') return <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">Funciones de tipo <strong>Restringido</strong> no pueden asignarse a roles de Administración.</div>
+                if (tipoRol === 'USUARIO') return <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">Solo funciones de tipo <strong>Usuario</strong> pueden asignarse a este rol.</div>
+                return null
+              })()}
               {/* Asignar nueva función */}
               <div className="flex gap-2">
                 <div className="flex-1 relative" ref={dropdownFuncionRolRef}>

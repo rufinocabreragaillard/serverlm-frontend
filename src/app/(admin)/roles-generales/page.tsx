@@ -67,7 +67,8 @@ export default function PaginaRolesGenerales() {
 function TabRolesGlobales() {
   const t = useTranslations('rolesGenerales')
   const tc = useTranslations('common')
-  const { aplicacionActiva } = useAuth()
+  const { aplicacionActiva, usuario } = useAuth()
+  const esUsuarioTest = normalizarTipo(usuario?.tipo) === 'TEST'
   const [roles, setRoles] = useState<Rol[]>([])
   const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([])
   const [cargando, setCargando] = useState(true)
@@ -177,9 +178,15 @@ function TabRolesGlobales() {
     catch { if (editando) cargarFuncionesRol(editando.id_rol) }
   }
 
-  const funcionesDisponibles = todasFunciones.filter(
-    (f) => !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion),
-  )
+  const funcionesDisponibles = (() => {
+    const sinAsignar = todasFunciones.filter((f) => !funcionesRol.some((fa) => fa.codigo_funcion === f.codigo_funcion))
+    if (!editando) return sinAsignar
+    const tipoRol = normalizarTipo(editando.tipo)
+    if (tipoRol === 'RESTRINGIDO') return sinAsignar.filter((f) => normalizarTipo(f.tipo) === 'RESTRINGIDO')
+    if (tipoRol === 'ADMINISTRADOR') return sinAsignar.filter((f) => normalizarTipo(f.tipo) !== 'RESTRINGIDO')
+    if (tipoRol === 'USUARIO') return sinAsignar.filter((f) => normalizarTipo(f.tipo) === 'USUARIO')
+    return sinAsignar
+  })()
   const funcionesRolFiltradas = funcionesDisponibles.filter(
     (f) =>
       busquedaFuncion.length === 0 ||
@@ -307,6 +314,10 @@ function TabRolesGlobales() {
     }
   }
 
+  const rolesVisibles = esUsuarioTest
+    ? roles.filter((r) => normalizarTipo(r.tipo) !== 'RESTRINGIDO')
+    : roles
+
   return (
     <Tarjeta>
       <TarjetaCabecera>
@@ -326,7 +337,7 @@ function TabRolesGlobales() {
         )}
         {cargando ? (
           <p className="text-sm text-texto-muted">Cargando...</p>
-        ) : roles.length === 0 ? (
+        ) : rolesVisibles.length === 0 ? (
           <p className="text-sm text-texto-muted">
             No hay roles generales definidos. Los roles generales son visibles en todos los grupos.
           </p>
@@ -347,9 +358,9 @@ function TabRolesGlobales() {
                   <th className="py-2 pr-4 w-28 text-right">Acciones</th>
                 </tr>
               </thead>
-              <SortableDndContext items={roles as unknown as Record<string, unknown>[]} getId={(r) => String(r.id_rol)} onReorder={(newItems) => reordenarRoles(newItems as unknown as Rol[])}>
+              <SortableDndContext items={rolesVisibles as unknown as Record<string, unknown>[]} getId={(r) => String(r.id_rol)} onReorder={(newItems) => reordenarRoles(newItems as unknown as Rol[])}>
               <tbody>
-                {roles.map((r) => {
+                {rolesVisibles.map((r) => {
                   const nombreAppOrigen = r.codigo_aplicacion_origen
                     ? (aplicaciones.find((a) => a.codigo_aplicacion === r.codigo_aplicacion_origen)?.nombre || r.codigo_aplicacion_origen)
                     : '—'
@@ -567,6 +578,14 @@ function TabRolesGlobales() {
 
           {tabModal === 'funciones' && editando && (
             <div className="flex flex-col gap-3">
+              {/* Aviso filtro por tipo de rol */}
+              {(() => {
+                const tipoRol = normalizarTipo(editando.tipo)
+                if (tipoRol === 'RESTRINGIDO') return <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">Solo funciones de tipo <strong>Restringido</strong> pueden asignarse a este rol.</div>
+                if (tipoRol === 'ADMINISTRADOR') return <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">Funciones de tipo <strong>Restringido</strong> no pueden asignarse a roles de Administración.</div>
+                if (tipoRol === 'USUARIO') return <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">Solo funciones de tipo <strong>Usuario</strong> pueden asignarse a este rol.</div>
+                return null
+              })()}
               {/* Asignar nueva */}
               <div>
                 <label className="text-sm font-medium text-texto">{t('asignarFuncion')}</label>
