@@ -744,11 +744,7 @@ export default function PaginaGrupos() {
                 <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />
               )}
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardarEntidad(false)} cargando={guardandoEntidad}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardarEntidad(true)} cargando={guardandoEntidad}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!entidadEditando} onGuardar={() => guardarEntidad(false)} onGuardarYSalir={() => guardarEntidad(true)} onCerrar={() => setModalEntidad(false)} cargando={guardandoEntidad} />
             </>
           )}
 
