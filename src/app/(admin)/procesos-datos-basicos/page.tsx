@@ -9,17 +9,18 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { procesosDatosBasicosApi } from '@/lib/api'
-import type { CategoriaProceso, TipoProceso, EstadoProceso } from '@/lib/tipos'
+import { procesosDatosBasicosApi, tareasDatosBasicosApi } from '@/lib/api'
+import type { CategoriaProceso, TipoProceso, EstadoProceso, EstadoCanonicalProceso } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { BotonChat } from '@/components/ui/boton-chat'
 
-type TabId = 'categorias' | 'tipos' | 'estados'
+type TabId = 'categorias' | 'tipos' | 'estados' | 'canonicos'
 
 type ItemEliminar =
   | { tipo: 'categoria'; item: CategoriaProceso }
   | { tipo: 'tipo'; item: TipoProceso }
   | { tipo: 'estado'; item: EstadoProceso }
+  | { tipo: 'canonico'; item: EstadoCanonicalProceso }
 
 export default function PaginaProcesosDatosBasicos() {
   const [tabActiva, setTabActiva] = useState<TabId>('categorias')
@@ -61,6 +62,16 @@ export default function PaginaProcesosDatosBasicos() {
   const [filtroCatEst, setFiltroCatEst] = useState('')
   const [filtroTipoEst, setFiltroTipoEst] = useState('')
 
+  // ── Canónicos ──────────────────────────────────────────────────────────────
+  const [canonicos, setCanonicos] = useState<EstadoCanonicalProceso[]>([])
+  const [cargandoCan, setCargandoCan] = useState(true)
+  const [modalCan, setModalCan] = useState(false)
+  const [canEditando, setCanEditando] = useState<EstadoCanonicalProceso | null>(null)
+  const [formCan, setFormCan] = useState({ codigo_estado_canonico: '', nombre: '' })
+  const [guardandoCan, setGuardandoCan] = useState(false)
+  const [errorCan, setErrorCan] = useState('')
+  const [busquedaCan, setBusquedaCan] = useState('')
+
   // ── Eliminación ────────────────────────────────────────────────────────────
   const [itemAEliminar, setItemAEliminar] = useState<ItemEliminar | null>(null)
   const [eliminando, setEliminando] = useState(false)
@@ -84,9 +95,16 @@ export default function PaginaProcesosDatosBasicos() {
     finally { setCargandoEst(false) }
   }, [])
 
+  const cargarCanonicos = useCallback(async () => {
+    setCargandoCan(true)
+    try { setCanonicos(await tareasDatosBasicosApi.listarCanonicosPro()) }
+    finally { setCargandoCan(false) }
+  }, [])
+
   useEffect(() => { cargarCategorias() }, [cargarCategorias])
   useEffect(() => { cargarTipos() }, [cargarTipos])
   useEffect(() => { cargarEstados() }, [cargarEstados])
+  useEffect(() => { cargarCanonicos() }, [cargarCanonicos])
 
   // ── CRUD Categorías ────────────────────────────────────────────────────────
   const abrirNuevaCat = () => {
@@ -253,16 +271,54 @@ export default function PaginaProcesosDatosBasicos() {
         const t = itemAEliminar.item as TipoProceso
         await procesosDatosBasicosApi.eliminarTipo(t.codigo_categoria_proceso, t.codigo_tipo_proceso)
         cargarTipos()
-      } else {
+      } else if (itemAEliminar.tipo === 'estado') {
         const e = itemAEliminar.item as EstadoProceso
         await procesosDatosBasicosApi.eliminarEstado(e.codigo_categoria_proceso, e.codigo_tipo_proceso, e.codigo_estado_proceso)
         cargarEstados()
+      } else {
+        await tareasDatosBasicosApi.eliminarCanonicosPro((itemAEliminar.item as EstadoCanonicalProceso).codigo_estado_canonico)
+        cargarCanonicos()
       }
       setItemAEliminar(null)
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Error al eliminar')
       setItemAEliminar(null)
     } finally { setEliminando(false) }
+  }
+
+  // ── CRUD Canónicos ─────────────────────────────────────────────────────────
+  const abrirNuevoCan = () => {
+    setCanEditando(null)
+    setFormCan({ codigo_estado_canonico: '', nombre: '' })
+    setErrorCan('')
+    setModalCan(true)
+  }
+
+  const abrirEditarCan = (c: EstadoCanonicalProceso) => {
+    setCanEditando(c)
+    setFormCan({ codigo_estado_canonico: c.codigo_estado_canonico, nombre: c.nombre })
+    setErrorCan('')
+    setModalCan(true)
+  }
+
+  const guardarCanonico = async (cerrar = true) => {
+    if (!formCan.nombre.trim()) { setErrorCan('El nombre es obligatorio'); return }
+    if (!canEditando && !formCan.codigo_estado_canonico.trim()) { setErrorCan('El código es obligatorio'); return }
+    setGuardandoCan(true); setErrorCan('')
+    try {
+      if (canEditando) {
+        await tareasDatosBasicosApi.actualizarCanonicosPro(canEditando.codigo_estado_canonico, { nombre: formCan.nombre.trim() })
+      } else {
+        await tareasDatosBasicosApi.crearCanonicosPro({
+          codigo_estado_canonico: formCan.codigo_estado_canonico.trim(),
+          nombre: formCan.nombre.trim(),
+        })
+      }
+      if (cerrar) setModalCan(false)
+      cargarCanonicos()
+    } catch (e) {
+      setErrorCan(e instanceof Error ? e.message : 'Error al guardar')
+    } finally { setGuardandoCan(false) }
   }
 
   // ── Filtros ────────────────────────────────────────────────────────────────
@@ -279,6 +335,13 @@ export default function PaginaProcesosDatosBasicos() {
   const tiposParaEstados = filtroTipoEst || !filtroCatEst
     ? tipos.filter((t) => !filtroCatEst || t.codigo_categoria_proceso === filtroCatEst)
     : tipos
+
+  const canonicosFiltrados = busquedaCan
+    ? canonicos.filter((c) =>
+        c.codigo_estado_canonico.toLowerCase().includes(busquedaCan.toLowerCase()) ||
+        c.nombre.toLowerCase().includes(busquedaCan.toLowerCase())
+      )
+    : canonicos
 
   const selectCls = 'rounded-lg border border-borde bg-surface px-3 py-1.5 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
   const tabCls = (id: TabId) =>
@@ -298,6 +361,7 @@ export default function PaginaProcesosDatosBasicos() {
         <button onClick={() => setTabActiva('categorias')} className={tabCls('categorias')}>Categorías de Proceso</button>
         <button onClick={() => setTabActiva('tipos')} className={tabCls('tipos')}>Tipos de Proceso</button>
         <button onClick={() => setTabActiva('estados')} className={tabCls('estados')}>Estados de Proceso</button>
+        <button onClick={() => setTabActiva('canonicos')} className={tabCls('canonicos')}>Estados Canónicos</button>
       </div>
 
       {/* ── Tab: Categorías ── */}
@@ -482,6 +546,65 @@ export default function PaginaProcesosDatosBasicos() {
         </>
       )}
 
+      {/* ── Tab: Canónicos ── */}
+      {tabActiva === 'canonicos' && (
+        <>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={busquedaCan}
+                onChange={(e) => setBusquedaCan(e.target.value)}
+                placeholder="Buscar estado canónico..."
+                className={selectCls + ' w-64'}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Boton variante="contorno" tamano="sm"
+                onClick={() => exportarExcel(canonicosFiltrados as unknown as Record<string, unknown>[], [
+                  { titulo: 'Código', campo: 'codigo_estado_canonico' },
+                  { titulo: 'Nombre', campo: 'nombre' },
+                  { titulo: 'Activo', campo: 'activo', formato: (v) => v ? 'Sí' : 'No' },
+                ], 'canonicos_proceso')}
+                disabled={canonicosFiltrados.length === 0}>
+                <Download size={15} /> Excel
+              </Boton>
+              <Boton variante="primario" onClick={abrirNuevoCan}><Plus size={16} /> Nuevo estado canónico</Boton>
+            </div>
+          </div>
+
+          {cargandoCan ? (
+            <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+          ) : (
+            <Tabla>
+              <TablaCabecera><tr>
+                <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Estado</TablaTh>
+                <TablaTh className="text-right">Acciones</TablaTh>
+              </tr></TablaCabecera>
+              <TablaCuerpo>
+                {canonicosFiltrados.length === 0 ? (
+                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={4 as never}>No hay estados canónicos registrados</TablaTd></TablaFila>
+                ) : canonicosFiltrados.map((c) => (
+                  <TablaFila key={c.codigo_estado_canonico}>
+                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_estado_canonico}</code></TablaTd>
+                    <TablaTd className="font-medium">{c.nombre}</TablaTd>
+                    <TablaTd>
+                      <Insignia variante={c.activo ? 'exito' : 'neutro'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia>
+                    </TablaTd>
+                    <TablaTd>
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => abrirEditarCan(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                        <button onClick={() => setItemAEliminar({ tipo: 'canonico', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                      </div>
+                    </TablaTd>
+                  </TablaFila>
+                ))}
+              </TablaCuerpo>
+            </Tabla>
+          )}
+        </>
+      )}
+
       {/* Modal Categoría */}
       <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? 'Editar categoría' : 'Nueva categoría de proceso'}>
         <div className="flex flex-col gap-4">
@@ -597,6 +720,31 @@ export default function PaginaProcesosDatosBasicos() {
         </div>
       </Modal>
 
+      {/* Modal Canónico */}
+      <Modal abierto={modalCan} alCerrar={() => setModalCan(false)} titulo={canEditando ? `Editar: ${canEditando.nombre}` : 'Nuevo Estado Canónico de Proceso'}>
+        <div className="flex flex-col gap-4 min-w-[440px]">
+          <Input etiqueta="Código" value={formCan.codigo_estado_canonico}
+            onChange={(e) => setFormCan({ ...formCan, codigo_estado_canonico: e.target.value })}
+            placeholder="Ej: ABIERTO, EN_PROCESO, CERRADO"
+            disabled={!!canEditando}
+            autoFocus={!canEditando}
+          />
+          <Input etiqueta="Nombre *" value={formCan.nombre}
+            onChange={(e) => setFormCan({ ...formCan, nombre: e.target.value })}
+            placeholder="Nombre del estado canónico"
+            autoFocus={!!canEditando}
+          />
+          {errorCan && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCan}</p></div>}
+          <PieBotonesModal
+            editando={!!canEditando}
+            onGuardar={() => guardarCanonico(false)}
+            onGuardarYSalir={() => guardarCanonico(true)}
+            onCerrar={() => setModalCan(false)}
+            cargando={guardandoCan}
+          />
+        </div>
+      </Modal>
+
       {/* Modal Confirmar Eliminación */}
       <ModalConfirmar
         abierto={!!itemAEliminar}
@@ -604,13 +752,16 @@ export default function PaginaProcesosDatosBasicos() {
         alConfirmar={ejecutarEliminacion}
         titulo={
           itemAEliminar?.tipo === 'categoria' ? 'Eliminar categoría' :
-          itemAEliminar?.tipo === 'tipo' ? 'Eliminar tipo' : 'Eliminar estado'
+          itemAEliminar?.tipo === 'tipo' ? 'Eliminar tipo' :
+          itemAEliminar?.tipo === 'canonico' ? 'Eliminar estado canónico' : 'Eliminar estado'
         }
         mensaje={
           itemAEliminar?.tipo === 'categoria'
             ? `¿Eliminar la categoría "${(itemAEliminar.item as CategoriaProceso).nombre_categoria_proceso}"? Solo posible si no tiene tipos asociados.`
             : itemAEliminar?.tipo === 'tipo'
             ? `¿Eliminar el tipo "${(itemAEliminar.item as TipoProceso).nombre_tipo_proceso}"? Solo posible si no tiene estados asociados.`
+            : itemAEliminar?.tipo === 'canonico'
+            ? `¿Eliminar el estado canónico "${(itemAEliminar.item as EstadoCanonicalProceso).nombre}"?`
             : `¿Eliminar el estado "${(itemAEliminar?.item as EstadoProceso)?.nombre_estado}"?`
         }
         textoConfirmar="Eliminar"

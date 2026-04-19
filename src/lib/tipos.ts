@@ -309,6 +309,12 @@ export interface EstadoCanonicoTarea {
   activo: boolean
 }
 
+export interface EstadoCanonicalProceso {
+  codigo_estado_canonico: string
+  nombre: string
+  activo: boolean
+}
+
 export interface CategoriaTarea {
   codigo_categoria_tarea: string
   nombre_categoria_tarea: string
