@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Copy, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Copy, Pencil, Plus, Save, Search, Trash2, X } from 'lucide-react'
 import { SortableDndContext, SortableRow, SortableListItem } from '@/components/ui/sortable'
 import { Boton } from '@/components/ui/boton'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/components/ui/tarjeta'
@@ -88,6 +88,39 @@ function TabRolesGlobales() {
 
   const [confirmacion, setConfirmacion] = useState<Rol | null>(null)
   const [eliminando, setEliminando] = useState(false)
+
+  // Edición inline de booleans
+  const [inlineChanges, setInlineChanges] = useState<Map<number, { inicial: boolean; inicial_admin_grupo: boolean; inicial_admin_general: boolean }>>(new Map())
+  const [guardandoInline, setGuardandoInline] = useState<Set<number>>(new Set())
+
+  const getInlineVal = (r: Rol, campo: 'inicial' | 'inicial_admin_grupo' | 'inicial_admin_general') => {
+    const pending = inlineChanges.get(r.id_rol)
+    return pending !== undefined ? pending[campo] : (r[campo] ?? false)
+  }
+
+  const handleInlineCheck = (r: Rol, campo: 'inicial' | 'inicial_admin_grupo' | 'inicial_admin_general', valor: boolean) => {
+    setInlineChanges(prev => {
+      const next = new Map(prev)
+      const current = next.get(r.id_rol) ?? { inicial: r.inicial ?? false, inicial_admin_grupo: r.inicial_admin_grupo ?? false, inicial_admin_general: r.inicial_admin_general ?? false }
+      next.set(r.id_rol, { ...current, [campo]: valor })
+      return next
+    })
+  }
+
+  const guardarInline = async (idRol: number) => {
+    const cambios = inlineChanges.get(idRol)
+    if (!cambios) return
+    setGuardandoInline(prev => new Set([...prev, idRol]))
+    try {
+      await rolesApi.actualizar(idRol, cambios)
+      setInlineChanges(prev => { const next = new Map(prev); next.delete(idRol); return next })
+      cargar()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar')
+    } finally {
+      setGuardandoInline(prev => { const next = new Set(prev); next.delete(idRol); return next })
+    }
+  }
 
   // Tab dentro del modal de edición: datos | funciones
   const [tabModal, setTabModal] = useState<'datos' | 'funciones'>('datos')
@@ -293,8 +326,10 @@ function TabRolesGlobales() {
                   <th className="py-2 pr-4">Alias</th>
                   <th className="py-2 pr-4">Descripción</th>
                   <th className="py-2 pr-4 text-center">Inicial</th>
+                  <th className="py-2 pr-4 text-center">Ini. Admin Grupo</th>
+                  <th className="py-2 pr-4 text-center">Ini. Admin General</th>
                   <th className="py-2 pr-4">Código</th>
-                  <th className="py-2 pr-4 w-24 text-right">Acciones</th>
+                  <th className="py-2 pr-4 w-28 text-right">Acciones</th>
                 </tr>
               </thead>
               <SortableDndContext items={roles as unknown as Record<string, unknown>[]} getId={(r) => String(r.id_rol)} onReorder={(newItems) => reordenarRoles(newItems as unknown as Rol[])}>
@@ -313,11 +348,31 @@ function TabRolesGlobales() {
                     <td className="py-2 pr-4 text-texto-muted">{r.alias_de_rol || '—'}</td>
                     <td className="py-2 pr-4 text-texto-muted truncate max-w-xs">{r.descripcion || '—'}</td>
                     <td className="py-2 pr-4 text-center">
-                      {r.inicial ? (
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-exito/10 text-exito" title="Rol inicial">✓</span>
-                      ) : (
-                        <span className="text-texto-muted text-xs">—</span>
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={getInlineVal(r, 'inicial')}
+                        onChange={(e) => handleInlineCheck(r, 'inicial', e.target.checked)}
+                        className="w-4 h-4 rounded accent-primario cursor-pointer"
+                        title="Rol inicial"
+                      />
+                    </td>
+                    <td className="py-2 pr-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={getInlineVal(r, 'inicial_admin_grupo')}
+                        onChange={(e) => handleInlineCheck(r, 'inicial_admin_grupo', e.target.checked)}
+                        className="w-4 h-4 rounded accent-primario cursor-pointer"
+                        title="Inicial Admin Grupo"
+                      />
+                    </td>
+                    <td className="py-2 pr-4 text-center">
+                      <input
+                        type="checkbox"
+                        checked={getInlineVal(r, 'inicial_admin_general')}
+                        onChange={(e) => handleInlineCheck(r, 'inicial_admin_general', e.target.checked)}
+                        className="w-4 h-4 rounded accent-primario cursor-pointer"
+                        title="Inicial Admin General"
+                      />
                     </td>
                     <td className="py-2 pr-4 font-mono text-xs">{r.codigo_rol}</td>
                     <td className="py-2 pr-4">
@@ -328,6 +383,14 @@ function TabRolesGlobales() {
                           title="Editar"
                         >
                           <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => guardarInline(r.id_rol)}
+                          disabled={guardandoInline.has(r.id_rol)}
+                          className={`p-1.5 rounded transition-colors ${inlineChanges.has(r.id_rol) ? 'text-primario hover:bg-primario-muy-claro' : 'text-texto-muted hover:bg-surface-hover hover:text-primario'} disabled:opacity-40 disabled:cursor-not-allowed`}
+                          title="Guardar cambios"
+                        >
+                          <Save size={16} />
                         </button>
                         <button
                           onClick={() => setConfirmacion(r)}
