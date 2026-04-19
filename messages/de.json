@@ -470,7 +470,8 @@
     "placeholderSeguridad": "Fragen zu Benutzern, Rollen, Audit... (Enter zum Senden, Shift+Enter für Zeilenumbruch)",
     "placeholderSegGrupo": "Beispiel: \"Weisen Sie die Rolle DOC-ADMIN juan@ejemplo.cl zu\", \"zeige mir die Gruppenmitglieder\"... (Enter zum Senden)",
     "placeholderPrimerMensaje": "Neue Unterhaltung. Schreiben Sie Ihre erste Nachricht unten.",
-    "pensando": "Wird überlegt..."
+    "pensando": "Wird überlegt...",
+    "espaciosTrabajo": "Arbeitsbereiche"
   },
   "documentos": {
     "titulo": "Dokumente",

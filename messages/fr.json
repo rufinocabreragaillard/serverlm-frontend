@@ -470,7 +470,8 @@
     "placeholderSeguridad": "Consultez sur les utilisateurs, rôles, audit... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)",
     "placeholderSegGrupo": "Ex: \"Attribuer le rôle DOC-ADMIN à juan@ejemplo.cl\", \"montre-moi les utilisateurs du groupe\"... (Entrée pour envoyer)",
     "placeholderPrimerMensaje": "Nouvelle conversation. Tapez votre premier message ci-dessous.",
-    "pensando": "Réflexion..."
+    "pensando": "Réflexion...",
+    "espaciosTrabajo": "Espaces de Travail"
   },
   "documentos": {
     "titulo": "Documents",

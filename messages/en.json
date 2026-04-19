@@ -402,7 +402,8 @@
     "placeholderSeguridad": "Ask about users, roles, audit... (Enter to send, Shift+Enter for new line)",
     "placeholderSegGrupo": "E.g. \"Assign the DOC-ADMIN role to john@example.com\", \"show me the group users\"... (Enter to send)",
     "placeholderPrimerMensaje": "New conversation. Write your first message below.",
-    "pensando": "Thinking..."
+    "pensando": "Thinking...",
+    "espaciosTrabajo": "Workspaces"
   },
   "documentos": {
     "titulo": "Documents",

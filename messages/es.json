@@ -481,7 +481,8 @@
     "placeholderSeguridad": "Consulta sobre usuarios, roles, auditoría... (Enter para enviar, Shift+Enter para salto de línea)",
     "placeholderSegGrupo": "Ej: \"Asigna el rol DOC-ADMIN a juan@ejemplo.cl\", \"muéstrame los usuarios del grupo\"... (Enter para enviar)",
     "placeholderPrimerMensaje": "Conversación nueva. Escribe tu primer mensaje abajo.",
-    "pensando": "Pensando..."
+    "pensando": "Pensando...",
+    "espaciosTrabajo": "Espacios de Trabajo"
   },
   "documentos": {
     "titulo": "Documentos",

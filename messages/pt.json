@@ -470,7 +470,8 @@
     "placeholderSeguridad": "Consulta sobre usuários, funções, auditoria... (Enter para enviar, Shift+Enter para quebra de linha)",
     "placeholderSegGrupo": "Ex: \"Atribua o papel DOC-ADMIN a juan@exemplo.cl\", \"mostre-me os usuários do grupo\"... (Enter para enviar)",
     "placeholderPrimerMensaje": "Conversação nova. Digite sua primeira mensagem abaixo.",
-    "pensando": "Pensando..."
+    "pensando": "Pensando...",
+    "espaciosTrabajo": "Espaços de Trabalho"
   },
   "documentos": {
     "titulo": "Documentos",

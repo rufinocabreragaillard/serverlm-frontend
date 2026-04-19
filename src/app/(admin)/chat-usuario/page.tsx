@@ -248,7 +248,7 @@ export default function PaginaChatUsuario() {
             {t('conversaciones')}
           </button>
           <button onClick={() => setTabPagina('documentos')} className={tabStyle(tabPagina === 'documentos')}>
-            Documentos
+            {t('espaciosTrabajo')}
           </button>
         </nav>
       </div>
