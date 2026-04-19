@@ -50,8 +50,6 @@ import type {
   ChatConversacionDetalle,
   Cargo,
   RolCargo,
-  EspacioTrabajo,
-  DocumentoEspacio,
   LocaleSoportado,
   EstadoTraducciones,
 } from './tipos'
@@ -1336,36 +1334,6 @@ export const traduccionesApi = {
   // Resetea el estado GENERANDO (para desatascar una generación fallida)
   cancelar: () =>
     api.post<{ status: string; mensaje: string }>('/traducciones/cancelar').then((r) => r.data),
-}
-
-// ─── Espacios de Trabajo ─────────────────────────────────────────────────────
-
-export const espaciosTrabajoApi = {
-  listarPaginado: (params: {
-    page?: number; limit?: number; q?: string
-    tipo_espacio?: string; solo_propios?: boolean
-  }) =>
-    api.get<RespuestaPaginadaApi<EspacioTrabajo>>('/espacios-trabajo', { params }).then((r) => r.data),
-
-  crear: (datos: { nombre_espacio?: string; descripcion?: string; tipo_espacio?: string; fecha_termino?: string }) =>
-    api.post<EspacioTrabajo>('/espacios-trabajo', datos).then((r) => r.data),
-
-  actualizar: (id: number, datos: Partial<{ nombre_espacio: string; descripcion: string; tipo_espacio: string; fecha_termino: string | null }>) =>
-    api.put<EspacioTrabajo>(`/espacios-trabajo/${id}`, datos).then((r) => r.data),
-
-  eliminar: (id: number) => api.delete(`/espacios-trabajo/${id}`),
-
-  listarDocumentos: (id: number, q?: string) =>
-    api.get<DocumentoEspacio[]>(`/espacios-trabajo/${id}/documentos`, { params: q ? { q } : undefined }).then((r) => r.data),
-
-  listarDocumentosDisponibles: (id: number, params?: { q?: string; limit?: number }) =>
-    api.get<DocumentoEspacio[]>(`/espacios-trabajo/${id}/documentos-disponibles`, { params }).then((r) => r.data),
-
-  agregarDocumentos: (id: number, codigos_documento: number[]) =>
-    api.post(`/espacios-trabajo/${id}/documentos`, { codigos_documento }).then((r) => r.data),
-
-  quitarDocumento: (id: number, codigo_documento: number) =>
-    api.delete(`/espacios-trabajo/${id}/documentos/${codigo_documento}`).then((r) => r.data),
 }
 
 export default api
