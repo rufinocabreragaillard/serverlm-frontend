@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
@@ -499,11 +500,13 @@ export default function PaginaProcesosDatosBasicos() {
             onChange={(e) => setFormCat({ ...formCat, alias: e.target.value })}
             placeholder="Alias breve" />
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalCat(false)}>Salir</Boton>
-            <Boton variante="secundario" onClick={() => guardarCategoria(true)} cargando={guardandoCat}>Grabar y Salir</Boton>
-            <Boton variante="primario" onClick={() => guardarCategoria(false)} cargando={guardandoCat}>{catEditando ? 'Grabar' : 'Crear'}</Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!catEditando}
+            onGuardar={() => guardarCategoria(false)}
+            onGuardarYSalir={() => guardarCategoria(true)}
+            onCerrar={() => setModalCat(false)}
+            cargando={guardandoCat}
+          />
         </div>
       </Modal>
 
@@ -535,11 +538,13 @@ export default function PaginaProcesosDatosBasicos() {
             onChange={(e) => setFormTipo({ ...formTipo, alias: e.target.value })}
             placeholder="Alias breve" />
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalTipo(false)}>Salir</Boton>
-            <Boton variante="secundario" onClick={() => guardarTipo(true)} cargando={guardandoTipo}>Grabar y Salir</Boton>
-            <Boton variante="primario" onClick={() => guardarTipo(false)} cargando={guardandoTipo}>{tipoEditando ? 'Grabar' : 'Crear'}</Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!tipoEditando}
+            onGuardar={() => guardarTipo(false)}
+            onGuardarYSalir={() => guardarTipo(true)}
+            onCerrar={() => setModalTipo(false)}
+            cargando={guardandoTipo}
+          />
         </div>
       </Modal>
 
@@ -582,11 +587,13 @@ export default function PaginaProcesosDatosBasicos() {
               className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
           </div>
           {errorEst && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEst}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalEst(false)}>Salir</Boton>
-            <Boton variante="secundario" onClick={() => guardarEstado(true)} cargando={guardandoEst}>Grabar y Salir</Boton>
-            <Boton variante="primario" onClick={() => guardarEstado(false)} cargando={guardandoEst}>{estEditando ? 'Grabar' : 'Crear'}</Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!estEditando}
+            onGuardar={() => guardarEstado(false)}
+            onGuardarYSalir={() => guardarEstado(true)}
+            onCerrar={() => setModalEst(false)}
+            cargando={guardandoEst}
+          />
         </div>
       </Modal>
 

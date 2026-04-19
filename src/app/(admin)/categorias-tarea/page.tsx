@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
-import { Boton } from '@/components/ui/boton'
 import { BarraHerramientas } from '@/components/ui/barra-herramientas'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 import {
   TablaCrud,
   columnaCodigo,
@@ -253,39 +253,19 @@ export default function PaginaCategoriasTarea() {
             </div>
           )}
 
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={crud.cerrarModal}>
-              Salir
-            </Boton>
-            <Boton
-              variante="secundario"
-              onClick={() => {
-                if (!crud.form.nombre_categoria_tarea.trim()) {
-                  crud.setError('El nombre es obligatorio')
-                  setTabModal('datos')
-                  return
-                }
-                crud.guardar(undefined, undefined, { cerrar: true })
-              }}
-              cargando={crud.guardando}
-            >
-              Grabar y Salir
-            </Boton>
-            <Boton
-              variante="primario"
-              onClick={() => {
-                if (!crud.form.nombre_categoria_tarea.trim()) {
-                  crud.setError('El nombre es obligatorio')
-                  setTabModal('datos')
-                  return
-                }
-                crud.guardar(undefined, undefined, { cerrar: false })
-              }}
-              cargando={crud.guardando}
-            >
-              {crud.editando ? 'Grabar' : 'Crear'}
-            </Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!crud.editando}
+            onGuardar={() => {
+              if (!crud.form.nombre_categoria_tarea.trim()) { crud.setError('El nombre es obligatorio'); setTabModal('datos'); return }
+              crud.guardar(undefined, undefined, { cerrar: false })
+            }}
+            onGuardarYSalir={() => {
+              if (!crud.form.nombre_categoria_tarea.trim()) { crud.setError('El nombre es obligatorio'); setTabModal('datos'); return }
+              crud.guardar(undefined, undefined, { cerrar: true })
+            }}
+            onCerrar={crud.cerrarModal}
+            cargando={crud.guardando}
+          />
         </div>
       </Modal>
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Plus, Pencil, Trash2, X, Check, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
@@ -481,17 +482,13 @@ export default function PaginaDatosBasicos() {
             </div>
           )}
 
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalCat(false)}>
-              Salir
-            </Boton>
-            <Boton variante="secundario" onClick={() => guardarCategoria(true)} cargando={guardandoCat}>
-              Grabar y Salir
-            </Boton>
-            <Boton variante="primario" onClick={() => guardarCategoria(false)} cargando={guardandoCat}>
-              {catEditando ? 'Grabar' : 'Crear categoría'}
-            </Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!catEditando}
+            onGuardar={() => guardarCategoria(false)}
+            onGuardarYSalir={() => guardarCategoria(true)}
+            onCerrar={() => setModalCat(false)}
+            cargando={guardandoCat}
+          />
         </div>
       </Modal>
 
@@ -544,17 +541,13 @@ export default function PaginaDatosBasicos() {
             </div>
           )}
 
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalTipo(false)}>
-              Salir
-            </Boton>
-            <Boton variante="secundario" onClick={() => guardarTipo(true)} cargando={guardandoTipo}>
-              Grabar y Salir
-            </Boton>
-            <Boton variante="primario" onClick={() => guardarTipo(false)} cargando={guardandoTipo}>
-              {tipoEditando ? 'Grabar' : 'Crear tipo'}
-            </Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!tipoEditando}
+            onGuardar={() => guardarTipo(false)}
+            onGuardarYSalir={() => guardarTipo(true)}
+            onCerrar={() => setModalTipo(false)}
+            cargando={guardandoTipo}
+          />
         </div>
       </Modal>
 

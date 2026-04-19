@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { iconoTipoArchivo } from '@/lib/icono-tipo-archivo'
 import { Boton } from '@/components/ui/boton'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
@@ -1007,11 +1008,13 @@ export default function PaginaCargaDocsUsuario() {
             </div>
           )}
           {errorUb && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorUb}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="secundario" onClick={() => setModalUb(false)}>Salir</Boton>
-            <Boton variante="secundario" onClick={() => guardarUb(true)} cargando={guardandoUb}>Grabar y Salir</Boton>
-            <Boton variante="primario" onClick={() => guardarUb(false)} cargando={guardandoUb}>Grabar</Boton>
-          </div>
+          <PieBotonesModal
+            editando={!!editandoUb}
+            onGuardar={() => guardarUb(false)}
+            onGuardarYSalir={() => guardarUb(true)}
+            onCerrar={() => setModalUb(false)}
+            cargando={guardandoUb}
+          />
         </div>
       </Modal>
 
