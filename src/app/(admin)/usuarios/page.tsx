@@ -444,15 +444,18 @@ export default function PaginaUsuarios() {
   const ROLES_PROTEGIDOS = new Set(['SEG_ADMIN_GRUPO', 'ADMIN'])
   const esSuperAdmin = (usuarioActual?.grupos || []).some((g) => g.codigo_grupo === 'ADMIN')
   const mapaAppNombre = Object.fromEntries(catalogoApps.map((a) => [a.codigo_aplicacion, a.nombre]))
-  const tipoGrupoActivo = normalizarTipo(catalogoGrupos.find((g) => g.codigo_grupo === grupoActivo)?.tipo)
+  const tipoUsuarioEditando = normalizarTipo(form.tipo)
   const rolesDisponibles = roles
-    .filter((r) =>
-      !ROLES_PROTEGIDOS.has(r.codigo_rol) &&
-      (r.codigo_grupo === grupoActivo || r.codigo_grupo == null) &&
-      !rolesUsuario.some((ra) => ra.codigo_grupo === grupoActivo && ra.id_rol === r.id_rol) &&
-      // Filtro tipo: el rol debe tener el mismo tipo que el grupo activo
-      normalizarTipo(r.tipo) === tipoGrupoActivo
-    )
+    .filter((r) => {
+      if (ROLES_PROTEGIDOS.has(r.codigo_rol)) return false
+      if (!(r.codigo_grupo === grupoActivo || r.codigo_grupo == null)) return false
+      if (rolesUsuario.some((ra) => ra.codigo_grupo === grupoActivo && ra.id_rol === r.id_rol)) return false
+      const tipoRol = normalizarTipo(r.tipo)
+      if (tipoUsuarioEditando === 'RESTRINGIDO') return tipoRol === 'RESTRINGIDO'
+      if (tipoUsuarioEditando === 'ADMINISTRADOR') return tipoRol !== 'RESTRINGIDO'
+      if (tipoUsuarioEditando === 'USUARIO') return tipoRol === 'USUARIO'
+      return true
+    })
     // Orden: nombre app origen → nombre rol. Sin app origen al final.
     .sort((a, b) => {
       const na = a.codigo_aplicacion_origen ? (mapaAppNombre[a.codigo_aplicacion_origen] || a.codigo_aplicacion_origen) : ''
@@ -1041,6 +1044,12 @@ export default function PaginaUsuarios() {
                 </div>
               ) : (
                 <>
+                {(() => {
+                  if (tipoUsuarioEditando === 'RESTRINGIDO') return <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">Solo roles de tipo <strong>Restringido</strong> pueden asignarse a este usuario.</div>
+                  if (tipoUsuarioEditando === 'ADMINISTRADOR') return <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">Roles de tipo <strong>Restringido</strong> no pueden asignarse a usuarios de Administración.</div>
+                  if (tipoUsuarioEditando === 'USUARIO') return <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">Solo roles de tipo <strong>Usuario</strong> pueden asignarse a este usuario.</div>
+                  return null
+                })()}
               {/* Asignar nuevo rol */}
               <div className="flex gap-2">
                 <div className="flex-1 relative" ref={dropdownRolRef}>
