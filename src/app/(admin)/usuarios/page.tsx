@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Usuario, Rol, Entidad, Area, Aplicacion, Grupo } from '@/lib/tipos'
 import { normalizarTipo, etiquetaTipo, varianteTipo } from '@/lib/tipo-elemento'
 import { exportarExcel } from '@/lib/exportar-excel'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 
 type RolAsignado = {
   codigo_grupo: string
@@ -723,11 +724,7 @@ export default function PaginaUsuarios() {
                       <p className="text-sm text-error">{error}</p>
                     </div>
                   )}
-                  <div className="flex gap-3 justify-end pt-2">
-                    <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
-                    <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
-                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                  </div>
+                  <PieBotonesModal editando={!!usuarioEditando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModalAbierto(false)} cargando={guardando} />
                 </div>
               ) : (
                 /* ── Modo edición: todos los campos ── */
@@ -793,11 +790,7 @@ export default function PaginaUsuarios() {
                       <p className="text-sm text-error">{error}</p>
                     </div>
                   )}
-                  <div className="flex gap-3 justify-end pt-2">
-                    <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
-                    <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
-                    <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
-                  </div>
+                  <PieBotonesModal editando={!!usuarioEditando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModalAbierto(false)} cargando={guardando} />
                 </div>
               )}
             </>
@@ -911,11 +904,7 @@ export default function PaginaUsuarios() {
                   <p className="text-sm text-error">{error}</p>
                 </div>
               )}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!usuarioEditando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModalAbierto(false)} cargando={guardando} />
             </div>
           )}
 
@@ -1025,11 +1014,7 @@ export default function PaginaUsuarios() {
                   <p className="text-sm text-error">{error}</p>
                 </div>
               )}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!usuarioEditando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModalAbierto(false)} cargando={guardando} />
             </div>
           )}
 
@@ -1160,11 +1145,7 @@ export default function PaginaUsuarios() {
                   <p className="text-sm text-error">{error}</p>
                 </div>
               )}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardar(false)} cargando={guardando}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardar(true)} cargando={guardando}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!usuarioEditando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModalAbierto(false)} cargando={guardando} />
             </div>
           )}
 

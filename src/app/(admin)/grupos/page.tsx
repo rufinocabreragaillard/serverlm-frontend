@@ -17,6 +17,7 @@ import type { Grupo, Entidad, Usuario } from '@/lib/tipos'
 import { etiquetaTipo, varianteTipo, normalizarTipo, type TipoElemento } from '@/lib/tipo-elemento'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { useTranslations } from 'next-intl'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 
 type UsuarioGrupo = { codigo_usuario: string; fecha_alta?: string; usuarios?: { nombre: string; activo: boolean } }
 
@@ -719,11 +720,7 @@ export default function PaginaGrupos() {
           )}
 
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="primario" onClick={() => guardarGrupo(false)} cargando={guardando}>Guardar</Boton>
-            <Boton variante="secundario" onClick={() => guardarGrupo(true)} cargando={guardando}>Guardar y Salir</Boton>
-            <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Salir</Boton>
-          </div>
+          <PieBotonesModal editando={!!grupoEditando} onGuardar={() => guardarGrupo(false)} onGuardarYSalir={() => guardarGrupo(true)} onCerrar={() => setModalGrupo(false)} cargando={guardando} />
         </div>
       </Modal>
 

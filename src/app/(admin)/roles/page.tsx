@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Rol, Funcion, Aplicacion, RegistroLLM } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { etiquetaTipo, varianteTipo, normalizarTipo, type TipoElemento } from '@/lib/tipo-elemento'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 
 type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string } }
 
@@ -748,11 +749,7 @@ export default function PaginaRoles() {
                 </div>
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardando}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!rolEditando} onGuardar={() => guardarRol(false)} onGuardarYSalir={() => guardarRol(true)} onCerrar={() => setModalRol(false)} cargando={guardando} />
             </>
           )}
 
@@ -891,7 +888,7 @@ export default function PaginaRoles() {
                 onChange={(e) => setFormRol({ ...formRol, prompt: e.target.value })}
               />
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardando}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton></div>
+              <PieBotonesModal editando={!!rolEditando} onGuardar={() => guardarRol(false)} onGuardarYSalir={() => guardarRol(true)} onCerrar={() => setModalRol(false)} cargando={guardando} />
             </div>
           )}
 
@@ -906,7 +903,7 @@ export default function PaginaRoles() {
                 onChange={(e) => setFormRol({ ...formRol, system_prompt: e.target.value })}
               />
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarRol(false)} cargando={guardando}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarRol(true)} cargando={guardando}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalRol(false)}>Salir</Boton></div>
+              <PieBotonesModal editando={!!rolEditando} onGuardar={() => guardarRol(false)} onGuardarYSalir={() => guardarRol(true)} onCerrar={() => setModalRol(false)} cargando={guardando} />
             </div>
           )}
         </div>
@@ -950,11 +947,7 @@ export default function PaginaRoles() {
                 <Input etiqueta="Código" value={formFuncion.codigo_funcion} disabled readOnly />
               )}
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardarFuncion(false)} cargando={guardando}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardarFuncion(true)} cargando={guardando}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!funcionEditando} onGuardar={() => guardarFuncion(false)} onGuardarYSalir={() => guardarFuncion(true)} onCerrar={() => setModalFuncion(false)} cargando={guardando} />
             </>
           )}
 
@@ -1034,11 +1027,7 @@ export default function PaginaRoles() {
                 </p>
               </div>
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-              <div className="flex gap-3 justify-end pt-2">
-                <Boton variante="primario" onClick={() => guardarFuncion(false)} cargando={guardando}>Guardar</Boton>
-                <Boton variante="secundario" onClick={() => guardarFuncion(true)} cargando={guardando}>Guardar y Salir</Boton>
-                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>Salir</Boton>
-              </div>
+              <PieBotonesModal editando={!!funcionEditando} onGuardar={() => guardarFuncion(false)} onGuardarYSalir={() => guardarFuncion(true)} onCerrar={() => setModalFuncion(false)} cargando={guardando} />
             </div>
           )}
         </div>

@@ -358,7 +358,7 @@ export default function PaginaAplicaciones() {
                 onChange={(e) => setFormApp({ ...formApp, prompt: e.target.value })}
               />
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarApp(true)} cargando={guardandoApp}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
+              <PieBotonesModal editando={!!appEditando} onGuardar={() => guardarApp(false)} onGuardarYSalir={() => guardarApp(true)} onCerrar={() => setModalApp(false)} cargando={guardandoApp} />
             </div>
           )}
           {tabModalApp === 'system_prompt' && appEditando && (
@@ -371,7 +371,7 @@ export default function PaginaAplicaciones() {
                 onChange={(e) => setFormApp({ ...formApp, system_prompt: e.target.value })}
               />
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
-              <div className="flex gap-3 justify-end pt-2"><Boton variante="primario" onClick={() => guardarApp(false)} cargando={guardandoApp}>Guardar</Boton><Boton variante="secundario" onClick={() => guardarApp(true)} cargando={guardandoApp}>Guardar y Salir</Boton><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
+              <PieBotonesModal editando={!!appEditando} onGuardar={() => guardarApp(false)} onGuardarYSalir={() => guardarApp(true)} onCerrar={() => setModalApp(false)} cargando={guardandoApp} />
             </div>
           )}
           {tabModalApp === 'grupos' && appEditando && (
