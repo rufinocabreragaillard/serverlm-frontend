@@ -521,7 +521,11 @@ export default function PaginaRoles() {
                   <TablaTd><Insignia variante={varianteTipo(r.tipo)}>{etiquetaTipo(r.tipo)}</Insignia></TablaTd>
                   <TablaTd className="text-sm">{r.alias_de_rol || '—'}</TablaTd>
                   <TablaTd className="font-medium">{r.nombre}</TablaTd>
-                  <TablaTd className="text-texto-muted text-xs">{r.url_inicio || '—'}</TablaTd>
+                  <TablaTd className="text-xs">
+                    {r.url_inicio ? (
+                      <a href={r.url_inicio} className="text-primario hover:underline font-mono" title={r.url_inicio}>{r.url_inicio}</a>
+                    ) : <span className="text-texto-muted">—</span>}
+                  </TablaTd>
                   <TablaTd className="text-center">
                     {r.inicial ? (
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-exito/10 text-exito" title="Rol inicial">✓</span>
