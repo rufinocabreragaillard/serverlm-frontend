@@ -378,7 +378,11 @@ export interface EstadoProceso {
   nombre_estado: string
   prompt?: string
   system_prompt?: string
-  activo: boolean
+  codigo_funcion?: string | null
+  n_parallel?: number | null
+  ayuda?: string | null
+  traducir: boolean
+  batch_size?: number | null
 }
 
 export interface EstadoTarea {
