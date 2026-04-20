@@ -520,6 +520,21 @@ export const documentosApi = {
       '/documentos/revertir-estado',
       { codigos_documento, estados_origen, estado_destino },
     ).then((r) => r.data),
+  // Revertir masivo por filtros (sin lista de IDs).
+  // Si solo_contar=true devuelve conteo sin hacer UPDATE.
+  revertir: (params: {
+    estados_origen: string[]
+    estado_destino: string
+    codigo_entidad?: string
+    q?: string
+    codigo_ubicacion?: string
+    tope?: number
+    solo_contar?: boolean
+  }) =>
+    api.post<{ conteo: number; revertidos: number; solo_contar: boolean }>(
+      '/documentos/revertir',
+      params,
+    ).then((r) => r.data),
   // Características
   listarCaracteristicas: (id: number) =>
     api.get<CategoriaConCaracteristicasDocs[]>(`/documentos/${id}/caracteristicas`).then((r) => r.data),
@@ -1074,8 +1089,14 @@ export const colaEstadosDocsApi = {
   },
   listarPaginado: (params: { page: number; limit: number; estado_cola?: string; q?: string }) =>
     api.get<RespuestaPaginadaApi<ColaEstadoDoc>>('/cola-estados-docs/paginado', { params }).then((r) => r.data),
-  inicializar: (items: { codigo_documento: number; codigo_estado_doc_destino: string; prioridad?: number }[]) =>
-    api.post<{ encolados: number; omitidos: number; total: number }>('/cola-estados-docs/inicializar', { items }).then((r) => r.data),
+  inicializar: (
+    items: { codigo_documento: number; codigo_estado_doc_destino: string; prioridad?: number }[],
+    opts?: { codigo_proceso?: string; codigo_funcion?: string },
+  ) =>
+    api.post<{ encolados: number; omitidos: number; total: number }>(
+      '/cola-estados-docs/inicializar',
+      { items, ...(opts || {}) },
+    ).then((r) => r.data),
   inicializarPorEstado: (estado_origen: string, estado_destino: string, codigo_entidad?: string, tope?: number | null, codigo_ubicacion?: string | null) =>
     api.post<{ encolados: number; omitidos: number; total: number }>('/cola-estados-docs/inicializar-por-estado', { estado_origen, estado_destino, codigo_entidad, tope: tope || null, codigo_ubicacion: codigo_ubicacion || null }).then((r) => r.data),
   cerrar: () =>
@@ -1083,10 +1104,10 @@ export const colaEstadosDocsApi = {
   eliminar: (id: number) => api.delete(`/cola-estados-docs/${id}`),
   // Dispara el worker backend (BackgroundTasks). Retorna inmediato; el
   // procesamiento corre en el servidor. El cliente hace polling de listar().
-  ejecutar: (estadoDestino?: string) =>
+  ejecutar: (estadoDestino?: string, opts?: { codigo_proceso?: string; codigo_funcion?: string }) =>
     api.post<{ mensaje: string; pendientes_al_iniciar: number }>(
       '/cola-estados-docs/ejecutar',
-      { estado_destino: estadoDestino || null },
+      { estado_destino: estadoDestino || null, ...(opts || {}) },
     ).then((r) => r.data),
   recuperarHuerfanos: (minutos = 5) =>
     api.post<{ recuperados: number }>(

@@ -864,7 +864,7 @@ function PaginaProcesarDocumentosInterna() {
           codigo_documento: id,
           codigo_estado_doc_destino: estadoDestino,
         }))
-        await colaEstadosDocsApi.inicializar(items)
+        await colaEstadosDocsApi.inicializar(items, { codigo_proceso: procesoSel || undefined })
       }
     } catch {
       setEjecutando(false)
@@ -896,7 +896,7 @@ function PaginaProcesarDocumentosInterna() {
 
     // 3. Disparar worker backend
     try {
-      await colaEstadosDocsApi.ejecutar(estadoDestino)
+      await colaEstadosDocsApi.ejecutar(estadoDestino, { codigo_proceso: procesoSel || undefined })
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al disparar el worker'
       setCola((prev) => prev.map((c) => ({ ...c, estado_cola: 'ERROR', resultado: msg })))

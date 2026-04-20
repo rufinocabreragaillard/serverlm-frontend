@@ -233,8 +233,8 @@ export function TabPipelineTodo({ procesos = [], estadosDocs = [], ubicaciones: 
     if (docs.length === 0) { setPaso(key, { estado: 'listo' }); return true }
     setPaso(key, { total: docs.length, completados: 0, estado: 'activo' })
     const items = docs.map((d) => ({ codigo_documento: d.codigo_documento, codigo_estado_doc_destino: estadoDestino }))
-    await colaEstadosDocsApi.inicializar(items)
-    await colaEstadosDocsApi.ejecutar(estadoDestino)
+    await colaEstadosDocsApi.inicializar(items, { codigo_proceso: key })
+    await colaEstadosDocsApi.ejecutar(estadoDestino, { codigo_proceso: key })
 
     const idsSet = new Set(docs.map((d) => d.codigo_documento))
 
