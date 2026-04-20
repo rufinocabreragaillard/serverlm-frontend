@@ -300,7 +300,15 @@ export default function PaginaProcesosDatosBasicos() {
           system_prompt: formTipo.system_prompt || undefined,
         })
       }
-      if (cerrar) setModalTipo(false)
+      if (cerrar) {
+        setModalTipo(false)
+      } else if (!tipoEditando) {
+        setFormTipo({
+          codigo_categoria_proceso: formTipo.codigo_categoria_proceso,
+          codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '',
+          alias: '', prompt: '', system_prompt: '',
+        })
+      }
       cargarTipos()
     } catch (e) {
       setErrorTipo(e instanceof Error ? e.message : 'Error al guardar')
