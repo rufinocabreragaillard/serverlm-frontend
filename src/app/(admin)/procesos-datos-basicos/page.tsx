@@ -5,12 +5,11 @@ import { Plus, Pencil, Trash2, Download } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
-import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { procesosDatosBasicosApi, tareasDatosBasicosApi } from '@/lib/api'
-import type { CategoriaProceso, TipoProceso, EstadoProceso, EstadoCanonicalProceso } from '@/lib/tipos'
+import { procesosDatosBasicosApi, tareasDatosBasicosApi, funcionesApi } from '@/lib/api'
+import type { CategoriaProceso, TipoProceso, EstadoProceso, EstadoCanonicalProceso, Funcion } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { BotonChat } from '@/components/ui/boton-chat'
 
@@ -32,6 +31,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [catEditando, setCatEditando] = useState<CategoriaProceso | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '',
+    prompt: '', system_prompt: '',
   })
   const [guardandoCat, setGuardandoCat] = useState(false)
   const [errorCat, setErrorCat] = useState('')
@@ -43,6 +43,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [tipoEditando, setTipoEditando] = useState<TipoProceso | null>(null)
   const [formTipo, setFormTipo] = useState({
     codigo_categoria_proceso: '', codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '',
+    prompt: '', system_prompt: '',
   })
   const [guardandoTipo, setGuardandoTipo] = useState(false)
   const [errorTipo, setErrorTipo] = useState('')
@@ -53,14 +54,31 @@ export default function PaginaProcesosDatosBasicos() {
   const [cargandoEst, setCargandoEst] = useState(true)
   const [modalEst, setModalEst] = useState(false)
   const [estEditando, setEstEditando] = useState<EstadoProceso | null>(null)
-  const [formEst, setFormEst] = useState({
+  const [formEst, setFormEst] = useState<{
+    codigo_categoria_proceso: string
+    codigo_tipo_proceso: string
+    codigo_estado_proceso: string
+    nombre_estado: string
+    secuencia: number
+    prompt: string
+    system_prompt: string
+    codigo_funcion: string
+    n_parallel: string
+    ayuda: string
+    traducir: boolean
+    batch_size: string
+    batch_timeout_seg: string
+  }>({
     codigo_categoria_proceso: '', codigo_tipo_proceso: '', codigo_estado_proceso: '',
     nombre_estado: '', secuencia: 0,
+    prompt: '', system_prompt: '', codigo_funcion: '',
+    n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
   })
   const [guardandoEst, setGuardandoEst] = useState(false)
   const [errorEst, setErrorEst] = useState('')
   const [filtroCatEst, setFiltroCatEst] = useState('')
   const [filtroTipoEst, setFiltroTipoEst] = useState('')
+  const [funciones, setFunciones] = useState<Funcion[]>([])
 
   // ── Canónicos ──────────────────────────────────────────────────────────────
   const [canonicos, setCanonicos] = useState<EstadoCanonicalProceso[]>([])
@@ -105,11 +123,12 @@ export default function PaginaProcesosDatosBasicos() {
   useEffect(() => { cargarTipos() }, [cargarTipos])
   useEffect(() => { cargarEstados() }, [cargarEstados])
   useEffect(() => { cargarCanonicos() }, [cargarCanonicos])
+  useEffect(() => { funcionesApi.listar().then(setFunciones).catch(() => setFunciones([])) }, [])
 
   // ── CRUD Categorías ────────────────────────────────────────────────────────
   const abrirNuevaCat = () => {
     setCatEditando(null)
-    setFormCat({ codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '' })
+    setFormCat({ codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '', prompt: '', system_prompt: '' })
     setErrorCat('')
     setModalCat(true)
   }
@@ -121,6 +140,8 @@ export default function PaginaProcesosDatosBasicos() {
       nombre_categoria_proceso: c.nombre_categoria_proceso,
       descripcion_categoria_proceso: c.descripcion_categoria_proceso || '',
       alias: c.alias || '',
+      prompt: c.prompt || '',
+      system_prompt: c.system_prompt || '',
     })
     setErrorCat('')
     setModalCat(true)
@@ -135,6 +156,8 @@ export default function PaginaProcesosDatosBasicos() {
           nombre_categoria_proceso: formCat.nombre_categoria_proceso,
           descripcion_categoria_proceso: formCat.descripcion_categoria_proceso || undefined,
           alias: formCat.alias || undefined,
+          prompt: formCat.prompt || undefined,
+          system_prompt: formCat.system_prompt || undefined,
         })
       } else {
         await procesosDatosBasicosApi.crearCategoria({
@@ -142,6 +165,8 @@ export default function PaginaProcesosDatosBasicos() {
           nombre_categoria_proceso: formCat.nombre_categoria_proceso,
           descripcion_categoria_proceso: formCat.descripcion_categoria_proceso || undefined,
           alias: formCat.alias || undefined,
+          prompt: formCat.prompt || undefined,
+          system_prompt: formCat.system_prompt || undefined,
         })
       }
       if (cerrar) setModalCat(false)
@@ -154,7 +179,7 @@ export default function PaginaProcesosDatosBasicos() {
   // ── CRUD Tipos ─────────────────────────────────────────────────────────────
   const abrirNuevoTipo = () => {
     setTipoEditando(null)
-    setFormTipo({ codigo_categoria_proceso: '', codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '' })
+    setFormTipo({ codigo_categoria_proceso: '', codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '', prompt: '', system_prompt: '' })
     setErrorTipo('')
     setModalTipo(true)
   }
@@ -167,6 +192,8 @@ export default function PaginaProcesosDatosBasicos() {
       nombre_tipo_proceso: t.nombre_tipo_proceso,
       descripcion_tipo_proceso: t.descripcion_tipo_proceso || '',
       alias: t.alias || '',
+      prompt: t.prompt || '',
+      system_prompt: t.system_prompt || '',
     })
     setErrorTipo('')
     setModalTipo(true)
@@ -181,7 +208,13 @@ export default function PaginaProcesosDatosBasicos() {
       if (tipoEditando) {
         await procesosDatosBasicosApi.actualizarTipo(
           tipoEditando.codigo_categoria_proceso, tipoEditando.codigo_tipo_proceso,
-          { nombre_tipo_proceso: formTipo.nombre_tipo_proceso, descripcion_tipo_proceso: formTipo.descripcion_tipo_proceso || undefined, alias: formTipo.alias || undefined }
+          {
+            nombre_tipo_proceso: formTipo.nombre_tipo_proceso,
+            descripcion_tipo_proceso: formTipo.descripcion_tipo_proceso || undefined,
+            alias: formTipo.alias || undefined,
+            prompt: formTipo.prompt || undefined,
+            system_prompt: formTipo.system_prompt || undefined,
+          }
         )
       } else {
         await procesosDatosBasicosApi.crearTipo({
@@ -190,6 +223,8 @@ export default function PaginaProcesosDatosBasicos() {
           nombre_tipo_proceso: formTipo.nombre_tipo_proceso,
           descripcion_tipo_proceso: formTipo.descripcion_tipo_proceso || undefined,
           alias: formTipo.alias || undefined,
+          prompt: formTipo.prompt || undefined,
+          system_prompt: formTipo.system_prompt || undefined,
         })
       }
       if (cerrar) setModalTipo(false)
@@ -202,7 +237,12 @@ export default function PaginaProcesosDatosBasicos() {
   // ── CRUD Estados ───────────────────────────────────────────────────────────
   const abrirNuevoEst = () => {
     setEstEditando(null)
-    setFormEst({ codigo_categoria_proceso: '', codigo_tipo_proceso: '', codigo_estado_proceso: '', nombre_estado: '', secuencia: 0 })
+    setFormEst({
+      codigo_categoria_proceso: '', codigo_tipo_proceso: '', codigo_estado_proceso: '',
+      nombre_estado: '', secuencia: 0,
+      prompt: '', system_prompt: '', codigo_funcion: '',
+      n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
+    })
     setErrorEst('')
     setModalEst(true)
   }
@@ -215,6 +255,14 @@ export default function PaginaProcesosDatosBasicos() {
       codigo_estado_proceso: e.codigo_estado_proceso,
       nombre_estado: e.nombre_estado,
       secuencia: e.secuencia,
+      prompt: e.prompt || '',
+      system_prompt: e.system_prompt || '',
+      codigo_funcion: e.codigo_funcion || '',
+      n_parallel: e.n_parallel != null ? String(e.n_parallel) : '',
+      ayuda: e.ayuda || '',
+      traducir: e.traducir,
+      batch_size: e.batch_size != null ? String(e.batch_size) : '',
+      batch_timeout_seg: e.batch_timeout_seg != null ? String(e.batch_timeout_seg) : '',
     })
     setErrorEst('')
     setModalEst(true)
@@ -225,11 +273,23 @@ export default function PaginaProcesosDatosBasicos() {
       setErrorEst('Categoría, tipo y nombre son obligatorios'); return
     }
     setGuardandoEst(true); setErrorEst('')
+    const toInt = (s: string) => (s.trim() === '' ? undefined : parseInt(s, 10))
     try {
       if (estEditando) {
         await procesosDatosBasicosApi.actualizarEstado(
           estEditando.codigo_categoria_proceso, estEditando.codigo_tipo_proceso, estEditando.codigo_estado_proceso,
-          { nombre_estado: formEst.nombre_estado, secuencia: formEst.secuencia }
+          {
+            nombre_estado: formEst.nombre_estado,
+            secuencia: formEst.secuencia,
+            prompt: formEst.prompt || undefined,
+            system_prompt: formEst.system_prompt || undefined,
+            codigo_funcion: formEst.codigo_funcion || undefined,
+            n_parallel: toInt(formEst.n_parallel),
+            ayuda: formEst.ayuda || undefined,
+            traducir: formEst.traducir,
+            batch_size: toInt(formEst.batch_size),
+            batch_timeout_seg: toInt(formEst.batch_timeout_seg),
+          }
         )
       } else {
         await procesosDatosBasicosApi.crearEstado({
@@ -238,6 +298,14 @@ export default function PaginaProcesosDatosBasicos() {
           codigo_estado_proceso: formEst.codigo_estado_proceso || undefined,
           nombre_estado: formEst.nombre_estado,
           secuencia: formEst.secuencia,
+          prompt: formEst.prompt || undefined,
+          system_prompt: formEst.system_prompt || undefined,
+          codigo_funcion: formEst.codigo_funcion || undefined,
+          n_parallel: toInt(formEst.n_parallel),
+          ayuda: formEst.ayuda || undefined,
+          traducir: formEst.traducir,
+          batch_size: toInt(formEst.batch_size),
+          batch_timeout_seg: toInt(formEst.batch_timeout_seg),
         })
       }
       if (cerrar) setModalEst(false)
@@ -245,18 +313,6 @@ export default function PaginaProcesosDatosBasicos() {
     } catch (e) {
       setErrorEst(e instanceof Error ? e.message : 'Error al guardar')
     } finally { setGuardandoEst(false) }
-  }
-
-  const toggleActivoEst = async (e: EstadoProceso) => {
-    try {
-      await procesosDatosBasicosApi.actualizarEstado(
-        e.codigo_categoria_proceso, e.codigo_tipo_proceso, e.codigo_estado_proceso,
-        { activo: !e.activo }
-      )
-      cargarEstados()
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error al cambiar estado')
-    }
   }
 
   // ── Eliminar ───────────────────────────────────────────────────────────────
@@ -499,7 +555,11 @@ export default function PaginaProcesosDatosBasicos() {
                   { titulo: 'Código estado', campo: 'codigo_estado_proceso' },
                   { titulo: 'Nombre', campo: 'nombre_estado' },
                   { titulo: 'Secuencia', campo: 'secuencia' },
-                  { titulo: 'Activo', campo: 'activo', formato: (v) => v ? 'Sí' : 'No' },
+                  { titulo: 'Función', campo: 'codigo_funcion' },
+                  { titulo: 'N paralelo', campo: 'n_parallel' },
+                  { titulo: 'Batch size', campo: 'batch_size' },
+                  { titulo: 'Batch timeout (s)', campo: 'batch_timeout_seg' },
+                  { titulo: 'Traducir', campo: 'traducir', formato: (v) => v ? 'Sí' : 'No' },
                 ], 'estados_proceso')}
                 disabled={estadosFiltrados.length === 0}>
                 <Download size={15} /> Excel
@@ -514,12 +574,13 @@ export default function PaginaProcesosDatosBasicos() {
             <Tabla>
               <TablaCabecera><tr>
                 <TablaTh>Categoría</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Código</TablaTh>
-                <TablaTh>Nombre</TablaTh><TablaTh>Sec.</TablaTh><TablaTh>Estado</TablaTh>
+                <TablaTh>Nombre</TablaTh><TablaTh>Sec.</TablaTh>
+                <TablaTh>Función</TablaTh><TablaTh>N paral.</TablaTh><TablaTh>Batch</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr></TablaCabecera>
               <TablaCuerpo>
                 {estadosFiltrados.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={7 as never}>No hay estados registrados</TablaTd></TablaFila>
+                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={9 as never}>No hay estados registrados</TablaTd></TablaFila>
                 ) : estadosFiltrados.map((e) => (
                   <TablaFila key={`${e.codigo_categoria_proceso}/${e.codigo_tipo_proceso}/${e.codigo_estado_proceso}`}>
                     <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_categoria_proceso}</code></TablaTd>
@@ -527,11 +588,9 @@ export default function PaginaProcesosDatosBasicos() {
                     <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_estado_proceso}</code></TablaTd>
                     <TablaTd className="font-medium">{e.nombre_estado}</TablaTd>
                     <TablaTd className="text-texto-muted text-sm text-center">{e.secuencia}</TablaTd>
-                    <TablaTd>
-                      <button onClick={() => toggleActivoEst(e)} title="Cambiar estado">
-                        <Insignia variante={e.activo ? 'exito' : 'error'}>{e.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                      </button>
-                    </TablaTd>
+                    <TablaTd className="text-texto-muted text-sm">{e.codigo_funcion || <span className="text-texto-light">—</span>}</TablaTd>
+                    <TablaTd className="text-texto-muted text-sm text-center">{e.n_parallel ?? <span className="text-texto-light">—</span>}</TablaTd>
+                    <TablaTd className="text-texto-muted text-sm text-center">{e.batch_size ?? <span className="text-texto-light">—</span>}</TablaTd>
                     <TablaTd>
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => abrirEditarEst(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -564,7 +623,6 @@ export default function PaginaProcesosDatosBasicos() {
                 onClick={() => exportarExcel(canonicosFiltrados as unknown as Record<string, unknown>[], [
                   { titulo: 'Código', campo: 'codigo_estado_canonico' },
                   { titulo: 'Nombre', campo: 'nombre' },
-                  { titulo: 'Activo', campo: 'activo', formato: (v) => v ? 'Sí' : 'No' },
                 ], 'canonicos_proceso')}
                 disabled={canonicosFiltrados.length === 0}>
                 <Download size={15} /> Excel
@@ -578,19 +636,16 @@ export default function PaginaProcesosDatosBasicos() {
           ) : (
             <Tabla>
               <TablaCabecera><tr>
-                <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Estado</TablaTh>
+                <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr></TablaCabecera>
               <TablaCuerpo>
                 {canonicosFiltrados.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={4 as never}>No hay estados canónicos registrados</TablaTd></TablaFila>
+                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={3 as never}>No hay estados canónicos registrados</TablaTd></TablaFila>
                 ) : canonicosFiltrados.map((c) => (
                   <TablaFila key={c.codigo_estado_canonico}>
                     <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_estado_canonico}</code></TablaTd>
                     <TablaTd className="font-medium">{c.nombre}</TablaTd>
-                    <TablaTd>
-                      <Insignia variante={c.activo ? 'exito' : 'neutro'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                    </TablaTd>
                     <TablaTd>
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => abrirEditarCan(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
@@ -622,6 +677,22 @@ export default function PaginaProcesosDatosBasicos() {
           <Input etiqueta="Alias" value={formCat.alias}
             onChange={(e) => setFormCat({ ...formCat, alias: e.target.value })}
             placeholder="Alias breve" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">Prompt</label>
+            <textarea value={formCat.prompt}
+              onChange={(e) => setFormCat({ ...formCat, prompt: e.target.value })}
+              rows={3}
+              placeholder="Prompt de la categoría"
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">System prompt</label>
+            <textarea value={formCat.system_prompt}
+              onChange={(e) => setFormCat({ ...formCat, system_prompt: e.target.value })}
+              rows={3}
+              placeholder="Instrucciones system para el LLM"
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+          </div>
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
           <PieBotonesModal
             editando={!!catEditando}
@@ -660,6 +731,22 @@ export default function PaginaProcesosDatosBasicos() {
           <Input etiqueta="Alias" value={formTipo.alias}
             onChange={(e) => setFormTipo({ ...formTipo, alias: e.target.value })}
             placeholder="Alias breve" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">Prompt</label>
+            <textarea value={formTipo.prompt}
+              onChange={(e) => setFormTipo({ ...formTipo, prompt: e.target.value })}
+              rows={3}
+              placeholder="Prompt del tipo de proceso"
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">System prompt</label>
+            <textarea value={formTipo.system_prompt}
+              onChange={(e) => setFormTipo({ ...formTipo, system_prompt: e.target.value })}
+              rows={3}
+              placeholder="Instrucciones system para el LLM"
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+          </div>
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
           <PieBotonesModal
             editando={!!tipoEditando}
@@ -672,43 +759,121 @@ export default function PaginaProcesosDatosBasicos() {
       </Modal>
 
       {/* Modal Estado */}
-      <Modal abierto={modalEst} alCerrar={() => setModalEst(false)} titulo={estEditando ? 'Editar estado' : 'Nuevo estado de proceso'}>
+      <Modal abierto={modalEst} alCerrar={() => setModalEst(false)} titulo={estEditando ? 'Editar estado' : 'Nuevo estado de proceso'} className="w-[720px] max-w-[95vw]">
         <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Categoría *</label>
+              <select value={formEst.codigo_categoria_proceso}
+                onChange={(e) => setFormEst({ ...formEst, codigo_categoria_proceso: e.target.value, codigo_tipo_proceso: '' })}
+                disabled={!!estEditando}
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
+                <option value="">Seleccionar categoría...</option>
+                {categorias.map((c) => <option key={c.codigo_categoria_proceso} value={c.codigo_categoria_proceso}>{c.nombre_categoria_proceso}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Tipo *</label>
+              <select value={formEst.codigo_tipo_proceso}
+                onChange={(e) => setFormEst({ ...formEst, codigo_tipo_proceso: e.target.value })}
+                disabled={!!estEditando}
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
+                <option value="">Seleccionar tipo...</option>
+                {tipos.filter((t) => t.codigo_categoria_proceso === formEst.codigo_categoria_proceso)
+                  .map((t) => <option key={t.codigo_tipo_proceso} value={t.codigo_tipo_proceso}>{t.nombre_tipo_proceso}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {!estEditando ? (
+              <Input etiqueta="Código estado (vacío = autogenerar)" value={formEst.codigo_estado_proceso}
+                onChange={(e) => setFormEst({ ...formEst, codigo_estado_proceso: e.target.value })}
+                placeholder="INGRESADO" />
+            ) : (
+              <Input etiqueta="Código estado" value={formEst.codigo_estado_proceso} disabled />
+            )}
+            <Input etiqueta="Nombre *" value={formEst.nombre_estado}
+              onChange={(e) => setFormEst({ ...formEst, nombre_estado: e.target.value })}
+              placeholder="Ingresado" />
+          </div>
+
+          <div className="grid grid-cols-4 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Secuencia</label>
+              <input type="number" min={0} value={formEst.secuencia}
+                onChange={(e) => setFormEst({ ...formEst, secuencia: parseInt(e.target.value) || 0 })}
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">N paralelo</label>
+              <input type="number" min={1} value={formEst.n_parallel}
+                onChange={(e) => setFormEst({ ...formEst, n_parallel: e.target.value })}
+                placeholder="10"
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Batch size</label>
+              <input type="number" min={1} value={formEst.batch_size}
+                onChange={(e) => setFormEst({ ...formEst, batch_size: e.target.value })}
+                placeholder="50"
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Batch timeout (s)</label>
+              <input type="number" min={1} value={formEst.batch_timeout_seg}
+                onChange={(e) => setFormEst({ ...formEst, batch_timeout_seg: e.target.value })}
+                placeholder="60"
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Categoría *</label>
-            <select value={formEst.codigo_categoria_proceso}
-              onChange={(e) => setFormEst({ ...formEst, codigo_categoria_proceso: e.target.value, codigo_tipo_proceso: '' })}
-              disabled={!!estEditando}
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
-              <option value="">Seleccionar categoría...</option>
-              {categorias.map((c) => <option key={c.codigo_categoria_proceso} value={c.codigo_categoria_proceso}>{c.nombre_categoria_proceso}</option>)}
+            <label className="text-sm font-medium text-texto">Función asociada</label>
+            <select value={formEst.codigo_funcion}
+              onChange={(e) => setFormEst({ ...formEst, codigo_funcion: e.target.value })}
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
+              <option value="">(Sin función)</option>
+              {[...funciones].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((f) => (
+                <option key={f.codigo_funcion} value={f.codigo_funcion}>{f.nombre} — {f.codigo_funcion}</option>
+              ))}
             </select>
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-texto">
+            <input type="checkbox" checked={formEst.traducir}
+              onChange={(e) => setFormEst({ ...formEst, traducir: e.target.checked })}
+              className="h-4 w-4 rounded border-borde text-primario focus:ring-primario" />
+            Traducir este estado a los idiomas configurados
+          </label>
+
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Tipo *</label>
-            <select value={formEst.codigo_tipo_proceso}
-              onChange={(e) => setFormEst({ ...formEst, codigo_tipo_proceso: e.target.value })}
-              disabled={!!estEditando}
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
-              <option value="">Seleccionar tipo...</option>
-              {tipos.filter((t) => t.codigo_categoria_proceso === formEst.codigo_categoria_proceso)
-                .map((t) => <option key={t.codigo_tipo_proceso} value={t.codigo_tipo_proceso}>{t.nombre_tipo_proceso}</option>)}
-            </select>
-          </div>
-          {!estEditando && (
-            <Input etiqueta="Código estado (dejar vacío para autogenerar)" value={formEst.codigo_estado_proceso}
-              onChange={(e) => setFormEst({ ...formEst, codigo_estado_proceso: e.target.value })}
-              placeholder="INGRESADO" />
-          )}
-          <Input etiqueta="Nombre *" value={formEst.nombre_estado}
-            onChange={(e) => setFormEst({ ...formEst, nombre_estado: e.target.value })}
-            placeholder="Ingresado" />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Secuencia</label>
-            <input type="number" min={0} value={formEst.secuencia}
-              onChange={(e) => setFormEst({ ...formEst, secuencia: parseInt(e.target.value) || 0 })}
+            <label className="text-sm font-medium text-texto">Ayuda</label>
+            <textarea value={formEst.ayuda}
+              onChange={(e) => setFormEst({ ...formEst, ayuda: e.target.value })}
+              rows={2}
+              placeholder="Texto de ayuda contextual para este estado"
               className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
           </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">Prompt</label>
+            <textarea value={formEst.prompt}
+              onChange={(e) => setFormEst({ ...formEst, prompt: e.target.value })}
+              rows={3}
+              placeholder="Prompt específico del estado"
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-texto">System prompt</label>
+            <textarea value={formEst.system_prompt}
+              onChange={(e) => setFormEst({ ...formEst, system_prompt: e.target.value })}
+              rows={3}
+              placeholder="Instrucciones system para el LLM"
+              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+          </div>
+
           {errorEst && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEst}</p></div>}
           <PieBotonesModal
             editando={!!estEditando}

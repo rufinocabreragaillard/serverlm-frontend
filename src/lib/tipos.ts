@@ -383,6 +383,7 @@ export interface EstadoProceso {
   ayuda?: string | null
   traducir: boolean
   batch_size?: number | null
+  batch_timeout_seg?: number | null
 }
 
 export interface EstadoTarea {
