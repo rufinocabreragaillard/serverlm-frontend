@@ -635,10 +635,8 @@ export interface Proceso {
   codigo_proceso: string
   nombre_proceso: string
   descripcion: string | null
-  tipo_entidad: string
   tipo: string
   orden: number
-  activo: boolean
   prompt?: string | null
   system_prompt?: string | null
   n_parallel: number
@@ -647,10 +645,9 @@ export interface Proceso {
 }
 
 export const procesosApi = {
-  listar: (tipoEntidad?: string, codigoFuncion?: string) =>
+  listar: (codigoFuncion?: string) =>
     api.get<Proceso[]>('/procesos', {
       params: {
-        ...(tipoEntidad ? { tipo_entidad: tipoEntidad } : {}),
         ...(codigoFuncion ? { codigo_funcion: codigoFuncion } : {}),
       },
     }).then((r) => r.data),

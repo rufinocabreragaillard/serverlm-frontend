@@ -27,7 +27,6 @@ const selectClass =
 type FormProceso = {
   nombre_proceso: string
   descripcion: string
-  tipo_entidad: string
   tipo: string
   n_parallel: number
   codigo_funcion: string
@@ -35,7 +34,6 @@ type FormProceso = {
 
 export default function PaginaProcesos() {
   const t = useTranslations('procesos')
-  const tc = useTranslations('common')
 
   const [funciones, setFunciones] = useState<Funcion[]>([])
 
@@ -57,12 +55,11 @@ export default function PaginaProcesos() {
       return r
     },
     getId: (p) => p.codigo_proceso,
-    camposBusqueda: (p) => [p.codigo_proceso, p.nombre_proceso, p.tipo_entidad, p.tipo, p.codigo_funcion ?? ''],
-    formInicial: { nombre_proceso: '', descripcion: '', tipo_entidad: '', tipo: 'USUARIO', n_parallel: 1, codigo_funcion: '' },
+    camposBusqueda: (p) => [p.codigo_proceso, p.nombre_proceso, p.tipo, p.codigo_funcion ?? ''],
+    formInicial: { nombre_proceso: '', descripcion: '', tipo: 'USUARIO', n_parallel: 1, codigo_funcion: '' },
     itemToForm: (p) => ({
       nombre_proceso: p.nombre_proceso,
       descripcion: p.descripcion ?? '',
-      tipo_entidad: p.tipo_entidad,
       tipo: p.tipo ?? 'USUARIO',
       n_parallel: p.n_parallel,
       codigo_funcion: p.codigo_funcion ?? '',
@@ -105,11 +102,9 @@ export default function PaginaProcesos() {
           { titulo: t('colCodigo'), campo: 'codigo_proceso' },
           { titulo: t('colNombre'), campo: 'nombre_proceso' },
           { titulo: t('colFuncion'), campo: 'codigo_funcion' },
-          { titulo: t('colTipoEntidad'), campo: 'tipo_entidad' },
           { titulo: t('colTipo'), campo: 'tipo' },
           { titulo: t('colOrden'), campo: 'orden' },
           { titulo: t('colParalelo'), campo: 'n_parallel' },
-          { titulo: t('colEstado'), campo: 'activo' },
         ]}
         excelNombreArchivo="procesos"
       />
@@ -134,25 +129,10 @@ export default function PaginaProcesos() {
             ),
           },
           {
-            titulo: t('colTipoEntidad'),
-            render: (p: Proceso) => (
-              <Insignia variante="secundario">{p.tipo_entidad}</Insignia>
-            ),
-          },
-          {
             titulo: t('colParalelo'),
             render: (p: Proceso) => (
               <span className="text-sm">{p.n_parallel}</span>
             ),
-          },
-          {
-            titulo: t('colEstado'),
-            render: (p: Proceso) =>
-              p.activo ? (
-                <Insignia variante="exito">{tc('activo')}</Insignia>
-              ) : (
-                <Insignia variante="neutro">{tc('inactivo')}</Insignia>
-              ),
           },
         ]}
         items={filtradosOrdenados}
@@ -231,21 +211,6 @@ export default function PaginaProcesos() {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">{t('etiquetaTipoEntidad')}</label>
-            <select
-              className={selectClass}
-              value={crud.form.tipo_entidad}
-              onChange={(e) => crud.updateForm('tipo_entidad', e.target.value)}
-              disabled
-            >
-              <option value="DOCUMENTOS">DOCUMENTOS</option>
-              <option value="PERSONAS">PERSONAS</option>
-              <option value="ACTIVOS">ACTIVOS</option>
-            </select>
-            <p className="text-xs text-texto-muted">{t('descTipoEntidad')}</p>
           </div>
 
           <Input

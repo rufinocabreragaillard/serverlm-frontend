@@ -58,7 +58,7 @@ export default function PaginaRevertirProcesarDocs() {
     setErrorCargaInicial(false)
     try {
       const [procsRaw, u] = await Promise.all([
-        procesosApi.listar('DOCUMENTOS'),
+        procesosApi.listar(),
         ubicacionesDocsApi.listar().catch(() => []),
       ])
       const procs = (procsRaw || [])
