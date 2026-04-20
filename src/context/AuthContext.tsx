@@ -121,20 +121,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Verificar sesión inicial con getSession() (no usa el lock interno de Supabase).
     // Esto evita el warning "lock not released within 5000ms" que causaba la demora
     // de 5s en "Iniciando sesión…" al usar INITIAL_SESSION dentro de onAuthStateChange.
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!isMounted) return
-      if (session) {
-        await cargarContexto()
-        if (isMounted) setCargando(false)
-      } else {
-        if (isMounted) {
-          setCargando(false)
-          if (!PUBLIC_ROUTES.includes(pathnameRef.current)) {
-            router.push('/login')
+    // Si getSession() no resuelve en 4s (ej: POST refresh_token nunca se despacha tras
+    // el preflight OPTIONS), se aborta y redirige a login para evitar pantalla congelada.
+    const TIMEOUT_SESION_MS = 4000
+    const timeoutSesion = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout_sesion')), TIMEOUT_SESION_MS)
+    )
+    Promise.race([supabase.auth.getSession(), timeoutSesion])
+      .then(async ({ data: { session } }) => {
+        if (!isMounted) return
+        if (session) {
+          await cargarContexto()
+          if (isMounted) setCargando(false)
+        } else {
+          if (isMounted) {
+            setCargando(false)
+            if (!PUBLIC_ROUTES.includes(pathnameRef.current)) {
+              router.push('/login')
+            }
           }
         }
-      }
-    })
+      })
+      .catch((e: unknown) => {
+        if (!isMounted) return
+        // Timeout o error inesperado: redirigir a login para que el usuario pueda reintentar
+        if (e instanceof Error && e.message === 'timeout_sesion') {
+          // Forzar limpieza del storage para evitar que el próximo intento quede bloqueado
+          supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+        }
+        setCargando(false)
+        if (!PUBLIC_ROUTES.includes(pathnameRef.current)) {
+          router.push('/login')
+        }
+      })
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
