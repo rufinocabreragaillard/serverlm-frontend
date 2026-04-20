@@ -568,6 +568,8 @@ export interface TipoCaractDocs {
   descripcion?: string | null
   orden?: number
   activo: boolean
+  prompt?: string | null
+  system_prompt?: string | null
 }
 
 export interface CaracteristicaDocumento {
@@ -578,6 +580,7 @@ export interface CaracteristicaDocumento {
   valor_texto_docs?: string | null
   valor_numerico_docs?: number | null
   valor_fecha_docs?: string | null
+  comentarios?: string | null
   tipos_caract_docs?: { nombre_tipo_docs: string } | null
 }
 

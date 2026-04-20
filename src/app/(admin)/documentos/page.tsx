@@ -665,14 +665,21 @@ export default function PaginaDocumentos() {
                         {cc.caracteristicas.map((c) => {
                           const tipoNombre = c.tipos_caract_docs?.nombre_tipo_docs || c.codigo_tipo_docs
                           const valor = c.valor_texto_docs || c.valor_numerico_docs || c.valor_fecha_docs
-                          if (!valor) return null
+                          const comentario = (c.comentarios || '').trim()
+                          // Mostrar la fila si hay valor o si hay comentario (OTROS sin valor explícito)
+                          if (!valor && !comentario) return null
                           return (
-                            <div key={c.id_caracteristica_docs} className="text-sm flex items-center gap-2 group">
-                              <span className="text-texto-muted">{tipoNombre}:</span>
-                              <span className="text-texto">{valor}</span>
+                            <div key={c.id_caracteristica_docs} className="text-sm flex items-start gap-2 group">
+                              <span className="text-texto-muted shrink-0">{tipoNombre}:</span>
+                              <div className="flex flex-col">
+                                {valor && <span className="text-texto">{valor}</span>}
+                                {comentario && (
+                                  <span className="text-xs text-texto-muted italic">{comentario}</span>
+                                )}
+                              </div>
                               {cat.editable_en_detalle_docs && (
                                 <button onClick={() => eliminarCaracteristica(c.id_caracteristica_docs)}
-                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-all">
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-all ml-auto">
                                   <Trash2 size={12} />
                                 </button>
                               )}

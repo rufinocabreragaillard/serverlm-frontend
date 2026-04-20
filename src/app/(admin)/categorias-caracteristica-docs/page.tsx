@@ -51,8 +51,12 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const [tipos, setTipos] = useState<TipoCaractDocs[]>([])
   const [cargandoTipos, setCargandoTipos] = useState(false)
   const [modalTipo, setModalTipo] = useState(false)
+  const [tabModalTipo, setTabModalTipo] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
   const [tipoEditando, setTipoEditando] = useState<TipoCaractDocs | null>(null)
-  const [formTipo, setFormTipo] = useState({ codigo_tipo_docs: '', nombre_tipo_docs: '' })
+  const [formTipo, setFormTipo] = useState({
+    codigo_tipo_docs: '', nombre_tipo_docs: '',
+    prompt: '', system_prompt: '',
+  })
   const [guardandoTipo, setGuardandoTipo] = useState(false)
   const [errorTipo, setErrorTipo] = useState('')
   const [confirmTipo, setConfirmTipo] = useState<TipoCaractDocs | null>(null)
@@ -179,14 +183,21 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   // ── CRUD Tipos ────────────────────────────────────────────────────────────
   const abrirNuevoTipo = () => {
     setTipoEditando(null)
-    setFormTipo({ codigo_tipo_docs: '', nombre_tipo_docs: '' })
+    setFormTipo({ codigo_tipo_docs: '', nombre_tipo_docs: '', prompt: '', system_prompt: '' })
+    setTabModalTipo('datos')
     setErrorTipo('')
     setModalTipo(true)
   }
 
   const abrirEditarTipo = (tipo: TipoCaractDocs) => {
     setTipoEditando(tipo)
-    setFormTipo({ codigo_tipo_docs: tipo.codigo_tipo_docs, nombre_tipo_docs: tipo.nombre_tipo_docs })
+    setFormTipo({
+      codigo_tipo_docs: tipo.codigo_tipo_docs,
+      nombre_tipo_docs: tipo.nombre_tipo_docs,
+      prompt: tipo.prompt || '',
+      system_prompt: tipo.system_prompt || '',
+    })
+    setTabModalTipo('datos')
     setErrorTipo('')
     setModalTipo(true)
   }
@@ -202,12 +213,16 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       if (tipoEditando) {
         await categoriasCaractDocsApi.actualizarTipo(catSeleccionada.codigo_cat_docs, tipoEditando.codigo_tipo_docs, {
           nombre_tipo_docs: formTipo.nombre_tipo_docs,
+          prompt: formTipo.prompt || null,
+          system_prompt: formTipo.system_prompt || null,
         })
       } else {
         await categoriasCaractDocsApi.crearTipo(catSeleccionada.codigo_cat_docs, {
           codigo_cat_docs: catSeleccionada.codigo_cat_docs,
           ...(formTipo.codigo_tipo_docs.trim() ? { codigo_tipo_docs: formTipo.codigo_tipo_docs.toUpperCase() } : { codigo_tipo_docs: '' }),
           nombre_tipo_docs: formTipo.nombre_tipo_docs,
+          ...(formTipo.prompt ? { prompt: formTipo.prompt } : {}),
+          ...(formTipo.system_prompt ? { system_prompt: formTipo.system_prompt } : {}),
         })
       }
       if (cerrar) setModalTipo(false)
@@ -534,14 +549,64 @@ export default function PaginaCategoriasCaracteristicaDocs() {
       </Modal>
 
       {/* Modal Tipo */}
-      <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? t('editarTipoTitulo', { nombre: tipoEditando.nombre_tipo_docs }) : t('nuevoTipoTitulo')}>
-        <div className="flex flex-col gap-4">
-          <Input etiqueta={t('etiquetaNombreTipo')} value={formTipo.nombre_tipo_docs}
-            onChange={(e) => setFormTipo({ ...formTipo, nombre_tipo_docs: e.target.value })}
-            placeholder={t('placeholderNombreTipo')} />
-          {tipoEditando && (
-            <Input etiqueta={t('colCodigo')} value={formTipo.codigo_tipo_docs} disabled readOnly />
+      <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? t('editarTipoTitulo', { nombre: tipoEditando.nombre_tipo_docs }) : t('nuevoTipoTitulo')} className="max-w-3xl">
+        <div className="flex flex-col gap-4 min-w-[520px]">
+          {/* Tabs */}
+          <div className="flex border-b border-borde">
+            {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setTabModalTipo(tab)}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  tabModalTipo === tab
+                    ? 'border-b-2 border-primario text-primario'
+                    : 'text-texto-muted hover:text-texto'
+                }`}
+              >
+                {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+              </button>
+            ))}
+          </div>
+
+          {tabModalTipo === 'datos' && (
+            <>
+              <Input etiqueta={t('etiquetaNombreTipo')} value={formTipo.nombre_tipo_docs}
+                onChange={(e) => setFormTipo({ ...formTipo, nombre_tipo_docs: e.target.value })}
+                placeholder={t('placeholderNombreTipo')} />
+              {tipoEditando && (
+                <Input etiqueta={t('colCodigo')} value={formTipo.codigo_tipo_docs} disabled readOnly />
+              )}
+            </>
           )}
+
+          {tabModalTipo === 'prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                Pista específica para que el LLM identifique este tipo dentro de su categoría. Se concatena al prompt de la categoría al clasificar documentos.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Factura electrónica o física de venta/compra con RUT emisor, folio y monto."
+                value={formTipo.prompt}
+                onChange={(e) => setFormTipo({ ...formTipo, prompt: e.target.value })}
+              />
+            </div>
+          )}
+
+          {tabModalTipo === 'system_prompt' && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-texto-muted">
+                System prompt opcional específico de este tipo. Se suma al system prompt de la categoría en el paso ANALIZAR. Déjalo vacío si basta con el de la categoría.
+              </p>
+              <textarea
+                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
+                placeholder="Ej: Al detectar este tipo, presta especial atención a..."
+                value={formTipo.system_prompt}
+                onChange={(e) => setFormTipo({ ...formTipo, system_prompt: e.target.value })}
+              />
+            </div>
+          )}
+
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
           <PieBotonesModal
             editando={!!tipoEditando}
