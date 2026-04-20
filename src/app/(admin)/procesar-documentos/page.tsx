@@ -148,12 +148,12 @@ function PaginaProcesarDocumentosInterna() {
   const [ubicExpandidos, setUbicExpandidos] = useState<Set<string>>(new Set())
   const ubicDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Paso actual derivado del proceso seleccionado (primer paso por ahora).
-  // Trae estado_origen/estado_destino y define el flujo a ejecutar.
+  // Proceso seleccionado (contiene estado_origen, estado_destino, id_modelo directamente).
+  // Reemplaza el anterior pasoActual = p.pasos?.[0] (ya no hay pasos anidados).
   const pasoActual = useMemo(() => {
     if (procesoSel === PROCESO_RESTABLECER || procesoSel === PROCESO_RESETEAR_CARGADO) return null
     const p = procesos.find((x) => x.codigo_proceso === procesoSel)
-    return p?.pasos?.[0] || null
+    return p ?? null
   }, [procesos, procesoSel])
 
   // Sincronizar n_parallel con el proceso seleccionado
@@ -309,7 +309,7 @@ function PaginaProcesarDocumentosInterna() {
       }
       // Procesos asignados a esta pantalla (función PROC_DOCUMENTOS), ordenados por `orden`.
       const procs = (procsRaw || [])
-        .filter((p: ProcesoCatalogo) => p.pasos && p.pasos.length > 0 && p.codigo_funcion === 'PROC_DOCUMENTOS')
+        .filter((p: ProcesoCatalogo) => !!p.estado_destino && p.codigo_funcion === 'PROC_DOCUMENTOS')
         .sort((a: ProcesoCatalogo, b: ProcesoCatalogo) => (a.orden ?? 0) - (b.orden ?? 0))
       setProcesos(procs)
 
@@ -320,7 +320,7 @@ function PaginaProcesarDocumentosInterna() {
         if (TERMINALES.includes(estadoDesdeUrl)) {
           setProcesoSel(PROCESO_RESTABLECER)
         } else {
-          const match = procs.find((p: ProcesoCatalogo) => p.pasos?.[0]?.estado_origen === estadoDesdeUrl)
+          const match = procs.find((p: ProcesoCatalogo) => p.estado_origen === estadoDesdeUrl)
           if (match) setProcesoSel(match.codigo_proceso)
           else if (procs.length > 0) setProcesoSel(procs[0].codigo_proceso)
         }
@@ -1060,8 +1060,7 @@ function PaginaProcesarDocumentosInterna() {
               <select value={procesoSel} onChange={(e) => setProcesoSel(e.target.value)} className={selectClass} disabled={ejecutando || cargandoInicial}>
                 <option value="">— Sin valor —</option>
                 {procesos.map((p) => {
-                  const paso = p.pasos?.[0]
-                  const flecha = paso ? `${paso.estado_origen || '—'} → ${paso.estado_destino}` : ''
+                  const flecha = p.estado_destino ? `${p.estado_origen || '—'} → ${p.estado_destino}` : ''
                   return (
                     <option key={p.codigo_proceso} value={p.codigo_proceso}>
                       {p.nombre_proceso} ({flecha})
@@ -1085,7 +1084,7 @@ function PaginaProcesarDocumentosInterna() {
                     if (TERMINALES.includes(nuevoEstado)) {
                       setProcesoSel(PROCESO_RESTABLECER)
                     } else {
-                      const match = procesos.find((p) => p.pasos?.[0]?.estado_origen === nuevoEstado)
+                      const match = procesos.find((p) => p.estado_origen === nuevoEstado)
                       if (match) setProcesoSel(match.codigo_proceso)
                     }
                   }
@@ -1683,7 +1682,7 @@ function PaginaProcesarDocumentosInterna() {
         }}
         onCambiarEstado={(estadoOrigen, estadoDestino, ubicacion, topeVal) => {
           setEstadoFiltro(estadoOrigen)
-          const match = procesos.find((p) => p.pasos?.[0]?.estado_origen === estadoOrigen && p.pasos?.[0]?.estado_destino === estadoDestino)
+          const match = procesos.find((p) => p.estado_origen === estadoOrigen && p.estado_destino === estadoDestino)
           if (match) setProcesoSel(match.codigo_proceso)
           if (ubicacion) setUbicacionSel(ubicacion)
           if (topeVal) setTope(String(topeVal))

@@ -484,9 +484,9 @@ export default function PaginaFunciones() {
                           <span className="text-sm font-medium text-texto">{p.nombre_proceso}</span>
                           <span className="ml-2 text-xs text-texto-muted">{p.codigo_proceso}</span>
                         </div>
-                        {p.pasos?.[0] && (
+                        {p.estado_destino && (
                           <span className="text-xs text-texto-muted shrink-0">
-                            {p.pasos[0].estado_origen || '—'} → {p.pasos[0].estado_destino}
+                            {p.estado_origen || '—'} → {p.estado_destino}
                           </span>
                         )}
                       </SortableListItem>

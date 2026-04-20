@@ -758,3 +758,17 @@ export interface RespuestaAPI<T = unknown> {
   error?: string
   mensaje?: string
 }
+
+// ─── Espacios de Trabajo ───────────────────────────────────────────────────────
+export interface EspacioTrabajo {
+  id_espacio: number
+  nombre_espacio: string
+  descripcion?: string | null
+  tipo_espacio: 'GUARDADO' | 'TEMPORAL'
+  codigo_grupo: string
+  codigo_entidad: string
+  codigo_usuario: string
+  fecha_creacion?: string | null
+  fecha_termino?: string | null
+  total_documentos?: number
+}

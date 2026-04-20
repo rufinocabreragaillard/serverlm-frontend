@@ -52,6 +52,7 @@ import type {
   RolCargo,
   LocaleSoportado,
   EstadoTraducciones,
+  EspacioTrabajo,
 } from './tipos'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -486,7 +487,7 @@ export interface RespuestaPaginadaApi<T> {
 export const documentosApi = {
   listar: (params?: { codigo_estado_doc?: string; activo?: boolean; q?: string; limit?: number }) =>
     api.get<Documento[]>('/documentos', { params }).then((r) => r.data),
-  listarPaginado: (params: { page: number; limit: number; codigo_estado_doc?: string; activo?: boolean; q?: string }) =>
+  listarPaginado: (params: { page: number; limit: number; codigo_estado_doc?: string; activo?: boolean; q?: string; ruta_prefijo?: string }) =>
     api.get<RespuestaPaginadaApi<Documento>>('/documentos/paginado', { params }).then((r) => r.data),
   contarPorEstado: () =>
     api.get<Record<string, number>>('/documentos/contar-por-estado').then((r) => r.data),
@@ -642,8 +643,15 @@ export interface Proceso {
   prompt?: string | null
   system_prompt?: string | null
   n_parallel: number
+  batch_size?: number | null
+  batch_timeout_seg?: number | null
   codigo_funcion?: string | null
-  pasos: PasoProceso[]
+  /** Campos directos desde tipos_proceso (reemplazan pasos[0]) */
+  estado_origen?: string | null
+  estado_destino?: string | null
+  id_modelo?: number | null
+  /** @deprecated — ya no se devuelve desde el backend; usar estado_origen/estado_destino/id_modelo */
+  pasos?: PasoProceso[]
 }
 
 export const procesosApi = {
@@ -1373,6 +1381,24 @@ export const traduccionesApi = {
   // Resetea el estado GENERANDO (para desatascar una generación fallida)
   cancelar: () =>
     api.post<{ status: string; mensaje: string }>('/traducciones/cancelar').then((r) => r.data),
+}
+
+// ─── Espacios de Trabajo ─────────────────────────────────────────────────────
+export const espaciosTrabajoApi = {
+  listarPaginado: (params: { page: number; limit: number; q?: string }) =>
+    api.get<RespuestaPaginadaApi<EspacioTrabajo>>('/espacios-trabajo/paginado', { params }).then((r) => r.data),
+  crear: (datos: { nombre_espacio?: string; tipo_espacio?: 'GUARDADO' | 'TEMPORAL'; ids_documentos: number[] }) =>
+    api.post<EspacioTrabajo>('/espacios-trabajo', datos).then((r) => r.data),
+  actualizar: (id: number, datos: { nombre_espacio?: string; tipo_espacio?: string }) =>
+    api.put<EspacioTrabajo>(`/espacios-trabajo/${id}`, datos).then((r) => r.data),
+  eliminar: (id: number) =>
+    api.delete(`/espacios-trabajo/${id}`),
+  listarDocumentos: (id: number, params: { page: number; limit: number; q?: string; codigo_estado_doc?: string }) =>
+    api.get<RespuestaPaginadaApi<Documento>>(`/espacios-trabajo/${id}/documentos/paginado`, { params }).then((r) => r.data),
+  agregarDocumentos: (id: number, ids_documentos: number[]) =>
+    api.post<{ documentos: number }>(`/espacios-trabajo/${id}/documentos`, { ids_documentos }).then((r) => r.data),
+  quitarDocumento: (id: number, codigo_documento: number) =>
+    api.delete(`/espacios-trabajo/${id}/documentos/${codigo_documento}`),
 }
 
 export default api

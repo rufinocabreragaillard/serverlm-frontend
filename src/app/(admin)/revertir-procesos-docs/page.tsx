@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { Play, AlertTriangle, Loader2, ChevronDown, ChevronRight, X, Search, CheckCircle } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef, useMemo, Suspense } from 'react'
+import { Play, AlertTriangle, Loader2, ChevronDown, ChevronRight, X, CheckCircle, FolderOpen, Search, Square } from 'lucide-react'
+import { iconoTipoArchivo } from '@/lib/icono-tipo-archivo'
 import { Boton } from '@/components/ui/boton'
-import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
+import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { documentosApi, ubicacionesDocsApi, procesosApi } from '@/lib/api'
 import type { Proceso as ProcesoCatalogo } from '@/lib/api'
-import { useAuth } from '@/context/AuthContext'
+import type { Documento } from '@/lib/tipos'
 
 interface UbicacionOption {
   codigo_ubicacion: string
@@ -20,9 +21,9 @@ interface UbicacionOption {
   codigo_ubicacion_superior?: string
 }
 
-export default function PaginaRevertirProcesarDocs() {
-  const { grupoActivo } = useAuth()
+const DOCS_POR_PAGINA = 20
 
+function PaginaRevertirInterna() {
   // Catálogos
   const [procesos, setProcesos] = useState<ProcesoCatalogo[]>([])
   const [ubicaciones, setUbicaciones] = useState<UbicacionOption[]>([])
@@ -40,9 +41,15 @@ export default function PaginaRevertirProcesarDocs() {
   const [tope, setTope] = useState('')
   const ubicDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Estado de la operación
+  // Documentos candidatos
+  const [documentos, setDocumentos] = useState<Documento[]>([])
   const [conteo, setConteo] = useState<number | null>(null)
-  const [buscando, setBuscando] = useState(false)
+  const [paginaActual, setPaginaActual] = useState(1)
+  const [totalPaginas, setTotalPaginas] = useState(1)
+  const [cargando, setCargando] = useState(false)
+  const [yaBuscado, setYaBuscado] = useState(false)
+
+  // Ejecución
   const [ejecutando, setEjecutando] = useState(false)
   const [resultado, setResultado] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -50,8 +57,13 @@ export default function PaginaRevertirProcesarDocs() {
 
   const pasoActual = useMemo(() => {
     const p = procesos.find((x) => x.codigo_proceso === procesoSel)
-    return p?.pasos?.[0] || null
+    return p ?? null
   }, [procesos, procesoSel])
+
+  const rutaUbicacion = useMemo(() => {
+    if (!ubicacionSel) return undefined
+    return ubicaciones.find((u) => u.codigo_ubicacion === ubicacionSel)?.ruta_completa
+  }, [ubicacionSel, ubicaciones])
 
   const cargarDatosIniciales = useCallback(async () => {
     setCargandoInicial(true)
@@ -62,7 +74,7 @@ export default function PaginaRevertirProcesarDocs() {
         ubicacionesDocsApi.listar().catch(() => []),
       ])
       const procs = (procsRaw || [])
-        .filter((p: ProcesoCatalogo) => p.pasos && p.pasos.length > 0 && p.codigo_funcion === 'REVERT_PROC_DOCS')
+        .filter((p: ProcesoCatalogo) => !!p.estado_destino && p.codigo_funcion === 'REVERT_PROC_DOCS')
         .sort((a: ProcesoCatalogo, b: ProcesoCatalogo) => (a.orden ?? 0) - (b.orden ?? 0))
       setProcesos(procs)
       setUbicaciones(
@@ -90,35 +102,73 @@ export default function PaginaRevertirProcesarDocs() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // Resetear resultado/conteo al cambiar filtros
+  // Resetear al cambiar filtros
   useEffect(() => {
+    setDocumentos([])
     setConteo(null)
     setResultado(null)
     setError(null)
+    setYaBuscado(false)
+    setPaginaActual(1)
   }, [procesoSel, filtroLibre, ubicacionSel, tope])
 
-  const buildParams = (soloContar: boolean) => ({
-    estados_origen: pasoActual?.estado_origen ? [pasoActual.estado_origen] : [],
-    estado_destino: pasoActual?.estado_destino || '',
-    q: filtroLibre || undefined,
-    codigo_ubicacion: ubicacionSel || undefined,
-    tope: tope ? parseInt(tope) : undefined,
-    solo_contar: soloContar,
-  })
+  const cargarDocumentos = useCallback(async (pagina: number) => {
+    if (!pasoActual?.estado_origen) return
+    setCargando(true)
+    try {
+      const data = await documentosApi.listarPaginado({
+        page: pagina,
+        limit: DOCS_POR_PAGINA,
+        codigo_estado_doc: pasoActual.estado_origen,
+        activo: true,
+        q: filtroLibre || undefined,
+        ruta_prefijo: rutaUbicacion,
+      })
+      setDocumentos(data.items || [])
+      setPaginaActual(pagina)
+      setTotalPaginas(Math.max(1, Math.ceil(data.total / DOCS_POR_PAGINA)))
+    } catch {
+      setError('Error al cargar la lista de documentos.')
+    } finally {
+      setCargando(false)
+    }
+  }, [pasoActual, filtroLibre, rutaUbicacion])
 
   const buscar = async () => {
-    if (!pasoActual) return
-    setBuscando(true)
+    if (!pasoActual?.estado_origen) return
+    setCargando(true)
     setConteo(null)
     setResultado(null)
     setError(null)
+    setDocumentos([])
     try {
-      const r = await documentosApi.revertir(buildParams(true))
-      setConteo(r.conteo)
+      const [conteoRes, docsRes] = await Promise.all([
+        documentosApi.revertir({
+          estados_origen: pasoActual.estado_origen ? [pasoActual.estado_origen] : [],
+          estado_destino: pasoActual.estado_destino || '',
+          q: filtroLibre || undefined,
+          codigo_ubicacion: ubicacionSel || undefined,
+          tope: tope ? parseInt(tope) : undefined,
+          solo_contar: true,
+        }),
+        documentosApi.listarPaginado({
+          page: 1,
+          limit: DOCS_POR_PAGINA,
+          codigo_estado_doc: pasoActual.estado_origen,
+          activo: true,
+          q: filtroLibre || undefined,
+          ruta_prefijo: rutaUbicacion,
+        }),
+      ])
+      setConteo(conteoRes.conteo)
+      setDocumentos(docsRes.items || [])
+      setPaginaActual(1)
+      setTotalPaginas(Math.max(1, Math.ceil(docsRes.total / DOCS_POR_PAGINA)))
+      setYaBuscado(true)
     } catch {
-      setError('Error al consultar la cantidad de documentos.')
+      setError('Error al consultar los documentos candidatos.')
     } finally {
-      setBuscando(false)
+      setCargando(false)
     }
   }
 
@@ -128,9 +178,18 @@ export default function PaginaRevertirProcesarDocs() {
     setConfirmEjecutar(false)
     setError(null)
     try {
-      const r = await documentosApi.revertir(buildParams(false))
+      const r = await documentosApi.revertir({
+        estados_origen: pasoActual.estado_origen ? [pasoActual.estado_origen] : [],
+        estado_destino: pasoActual.estado_destino || '',
+        q: filtroLibre || undefined,
+        codigo_ubicacion: ubicacionSel || undefined,
+        tope: tope ? parseInt(tope) : undefined,
+        solo_contar: false,
+      })
       setResultado(r.revertidos)
+      setDocumentos([])
       setConteo(null)
+      setYaBuscado(false)
     } catch {
       setError('Error al ejecutar el proceso de reversa.')
     } finally {
@@ -140,61 +199,22 @@ export default function PaginaRevertirProcesarDocs() {
 
   const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
 
-  // Árbol de ubicaciones
-  const ubicacionesRaiz = ubicaciones.filter((u) => !u.codigo_ubicacion_superior)
-  const ubicacionesHijas = (codigoPadre: string) =>
-    ubicaciones.filter((u) => u.codigo_ubicacion_superior === codigoPadre)
-
-  const renderUbicacion = (u: UbicacionOption): React.ReactNode => {
-    const hijas = ubicacionesHijas(u.codigo_ubicacion)
-    const expandida = ubicExpandidos.has(u.codigo_ubicacion)
-    const matchBusqueda = !ubicBusqueda || u.nombre_ubicacion.toLowerCase().includes(ubicBusqueda.toLowerCase()) || u.ruta_completa.toLowerCase().includes(ubicBusqueda.toLowerCase())
-    if (!matchBusqueda && hijas.length === 0) return null
-    return (
-      <div key={u.codigo_ubicacion}>
-        <button
-          type="button"
-          className={`flex items-center gap-1.5 w-full text-left px-2 py-1 text-sm hover:bg-primario-muy-claro rounded transition-colors ${ubicacionSel === u.codigo_ubicacion ? 'bg-primario-muy-claro text-primario font-medium' : 'text-texto'}`}
-          style={{ paddingLeft: `${(u.nivel ?? 0) * 12 + 8}px` }}
-          onClick={() => {
-            setUbicacionSel(u.codigo_ubicacion === ubicacionSel ? '' : u.codigo_ubicacion)
-            setUbicDropdownOpen(false)
-          }}
-        >
-          {hijas.length > 0 && (
-            <span onClick={(e) => {
-              e.stopPropagation()
-              setUbicExpandidos((prev) => {
-                const s = new Set(prev)
-                s.has(u.codigo_ubicacion) ? s.delete(u.codigo_ubicacion) : s.add(u.codigo_ubicacion)
-                return s
-              })
-            }}>
-              {expandida ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            </span>
-          )}
-          <span className="truncate">{u.nombre_ubicacion}</span>
-        </button>
-        {expandida && hijas.map((h) => renderUbicacion(h))}
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-6 w-full overflow-x-hidden">
       <div>
         <h2 className="page-heading">Revertir Procesos Docs.</h2>
         <p className="text-sm text-texto-muted mt-1">
-          Revierte documentos a estados anteriores del pipeline (ej. VECTORIZADO → CHUNKEADO).
-          Usa los filtros, presiona <strong>Buscar</strong> para ver cuántos docs se verán afectados
-          y luego <strong>Ejecutar</strong> para aplicar el cambio.
+          Revierte documentos a estados anteriores del pipeline. Selecciona el proceso de reversa,
+          aplica filtros y presiona <strong>Buscar</strong> para previsualizar los documentos
+          afectados, luego <strong>Ejecutar</strong> para aplicar el cambio.
         </p>
       </div>
 
+      {/* Error carga inicial */}
       {errorCargaInicial && (
         <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-error">
           <AlertTriangle size={16} className="shrink-0" />
-          <span>No se pudieron cargar los procesos. El servidor puede estar iniciando.</span>
+          <span>No se pudieron cargar los procesos del sistema. El servidor puede estar iniciando.</span>
           <Boton variante="contorno" tamano="sm" onClick={cargarDatosIniciales} disabled={cargandoInicial}>
             {cargandoInicial ? <Loader2 size={14} className="animate-spin" /> : null}
             Reintentar
@@ -205,20 +225,19 @@ export default function PaginaRevertirProcesarDocs() {
       {/* Configuración */}
       <Tarjeta>
         <TarjetaContenido>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Proceso */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Proceso de Reversa</label>
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <label className="text-sm font-medium text-texto">Proceso</label>
               <select
                 value={procesoSel}
                 onChange={(e) => setProcesoSel(e.target.value)}
                 className={selectClass}
-                disabled={cargandoInicial || ejecutando}
+                disabled={ejecutando || cargandoInicial}
               >
-                <option value="">— Seleccionar proceso —</option>
+                <option value="">— Sin valor —</option>
                 {procesos.map((p) => {
-                  const paso = p.pasos?.[0]
-                  const flecha = paso ? `${paso.estado_origen || '—'} → ${paso.estado_destino}` : ''
+                  const flecha = p.estado_destino ? `${p.estado_origen || '—'} → ${p.estado_destino}` : ''
                   return (
                     <option key={p.codigo_proceso} value={p.codigo_proceso}>
                       {p.nombre_proceso} ({flecha})
@@ -226,17 +245,29 @@ export default function PaginaRevertirProcesarDocs() {
                   )
                 })}
               </select>
-              {pasoActual && (
-                <p className="text-xs text-texto-muted">
-                  Revierte documentos en estado <Insignia variante="neutro">{pasoActual.estado_origen || '—'}</Insignia>
-                  {' '}a <Insignia variante="neutro">{pasoActual.estado_destino}</Insignia>
-                </p>
-              )}
             </div>
 
-            {/* Ubicación */}
-            <div className="flex flex-col gap-1.5" ref={ubicDropdownRef}>
-              <label className="text-sm font-medium text-texto">Ubicación</label>
+            {/* Estado (derivado del proceso, solo lectura) */}
+            <div className="flex flex-col gap-1.5 min-w-0">
+              <label className="text-sm font-medium text-texto">Estado</label>
+              <div className={selectClass + ' cursor-default bg-fondo flex items-center gap-2 min-h-[38px]'}>
+                {pasoActual?.estado_origen
+                  ? <>
+                      <Insignia variante="advertencia">{pasoActual.estado_origen}</Insignia>
+                      <span className="text-texto-muted">→</span>
+                      <Insignia variante="neutro">{pasoActual.estado_destino}</Insignia>
+                    </>
+                  : <span className="text-texto-muted italic text-sm">— según proceso —</span>
+                }
+              </div>
+            </div>
+
+            {/* Ubicación — árbol idéntico al de /procesar-documentos */}
+            <div className="flex flex-col gap-1.5 min-w-0" ref={ubicDropdownRef}>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-texto">Ubicación</label>
+                <span className="text-xs text-texto-muted">Hasta 5 niveles</span>
+              </div>
               <div className="relative">
                 <button
                   type="button"
@@ -244,13 +275,16 @@ export default function PaginaRevertirProcesarDocs() {
                   disabled={ejecutando}
                   className="flex items-center gap-2 rounded-lg border border-borde bg-fondo-tarjeta px-4 py-2 text-sm text-texto hover:border-primario transition-colors w-full disabled:opacity-50"
                 >
+                  <FolderOpen size={16} className={ubicacionSel ? 'text-primario shrink-0' : 'text-texto-muted shrink-0'} />
                   <span className="flex-1 text-left truncate">
                     {ubicacionSel
                       ? (ubicaciones.find(u => u.codigo_ubicacion === ubicacionSel)?.nombre_ubicacion || 'Seleccionar ubicación')
-                      : 'Todas las ubicaciones'}
+                      : 'Seleccionar ubicación'}
                   </span>
                   {ubicacionSel ? (
-                    <X size={13} className="text-texto-muted hover:text-error shrink-0"
+                    <X
+                      size={13}
+                      className="text-texto-muted hover:text-error shrink-0"
                       onClick={(e) => { e.stopPropagation(); setUbicacionSel(''); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
                     />
                   ) : (
@@ -270,81 +304,161 @@ export default function PaginaRevertirProcesarDocs() {
                         autoFocus
                       />
                     </div>
-                    <div className="overflow-y-auto flex-1 p-1">
-                      {ubicacionesRaiz.map((u) => renderUbicacion(u))}
-                      {ubicaciones.length === 0 && (
-                        <p className="text-xs text-texto-muted px-2 py-3 text-center">Sin ubicaciones</p>
-                      )}
+                    <div className="overflow-y-auto flex-1">
+                      <div
+                        className="px-3 py-2 hover:bg-fondo cursor-pointer text-sm text-texto-muted border-b border-borde"
+                        onClick={() => { setUbicacionSel(''); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
+                      >
+                        Todas
+                      </div>
+                      {(() => {
+                        const tieneHijosUbic = (cod: string) => ubicaciones.some(u => u.codigo_ubicacion !== cod && u.codigo_ubicacion_superior === cod)
+                        if (ubicBusqueda) {
+                          const filtradas = ubicaciones.filter(u =>
+                            u.nombre_ubicacion.toLowerCase().includes(ubicBusqueda.toLowerCase()) ||
+                            (u.ruta_completa || '').toLowerCase().includes(ubicBusqueda.toLowerCase())
+                          )
+                          if (filtradas.length === 0) return <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin coincidencias</div>
+                          return filtradas.map(u => {
+                            const esArea = u.tipo_ubicacion === 'AREA'
+                            const selec = ubicacionSel === u.codigo_ubicacion
+                            return (
+                              <div
+                                key={u.codigo_ubicacion}
+                                className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer ${selec ? 'bg-primario-muy-claro' : ''}`}
+                                style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
+                                onClick={() => { setUbicacionSel(u.codigo_ubicacion); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
+                              >
+                                <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
+                                <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>{esArea ? 'Área' : 'Contenido'}</span>
+                              </div>
+                            )
+                          })
+                        }
+                        const toggleExpandirUbic = (e: React.MouseEvent, cod: string) => {
+                          e.stopPropagation()
+                          setUbicExpandidos(prev => { const next = new Set(prev); next.has(cod) ? next.delete(cod) : next.add(cod); return next })
+                        }
+                        const renderNodoUbic = (u: UbicacionOption): React.ReactNode => {
+                          const tieneHijos = tieneHijosUbic(u.codigo_ubicacion)
+                          const expandido = ubicExpandidos.has(u.codigo_ubicacion)
+                          const esArea = u.tipo_ubicacion === 'AREA'
+                          const selec = ubicacionSel === u.codigo_ubicacion
+                          const hijos = tieneHijos
+                            ? ubicaciones
+                                .filter(h => h.codigo_ubicacion_superior === u.codigo_ubicacion)
+                                .sort((a, b) => a.nombre_ubicacion.localeCompare(b.nombre_ubicacion))
+                            : []
+                          return (
+                            <div key={u.codigo_ubicacion}>
+                              <div
+                                className={`flex items-center gap-2 py-1.5 pr-3 hover:bg-fondo cursor-pointer select-none ${selec ? 'bg-primario-muy-claro' : ''}`}
+                                style={{ paddingLeft: `${(u.nivel || 0) * 16 + 12}px` }}
+                                onClick={() => { setUbicacionSel(u.codigo_ubicacion); setUbicBusqueda(''); setUbicDropdownOpen(false) }}
+                              >
+                                {tieneHijos
+                                  ? <button onClick={(e) => toggleExpandirUbic(e, u.codigo_ubicacion)} className="shrink-0 hover:text-primario text-texto-muted p-0.5 -ml-0.5 rounded">
+                                      {expandido ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                    </button>
+                                  : <span className="w-3 shrink-0" />
+                                }
+                                <FolderOpen size={13} className={`shrink-0 ${selec ? 'text-primario' : esArea ? 'text-sky-500' : 'text-amber-400'}`} />
+                                <span className={`text-sm truncate flex-1 ${selec ? 'text-primario font-medium' : 'text-texto'}`}>{u.nombre_ubicacion}</span>
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${esArea ? 'bg-sky-100 text-sky-600' : 'bg-amber-100 text-amber-600'}`}>{esArea ? 'Área' : 'Contenido'}</span>
+                              </div>
+                              {expandido && hijos.map(h => renderNodoUbic(h))}
+                            </div>
+                          )
+                        }
+                        const raicesUbic = ubicaciones
+                          .filter(u => !u.codigo_ubicacion_superior)
+                          .sort((a, b) => a.nombre_ubicacion.localeCompare(b.nombre_ubicacion))
+                        if (raicesUbic.length === 0) return <div className="px-3 py-4 text-sm text-texto-muted text-center">Sin ubicaciones</div>
+                        return raicesUbic.map(u => renderNodoUbic(u))
+                      })()}
                     </div>
                   </div>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Filtro libre */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Filtro por nombre</label>
+          {/* Filtro libre + Tope — misma línea */}
+          <div className="flex items-end gap-3 mt-3 flex-wrap">
+            <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+              <label className="text-sm font-medium text-texto">Filtro libre</label>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Nombre del documento…"
+                <input
+                  type="text"
+                  placeholder="Filtrar por nombre, directorio… (Enter para aplicar)"
                   value={filtroLibreInput}
                   onChange={(e) => setFiltroLibreInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setFiltroLibre(filtroLibreInput) }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setFiltroLibre(filtroLibreInput)
+                      setYaBuscado(false)
+                    }
+                  }}
                   disabled={ejecutando}
+                  className="flex-1 text-sm border border-borde rounded-lg px-3 py-2 bg-surface text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50 placeholder:text-texto-muted"
                 />
-                <Boton variante="contorno" tamano="sm" onClick={() => setFiltroLibre(filtroLibreInput)} disabled={ejecutando}>
-                  <Search size={14} />
-                </Boton>
-                {filtroLibre && (
-                  <Boton variante="fantasma" tamano="sm" onClick={() => { setFiltroLibre(''); setFiltroLibreInput('') }}>
-                    <X size={14} />
-                  </Boton>
+                {filtroLibreInput && (
+                  <button
+                    type="button"
+                    onClick={() => { setFiltroLibreInput(''); setFiltroLibre(''); setYaBuscado(false) }}
+                    disabled={ejecutando}
+                    className="px-2 rounded-lg border border-borde text-texto-muted hover:text-error hover:border-error transition-colors disabled:opacity-50"
+                    title="Limpiar filtro"
+                  >
+                    <X size={15} />
+                  </button>
                 )}
               </div>
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-texto-muted">Tope:</span>
+              <input
+                type="number"
+                min={1}
+                placeholder="todos"
+                value={tope}
+                onChange={(e) => setTope(e.target.value)}
+                disabled={ejecutando}
+                className="w-20 text-xs border border-borde rounded px-1.5 py-2 text-center bg-surface text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50 placeholder:text-texto-muted"
+              />
+            </div>
           </div>
 
-          {/* Tope */}
-          <div className="mt-4 flex flex-col gap-1.5 max-w-xs">
-            <label className="text-sm font-medium text-texto">Máx. a revertir</label>
-            <Input
-              type="number"
-              placeholder="Sin límite (todos los que coincidan)"
-              value={tope}
-              onChange={(e) => setTope(e.target.value)}
-              min={1}
-              disabled={ejecutando}
-            />
+          {/* Buscar + count + Ejecutar/Detener — misma línea */}
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde flex-wrap">
+            <Boton variante="contorno" tamano="sm" onClick={buscar} disabled={ejecutando || cargando || !procesoSel}>
+              {cargando ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+              Buscar
+            </Boton>
+            <span className="text-sm text-texto-muted">
+              {conteo !== null
+                ? `${conteo} documento${conteo !== 1 ? 's' : ''} a revertir`
+                : ''}
+            </span>
+            <div className="ml-auto flex items-center gap-3">
+              <Boton
+                variante="primario"
+                onClick={ejecutar}
+                disabled={ejecutando || !procesoSel || conteo === null || conteo === 0}
+              >
+                {ejecutando ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                {ejecutando ? 'Ejecutando…' : conteo !== null && conteo > 0 ? `Ejecutar (${conteo})` : 'Ejecutar'}
+              </Boton>
+              <Boton variante="contorno" onClick={() => {}} disabled={!ejecutando}>
+                <Square size={14} />Detener
+              </Boton>
+            </div>
           </div>
         </TarjetaContenido>
       </Tarjeta>
 
-      {/* Botones de acción */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Boton
-          variante="contorno"
-          onClick={buscar}
-          disabled={buscando || ejecutando || !procesoSel}
-        >
-          {buscando ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-          Buscar
-        </Boton>
-
-        <Boton
-          variante="primario"
-          onClick={() => setConfirmEjecutar(true)}
-          disabled={ejecutando || buscando || conteo === null || conteo === 0}
-        >
-          {ejecutando ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-          {conteo !== null && conteo > 0 ? `Ejecutar (${conteo} docs)` : 'Ejecutar'}
-        </Boton>
-
-        {conteo === 0 && (
-          <Insignia variante="neutro">Sin documentos que revertir</Insignia>
-        )}
-      </div>
-
-      {/* Resultado */}
+      {/* Resultado exitoso */}
       {resultado !== null && (
         <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
           <CheckCircle size={18} className="text-exito shrink-0" />
@@ -365,16 +479,99 @@ export default function PaginaRevertirProcesarDocs() {
         </div>
       )}
 
-      {/* Confirmación de ejecución */}
+      {/* Lista de documentos candidatos (visible tras Buscar) */}
+      {(yaBuscado || cargando) && (
+        <>
+          {documentos.length > 0 && (
+            <div className="flex items-center">
+              <span className="text-xs text-texto-muted">
+                {conteo !== null
+                  ? `${conteo} documento${conteo !== 1 ? 's' : ''} que se revertirán`
+                  : `${documentos.length} documentos`}
+                {pasoActual ? ` de ${pasoActual.estado_origen} → ${pasoActual.estado_destino}` : ''}
+              </span>
+            </div>
+          )}
+          <Tabla>
+            <TablaCabecera>
+              <tr>
+                <TablaTh>Documento</TablaTh>
+                <TablaTh>Ubicación</TablaTh>
+                <TablaTh>Estado actual</TablaTh>
+              </tr>
+            </TablaCabecera>
+            <TablaCuerpo>
+              {cargando ? (
+                <TablaFila>
+                  <TablaTd colSpan={3 as never} className="py-8 text-center text-texto-muted">
+                    Cargando…
+                  </TablaTd>
+                </TablaFila>
+              ) : documentos.length === 0 ? (
+                <TablaFila>
+                  <TablaTd colSpan={3 as never} className="py-8 text-center text-texto-muted">
+                    No hay documentos que coincidan con los filtros
+                  </TablaTd>
+                </TablaFila>
+              ) : (
+                documentos.map((d) => (
+                  <TablaFila key={d.codigo_documento}>
+                    <TablaTd className="max-w-0 w-[40%]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {iconoTipoArchivo(d.nombre_documento)}
+                        <span className="font-medium text-sm truncate" title={d.nombre_documento}>{d.nombre_documento}</span>
+                      </div>
+                    </TablaTd>
+                    <TablaTd className="text-xs text-texto-muted max-w-0 w-[30%] truncate" title={d.ubicacion_documento || ''}>
+                      {d.ubicacion_documento || '—'}
+                    </TablaTd>
+                    <TablaTd>
+                      <Insignia variante="advertencia">{d.codigo_estado_doc || '—'}</Insignia>
+                    </TablaTd>
+                  </TablaFila>
+                ))
+              )}
+            </TablaCuerpo>
+          </Tabla>
+          {/* Paginación */}
+          {conteo !== null && conteo > DOCS_POR_PAGINA && (
+            <div className="flex items-center justify-between text-xs text-texto-muted mt-1">
+              <span>
+                {(paginaActual - 1) * DOCS_POR_PAGINA + 1}–{Math.min(paginaActual * DOCS_POR_PAGINA, conteo)} de {conteo}
+              </span>
+              <div className="flex gap-1">
+                <button disabled={paginaActual <= 1} onClick={() => cargarDocumentos(1)}
+                  className="px-2 py-1 rounded border border-borde hover:bg-fondo disabled:opacity-30 disabled:cursor-not-allowed">«</button>
+                <button disabled={paginaActual <= 1} onClick={() => cargarDocumentos(paginaActual - 1)}
+                  className="px-2 py-1 rounded border border-borde hover:bg-fondo disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
+                <span className="px-3 py-1">{paginaActual} / {totalPaginas}</span>
+                <button disabled={paginaActual >= totalPaginas} onClick={() => cargarDocumentos(paginaActual + 1)}
+                  className="px-2 py-1 rounded border border-borde hover:bg-fondo disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+                <button disabled={paginaActual >= totalPaginas} onClick={() => cargarDocumentos(totalPaginas)}
+                  className="px-2 py-1 rounded border border-borde hover:bg-fondo disabled:opacity-30 disabled:cursor-not-allowed">»</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       <ModalConfirmar
         abierto={confirmEjecutar}
         titulo="Confirmar reversa"
-        mensaje={`¿Revertir ${conteo} documento${conteo !== 1 ? 's' : ''}${pasoActual ? ` de "${pasoActual.estado_origen}" a "${pasoActual.estado_destino}"` : ''}? Esta acción no se puede deshacer.`}
-        onConfirmar={ejecutar}
-        onCancelar={() => setConfirmEjecutar(false)}
+        mensaje={`¿Revertir ${conteo ?? 0} documento${(conteo ?? 0) !== 1 ? 's' : ''}${pasoActual ? ` de "${pasoActual.estado_origen}" a "${pasoActual.estado_destino}"` : ''}? Esta acción no se puede deshacer.`}
+        alConfirmar={ejecutar}
+        alCerrar={() => setConfirmEjecutar(false)}
         cargando={ejecutando}
-        variante="advertencia"
+        variante="peligro"
       />
     </div>
+  )
+}
+
+export default function PaginaRevertirProcesarDocs() {
+  return (
+    <Suspense fallback={<div className="p-8 text-texto-muted text-sm">Cargando...</div>}>
+      <PaginaRevertirInterna />
+    </Suspense>
   )
 }

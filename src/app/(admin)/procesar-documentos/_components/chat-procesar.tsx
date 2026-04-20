@@ -16,10 +16,8 @@ interface UbicacionOption {
 interface ProcesoCatalogo {
   codigo_proceso: string
   nombre_proceso: string
-  pasos?: Array<{
-    estado_origen?: string | null
-    estado_destino: string
-  }>
+  estado_origen?: string | null
+  estado_destino?: string | null
 }
 
 interface Accion {
@@ -87,8 +85,8 @@ export function ChatProcesar({ procesos, ubicaciones, estadosDocs, onEjecutar, o
           procesos: procesos.map((p) => ({
             codigo: p.codigo_proceso,
             nombre: p.nombre_proceso,
-            estado_origen: p.pasos?.[0]?.estado_origen ?? null,
-            estado_destino: p.pasos?.[0]?.estado_destino ?? null,
+            estado_origen: p.estado_origen ?? null,
+            estado_destino: p.estado_destino ?? null,
           })),
           ubicaciones: ubicaciones.slice(0, 30).map((u) => ({
             codigo: u.codigo_ubicacion,
