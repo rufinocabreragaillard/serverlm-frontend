@@ -10,6 +10,7 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
 import { procesosDatosBasicosApi, tareasDatosBasicosApi, funcionesApi } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import type { CategoriaProceso, TipoProceso, EstadoProceso, EstadoCanonicalProceso, Funcion } from '@/lib/tipos'
 import { exportarExcel } from '@/lib/exportar-excel'
 import { BotonChat } from '@/components/ui/boton-chat'
@@ -24,6 +25,7 @@ type ItemEliminar =
   | { tipo: 'canonico'; item: EstadoCanonicalProceso }
 
 export default function PaginaProcesosDatosBasicos() {
+  const { aplicacionActiva } = useAuth()
   const [tabActiva, setTabActiva] = useState<TabId>('categorias')
 
   // ── Categorías ─────────────────────────────────────────────────────────────
@@ -53,9 +55,12 @@ export default function PaginaProcesosDatosBasicos() {
   })
   const [guardandoTipo, setGuardandoTipo] = useState(false)
   const [errorTipo, setErrorTipo] = useState('')
-  const [filtroCatTipo, setFiltroCatTipo] = useState('')
-  const [busquedaCatTipo, setBusquedaCatTipo] = useState('')
-  const [mostrarListaCatTipo, setMostrarListaCatTipo] = useState(false)
+  const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState('')
+  const [busquedaCat, setBusquedaCat] = useState('')
+  const [mostrarListaCat, setMostrarListaCat] = useState(false)
+  const [busquedaTipo, setBusquedaTipo] = useState('')
+  const [mostrarListaTipo, setMostrarListaTipo] = useState(false)
 
   // ── Estados ────────────────────────────────────────────────────────────────
   const [estados, setEstados] = useState<EstadoProceso[]>([])
@@ -84,12 +89,8 @@ export default function PaginaProcesosDatosBasicos() {
   })
   const [guardandoEst, setGuardandoEst] = useState(false)
   const [errorEst, setErrorEst] = useState('')
-  const [filtroCatEst, setFiltroCatEst] = useState('')
-  const [filtroTipoEst, setFiltroTipoEst] = useState('')
-  const [busquedaCatEst, setBusquedaCatEst] = useState('')
-  const [mostrarListaCatEst, setMostrarListaCatEst] = useState(false)
-  const [busquedaTipoEst, setBusquedaTipoEst] = useState('')
-  const [mostrarListaTipoEst, setMostrarListaTipoEst] = useState(false)
+  const [busquedaFunEst, setBusquedaFunEst] = useState('')
+  const [mostrarListaFunEst, setMostrarListaFunEst] = useState(false)
   const [funciones, setFunciones] = useState<Funcion[]>([])
 
   // ── Canónicos ──────────────────────────────────────────────────────────────
@@ -192,7 +193,7 @@ export default function PaginaProcesosDatosBasicos() {
   const abrirNuevoTipo = () => {
     setTipoEditando(null)
     setFormTipo({
-      codigo_categoria_proceso: filtroCatTipo || '',
+      codigo_categoria_proceso: filtroCategoria || '',
       codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '',
       prompt: '', system_prompt: '',
       orden: '', codigo_funcion: '', ayuda: '', traducir: true, tipo: 'USUARIO',
@@ -230,7 +231,7 @@ export default function PaginaProcesosDatosBasicos() {
   }
 
   const reordenarTipos = async (nuevos: TipoProceso[]) => {
-    const resto = tipos.filter((t) => t.codigo_categoria_proceso !== filtroCatTipo)
+    const resto = tipos.filter((t) => t.codigo_categoria_proceso !== filtroCategoria)
     const nuevosConOrden = nuevos.map((t, idx) => ({ ...t, orden: idx + 1 }))
     setTipos([...resto, ...nuevosConOrden])
     try {
@@ -246,7 +247,7 @@ export default function PaginaProcesosDatosBasicos() {
 
   const reordenarEstados = async (nuevos: EstadoProceso[]) => {
     const resto = estados.filter(
-      (e) => e.codigo_categoria_proceso !== filtroCatEst || e.codigo_tipo_proceso !== filtroTipoEst
+      (e) => e.codigo_categoria_proceso !== filtroCategoria || e.codigo_tipo_proceso !== filtroTipo
     )
     const nuevosConOrden = nuevos.map((e, idx) => ({ ...e, orden: idx + 1 }))
     setEstados([...resto, ...nuevosConOrden])
@@ -319,8 +320,8 @@ export default function PaginaProcesosDatosBasicos() {
   const abrirNuevoEst = () => {
     setEstEditando(null)
     setFormEst({
-      codigo_categoria_proceso: filtroCatEst || '',
-      codigo_tipo_proceso: filtroTipoEst || '',
+      codigo_categoria_proceso: filtroCategoria || '',
+      codigo_tipo_proceso: filtroTipo || '',
       codigo_estado_proceso: '',
       nombre_estado: '', secuencia: 0,
       prompt: '', system_prompt: '', codigo_funcion: '',
@@ -461,9 +462,9 @@ export default function PaginaProcesosDatosBasicos() {
   }
 
   // ── Filtros ────────────────────────────────────────────────────────────────
-  const tiposFiltrados = filtroCatTipo
+  const tiposFiltrados = filtroCategoria
     ? tipos
-        .filter((t) => t.codigo_categoria_proceso === filtroCatTipo)
+        .filter((t) => t.codigo_categoria_proceso === filtroCategoria)
         .slice()
         .sort((a, b) => {
           const oa = a.orden ?? 99, ob = b.orden ?? 99
@@ -472,17 +473,17 @@ export default function PaginaProcesosDatosBasicos() {
         })
     : []
 
-  const categoriaSelTipo = categorias.find((c) => c.codigo_categoria_proceso === filtroCatTipo) || null
-  const categoriasSugTipo = !busquedaCatTipo.trim()
+  const categoriaSel = categorias.find((c) => c.codigo_categoria_proceso === filtroCategoria) || null
+  const categoriasSug = !busquedaCat.trim()
     ? categorias
     : categorias.filter((c) =>
-        c.nombre_categoria_proceso.toLowerCase().includes(busquedaCatTipo.toLowerCase()) ||
-        (c.alias || '').toLowerCase().includes(busquedaCatTipo.toLowerCase())
+        c.nombre_categoria_proceso.toLowerCase().includes(busquedaCat.toLowerCase()) ||
+        (c.alias || '').toLowerCase().includes(busquedaCat.toLowerCase())
       )
 
-  const estadosFiltrados = (filtroCatEst && filtroTipoEst)
+  const estadosFiltrados = (filtroCategoria && filtroTipo)
     ? estados
-        .filter((e) => e.codigo_categoria_proceso === filtroCatEst && e.codigo_tipo_proceso === filtroTipoEst)
+        .filter((e) => e.codigo_categoria_proceso === filtroCategoria && e.codigo_tipo_proceso === filtroTipo)
         .slice()
         .sort((a, b) => {
           const oa = a.orden ?? 99, ob = b.orden ?? 99
@@ -491,21 +492,24 @@ export default function PaginaProcesosDatosBasicos() {
         })
     : []
 
-  const categoriaSelEst = categorias.find((c) => c.codigo_categoria_proceso === filtroCatEst) || null
-  const categoriasSugEst = !busquedaCatEst.trim()
-    ? categorias
-    : categorias.filter((c) =>
-        c.nombre_categoria_proceso.toLowerCase().includes(busquedaCatEst.toLowerCase()) ||
-        (c.alias || '').toLowerCase().includes(busquedaCatEst.toLowerCase())
+  const tiposDeCateg = tipos.filter((t) => t.codigo_categoria_proceso === filtroCategoria)
+  const tipoSel = tiposDeCateg.find((t) => t.codigo_tipo_proceso === filtroTipo) || null
+  const tiposSug = !busquedaTipo.trim()
+    ? tiposDeCateg
+    : tiposDeCateg.filter((t) =>
+        t.nombre_tipo_proceso.toLowerCase().includes(busquedaTipo.toLowerCase()) ||
+        (t.alias || '').toLowerCase().includes(busquedaTipo.toLowerCase())
       )
 
-  const tiposDeCategEst = tipos.filter((t) => t.codigo_categoria_proceso === filtroCatEst)
-  const tipoSelEst = tiposDeCategEst.find((t) => t.codigo_tipo_proceso === filtroTipoEst) || null
-  const tiposSugEst = !busquedaTipoEst.trim()
-    ? tiposDeCategEst
-    : tiposDeCategEst.filter((t) =>
-        t.nombre_tipo_proceso.toLowerCase().includes(busquedaTipoEst.toLowerCase()) ||
-        (t.alias || '').toLowerCase().includes(busquedaTipoEst.toLowerCase())
+  const funcionesFiltradas = aplicacionActiva
+    ? [...funciones].filter((f) => f.codigo_aplicacion_origen === aplicacionActiva).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    : [...funciones].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  const funcionSelEst = funcionesFiltradas.find((f) => f.codigo_funcion === formEst.codigo_funcion) || null
+  const funcionesSugEst = !busquedaFunEst.trim()
+    ? funcionesFiltradas
+    : funcionesFiltradas.filter((f) =>
+        f.nombre.toLowerCase().includes(busquedaFunEst.toLowerCase()) ||
+        f.codigo_funcion.toLowerCase().includes(busquedaFunEst.toLowerCase())
       )
 
   const canonicosFiltrados = busquedaCan
@@ -568,7 +572,10 @@ export default function PaginaProcesosDatosBasicos() {
                 {categorias.length === 0 ? (
                   <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={5 as never}>No hay categorías registradas</TablaTd></TablaFila>
                 ) : categorias.map((c) => (
-                  <TablaFila key={c.codigo_categoria_proceso}>
+                  <TablaFila key={c.codigo_categoria_proceso}
+                    onDoubleClick={() => { setFiltroCategoria(c.codigo_categoria_proceso); setTabActiva('tipos') }}
+                    className="cursor-pointer"
+                  >
                     <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_categoria_proceso}</code></TablaTd>
                     <TablaTd className="font-medium">{c.nombre_categoria_proceso}</TablaTd>
                     <TablaTd className="text-texto-muted text-sm">{c.descripcion_categoria_proceso || <span className="text-texto-light">—</span>}</TablaTd>
@@ -596,31 +603,31 @@ export default function PaginaProcesosDatosBasicos() {
               <div className="relative max-w-md flex-1">
                 <Input
                   placeholder="Buscar y seleccionar categoría..."
-                  value={mostrarListaCatTipo ? busquedaCatTipo : (categoriaSelTipo?.nombre_categoria_proceso || '')}
-                  onChange={(e) => { setBusquedaCatTipo(e.target.value); setMostrarListaCatTipo(true) }}
-                  onFocus={() => { setMostrarListaCatTipo(true); setBusquedaCatTipo('') }}
-                  onBlur={() => setTimeout(() => setMostrarListaCatTipo(false), 150)}
+                  value={mostrarListaCat ? busquedaCat : (categoriaSel?.nombre_categoria_proceso || '')}
+                  onChange={(e) => { setBusquedaCat(e.target.value); setMostrarListaCat(true) }}
+                  onFocus={() => { setMostrarListaCat(true); setBusquedaCat('') }}
+                  onBlur={() => setTimeout(() => setMostrarListaCat(false), 150)}
                   icono={<Search size={15} />}
                 />
-                {mostrarListaCatTipo && categoriasSugTipo.length > 0 && (
+                {mostrarListaCat && categoriasSug.length > 0 && (
                   <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
-                    {filtroCatTipo && (
+                    {filtroCategoria && (
                       <button
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { setFiltroCatTipo(''); setMostrarListaCatTipo(false); setBusquedaCatTipo('') }}
+                        onClick={() => { setFiltroCategoria(''); setFiltroTipo(''); setMostrarListaCat(false); setBusquedaCat('') }}
                         className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde"
                       >
                         (limpiar selección)
                       </button>
                     )}
-                    {categoriasSugTipo.map((c) => (
+                    {categoriasSug.map((c) => (
                       <button
                         key={c.codigo_categoria_proceso}
                         type="button"
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { setFiltroCatTipo(c.codigo_categoria_proceso); setMostrarListaCatTipo(false); setBusquedaCatTipo('') }}
-                        className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${c.codigo_categoria_proceso === filtroCatTipo ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}
+                        onClick={() => { setFiltroCategoria(c.codigo_categoria_proceso); setFiltroTipo(''); setMostrarListaCat(false); setBusquedaCat('') }}
+                        className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${c.codigo_categoria_proceso === filtroCategoria ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}
                       >
                         {c.nombre_categoria_proceso}
                         {c.alias && <span className="text-texto-muted text-xs ml-2">({c.alias})</span>}
@@ -675,7 +682,9 @@ export default function PaginaProcesosDatosBasicos() {
                   {tiposFiltrados.map((t) => (
                     <SortableRow key={`${t.codigo_categoria_proceso}/${t.codigo_tipo_proceso}`} id={`${t.codigo_categoria_proceso}/${t.codigo_tipo_proceso}`}>
                       <TablaTd className="text-center text-texto-muted text-sm">{t.orden ?? '—'}</TablaTd>
-                      <TablaTd className="font-medium">{t.nombre_tipo_proceso}</TablaTd>
+                      <TablaTd className="font-medium cursor-pointer select-none"
+                        onDoubleClick={() => { setFiltroTipo(t.codigo_tipo_proceso); setTabActiva('estados') }}
+                        title="Doble clic para ver estados">{t.nombre_tipo_proceso}</TablaTd>
                       <TablaTd className="text-texto-muted text-sm">{t.descripcion_tipo_proceso || <span className="text-texto-light">—</span>}</TablaTd>
                       <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.codigo_tipo_proceso}</code></TablaTd>
                       <TablaTd>
@@ -702,25 +711,25 @@ export default function PaginaProcesosDatosBasicos() {
               <div className="relative max-w-xs flex-1">
                 <Input
                   placeholder="Buscar categoría..."
-                  value={mostrarListaCatEst ? busquedaCatEst : (categoriaSelEst?.nombre_categoria_proceso || '')}
-                  onChange={(e) => { setBusquedaCatEst(e.target.value); setMostrarListaCatEst(true) }}
-                  onFocus={() => { setMostrarListaCatEst(true); setBusquedaCatEst('') }}
-                  onBlur={() => setTimeout(() => setMostrarListaCatEst(false), 150)}
+                  value={mostrarListaCat ? busquedaCat : (categoriaSel?.nombre_categoria_proceso || '')}
+                  onChange={(e) => { setBusquedaCat(e.target.value); setMostrarListaCat(true) }}
+                  onFocus={() => { setMostrarListaCat(true); setBusquedaCat('') }}
+                  onBlur={() => setTimeout(() => setMostrarListaCat(false), 150)}
                   icono={<Search size={15} />}
                 />
-                {mostrarListaCatEst && categoriasSugEst.length > 0 && (
+                {mostrarListaCat && categoriasSug.length > 0 && (
                   <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
-                    {filtroCatEst && (
+                    {filtroCategoria && (
                       <button type="button" onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { setFiltroCatEst(''); setFiltroTipoEst(''); setMostrarListaCatEst(false); setBusquedaCatEst('') }}
+                        onClick={() => { setFiltroCategoria(''); setFiltroTipo(''); setMostrarListaCat(false); setBusquedaCat('') }}
                         className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde">
                         (limpiar selección)
                       </button>
                     )}
-                    {categoriasSugEst.map((c) => (
+                    {categoriasSug.map((c) => (
                       <button key={c.codigo_categoria_proceso} type="button" onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => { setFiltroCatEst(c.codigo_categoria_proceso); setFiltroTipoEst(''); setMostrarListaCatEst(false); setBusquedaCatEst('') }}
-                        className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${c.codigo_categoria_proceso === filtroCatEst ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
+                        onClick={() => { setFiltroCategoria(c.codigo_categoria_proceso); setFiltroTipo(''); setMostrarListaCat(false); setBusquedaCat('') }}
+                        className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${c.codigo_categoria_proceso === filtroCategoria ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
                         {c.nombre_categoria_proceso}
                         {c.alias && <span className="text-texto-muted text-xs ml-2">({c.alias})</span>}
                       </button>
@@ -728,31 +737,31 @@ export default function PaginaProcesosDatosBasicos() {
                   </div>
                 )}
               </div>
-              {filtroCatEst && (
+              {filtroCategoria && (
                 <>
                   <p className="text-sm text-texto-muted whitespace-nowrap">Tipo:</p>
                   <div className="relative max-w-xs flex-1">
                     <Input
                       placeholder="Buscar tipo..."
-                      value={mostrarListaTipoEst ? busquedaTipoEst : (tipoSelEst?.nombre_tipo_proceso || '')}
-                      onChange={(e) => { setBusquedaTipoEst(e.target.value); setMostrarListaTipoEst(true) }}
-                      onFocus={() => { setMostrarListaTipoEst(true); setBusquedaTipoEst('') }}
-                      onBlur={() => setTimeout(() => setMostrarListaTipoEst(false), 150)}
+                      value={mostrarListaTipo ? busquedaTipo : (tipoSel?.nombre_tipo_proceso || '')}
+                      onChange={(e) => { setBusquedaTipo(e.target.value); setMostrarListaTipo(true) }}
+                      onFocus={() => { setMostrarListaTipo(true); setBusquedaTipo('') }}
+                      onBlur={() => setTimeout(() => setMostrarListaTipo(false), 150)}
                       icono={<Search size={15} />}
                     />
-                    {mostrarListaTipoEst && tiposSugEst.length > 0 && (
+                    {mostrarListaTipo && tiposSug.length > 0 && (
                       <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
-                        {filtroTipoEst && (
+                        {filtroTipo && (
                           <button type="button" onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => { setFiltroTipoEst(''); setMostrarListaTipoEst(false); setBusquedaTipoEst('') }}
+                            onClick={() => { setFiltroTipo(''); setMostrarListaTipo(false); setBusquedaTipo('') }}
                             className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde">
                             (limpiar selección)
                           </button>
                         )}
-                        {tiposSugEst.map((t) => (
+                        {tiposSug.map((t) => (
                           <button key={t.codigo_tipo_proceso} type="button" onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => { setFiltroTipoEst(t.codigo_tipo_proceso); setMostrarListaTipoEst(false); setBusquedaTipoEst('') }}
-                            className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${t.codigo_tipo_proceso === filtroTipoEst ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
+                            onClick={() => { setFiltroTipo(t.codigo_tipo_proceso); setMostrarListaTipo(false); setBusquedaTipo('') }}
+                            className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${t.codigo_tipo_proceso === filtroTipo ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
                             {t.nombre_tipo_proceso}
                             {t.alias && <span className="text-texto-muted text-xs ml-2">({t.alias})</span>}
                           </button>
@@ -785,9 +794,9 @@ export default function PaginaProcesosDatosBasicos() {
             </div>
           </div>
 
-          {!filtroCatEst || !filtroTipoEst ? (
+          {!filtroCategoria || !filtroTipo ? (
             <div className="text-center text-texto-muted py-12 border border-dashed border-borde rounded-lg">
-              {!filtroCatEst ? 'Selecciona una categoría y un tipo para ver sus estados' : 'Selecciona un tipo de proceso para ver sus estados'}
+              {!filtroCategoria ? 'Selecciona una categoría y un tipo para ver sus estados' : 'Selecciona un tipo de proceso para ver sus estados'}
             </div>
           ) : cargandoEst ? (
             <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
@@ -1086,14 +1095,37 @@ export default function PaginaProcesosDatosBasicos() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-texto">Función asociada</label>
-            <select value={formEst.codigo_funcion}
-              onChange={(e) => setFormEst({ ...formEst, codigo_funcion: e.target.value })}
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario">
-              <option value="">(Sin función)</option>
-              {[...funciones].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((f) => (
-                <option key={f.codigo_funcion} value={f.codigo_funcion}>{f.nombre} — {f.codigo_funcion}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <Input
+                placeholder="Buscar función..."
+                value={mostrarListaFunEst ? busquedaFunEst : (funcionSelEst ? `${funcionSelEst.nombre} — ${funcionSelEst.codigo_funcion}` : '')}
+                onChange={(e) => { setBusquedaFunEst(e.target.value); setMostrarListaFunEst(true) }}
+                onFocus={() => { setMostrarListaFunEst(true); setBusquedaFunEst('') }}
+                onBlur={() => setTimeout(() => setMostrarListaFunEst(false), 150)}
+                icono={<Search size={15} />}
+              />
+              {mostrarListaFunEst && (
+                <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
+                  {formEst.codigo_funcion && (
+                    <button type="button" onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setFormEst({ ...formEst, codigo_funcion: '' }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
+                      className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde">
+                      (sin función)
+                    </button>
+                  )}
+                  {funcionesSugEst.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-texto-muted">Sin resultados</div>
+                  ) : funcionesSugEst.map((f) => (
+                    <button key={f.codigo_funcion} type="button" onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { setFormEst({ ...formEst, codigo_funcion: f.codigo_funcion }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
+                      className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${f.codigo_funcion === formEst.codigo_funcion ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
+                      {f.nombre}
+                      <span className="text-texto-muted text-xs ml-2">— {f.codigo_funcion}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <label className="flex items-center gap-2 text-sm text-texto">
