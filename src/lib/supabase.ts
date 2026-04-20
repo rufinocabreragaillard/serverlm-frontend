@@ -3,9 +3,37 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
+// Lock que usa navigator.locks con `steal: true` desde el primer intento.
+// Evita el cuelgue de 5s de "Iniciando sesión…" cuando un lock quedó huérfano
+// (React Strict Mode, tab anterior que no liberó, F5 durante auth, etc.).
+// El watchdog por defecto de gotrue-js espera 5s antes de hacer steal; acá
+// directamente hacemos steal para que no haya espera.
+// Safe para uso single-tab: un lock stolen solo afecta a una operación de
+// auth concurrente en otro tab, y Supabase maneja el conflicto internamente.
+const lockConSteal = async <R>(
+  name: string,
+  _acquireTimeout: number,
+  fn: () => Promise<R>,
+): Promise<R> => {
+  if (typeof navigator === 'undefined' || !('locks' in navigator)) {
+    return fn()
+  }
+  return new Promise<R>((resolve, reject) => {
+    navigator.locks
+      .request(name, { mode: 'exclusive', steal: true }, async () => {
+        try {
+          resolve(await fn())
+        } catch (e) {
+          reject(e)
+        }
+      })
+      .catch(reject)
+  })
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    lockAcquireTimeout: 3000,
+    lock: lockConSteal,
   },
 })
 
