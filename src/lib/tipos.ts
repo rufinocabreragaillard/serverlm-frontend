@@ -357,6 +357,7 @@ export interface CategoriaProceso {
   nombre_categoria_proceso: string
   descripcion_categoria_proceso?: string
   alias?: string
+  orden?: number
   prompt?: string
   system_prompt?: string
 }

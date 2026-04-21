@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, Download, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Download, Search, Eye } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Input } from '@/components/ui/input'
 import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
@@ -228,6 +228,19 @@ export default function PaginaProcesosDatosBasicos() {
     })
     setErrorTipo('')
     setModalTipo(true)
+  }
+
+  const reordenarCategorias = async (nuevos: CategoriaProceso[]) => {
+    const nuevosConOrden = nuevos.map((c, idx) => ({ ...c, orden: idx + 1 }))
+    setCategorias(nuevosConOrden)
+    try {
+      await procesosDatosBasicosApi.reordenarCategorias(
+        nuevosConOrden.map((c) => ({
+          codigo_categoria_proceso: c.codigo_categoria_proceso,
+          orden: c.orden ?? 0,
+        }))
+      )
+    } catch { cargarCategorias() }
   }
 
   const reordenarTipos = async (nuevos: TipoProceso[]) => {
@@ -562,34 +575,44 @@ export default function PaginaProcesosDatosBasicos() {
 
           {cargandoCat ? (
             <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+          ) : categorias.length === 0 ? (
+            <div className="text-center text-texto-muted py-12 border border-dashed border-borde rounded-lg">No hay categorías registradas</div>
           ) : (
-            <Tabla>
-              <TablaCabecera><tr>
-                <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Alias</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
-              </tr></TablaCabecera>
-              <TablaCuerpo>
-                {categorias.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={5 as never}>No hay categorías registradas</TablaTd></TablaFila>
-                ) : categorias.map((c) => (
-                  <TablaFila key={c.codigo_categoria_proceso}
-                    onDoubleClick={() => { setFiltroCategoria(c.codigo_categoria_proceso); setTabActiva('tipos') }}
-                    className="cursor-pointer"
-                  >
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_categoria_proceso}</code></TablaTd>
-                    <TablaTd className="font-medium">{c.nombre_categoria_proceso}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{c.descripcion_categoria_proceso || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{c.alias || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => setItemAEliminar({ tipo: 'categoria', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
-              </TablaCuerpo>
-            </Tabla>
+            <SortableDndContext
+              items={categorias as unknown as Record<string, unknown>[]}
+              getId={(c) => (c as unknown as CategoriaProceso).codigo_categoria_proceso}
+              onReorder={(n) => reordenarCategorias(n as unknown as CategoriaProceso[])}
+            >
+              <Tabla>
+                <TablaCabecera><tr>
+                  <TablaTh className="w-8" />
+                  <TablaTh className="w-16 text-center">Orden</TablaTh>
+                  <TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Alias</TablaTh>
+                  <TablaTh className="w-48">Código</TablaTh>
+                  <TablaTh className="text-right w-28">Acciones</TablaTh>
+                </tr></TablaCabecera>
+                <TablaCuerpo>
+                  {categorias.map((c) => (
+                    <SortableRow key={c.codigo_categoria_proceso} id={c.codigo_categoria_proceso}
+                      onDoubleClick={() => { setFiltroCategoria(c.codigo_categoria_proceso); setTabActiva('tipos') }}
+                    >
+                      <TablaTd className="text-center text-texto-muted text-sm">{c.orden ?? '—'}</TablaTd>
+                      <TablaTd className="font-medium">{c.nombre_categoria_proceso}</TablaTd>
+                      <TablaTd className="text-texto-muted text-sm">{c.descripcion_categoria_proceso || <span className="text-texto-light">—</span>}</TablaTd>
+                      <TablaTd className="text-texto-muted text-sm">{c.alias || <span className="text-texto-light">—</span>}</TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_categoria_proceso}</code></TablaTd>
+                      <TablaTd>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setFiltroCategoria(c.codigo_categoria_proceso); setTabActiva('tipos') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver tipos"><Eye size={14} /></button>
+                          <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                          <button onClick={() => setItemAEliminar({ tipo: 'categoria', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                        </div>
+                      </TablaTd>
+                    </SortableRow>
+                  ))}
+                </TablaCuerpo>
+              </Tabla>
+            </SortableDndContext>
           )}
         </>
       )}
@@ -653,7 +676,7 @@ export default function PaginaProcesosDatosBasicos() {
             </div>
           </div>
 
-          {!filtroCatTipo ? (
+          {!filtroCategoria ? (
             <div className="text-center text-texto-muted py-12 border border-dashed border-borde rounded-lg">
               Selecciona una categoría para ver sus tipos de proceso
             </div>
@@ -680,15 +703,14 @@ export default function PaginaProcesosDatosBasicos() {
                 </tr></TablaCabecera>
                 <TablaCuerpo>
                   {tiposFiltrados.map((t) => (
-                    <SortableRow key={`${t.codigo_categoria_proceso}/${t.codigo_tipo_proceso}`} id={`${t.codigo_categoria_proceso}/${t.codigo_tipo_proceso}`}>
+                    <SortableRow key={`${t.codigo_categoria_proceso}/${t.codigo_tipo_proceso}`} id={`${t.codigo_categoria_proceso}/${t.codigo_tipo_proceso}`} onDoubleClick={() => { setFiltroTipo(t.codigo_tipo_proceso); setTabActiva('estados') }}>
                       <TablaTd className="text-center text-texto-muted text-sm">{t.orden ?? '—'}</TablaTd>
-                      <TablaTd className="font-medium cursor-pointer select-none"
-                        onDoubleClick={() => { setFiltroTipo(t.codigo_tipo_proceso); setTabActiva('estados') }}
-                        title="Doble clic para ver estados">{t.nombre_tipo_proceso}</TablaTd>
+                      <TablaTd className="font-medium">{t.nombre_tipo_proceso}</TablaTd>
                       <TablaTd className="text-texto-muted text-sm">{t.descripcion_tipo_proceso || <span className="text-texto-light">—</span>}</TablaTd>
                       <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.codigo_tipo_proceso}</code></TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setFiltroTipo(t.codigo_tipo_proceso); setTabActiva('estados') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver estados"><Eye size={14} /></button>
                           <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
                           <button onClick={() => setItemAEliminar({ tipo: 'tipo', item: t })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
                         </div>
