@@ -307,6 +307,7 @@ export interface TipoParametro {
   nombre: string
   descripcion?: string
   activo: boolean
+  orden?: number
   fecha_creacion?: string
   categorias_parametro?: { nombre: string }
   prompt_insert?: string | null
