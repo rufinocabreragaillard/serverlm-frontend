@@ -47,7 +47,7 @@ type FormTipoTarea = {
   javascript_editado_manual: boolean
 }
 
-type TabModal = 'datos' | 'prompts'
+type TabModal = 'datos' | 'system_prompt' | 'programacion'
 
 const FORM_INICIAL: FormTipoTarea = {
   codigo_categoria_tarea: '',
@@ -147,7 +147,8 @@ export default function PaginaTiposTarea() {
 
   const tabs: { key: TabModal; label: string }[] = [
     { key: 'datos', label: 'Datos' },
-    { key: 'prompts', label: 'Prompts' },
+    { key: 'system_prompt', label: 'System Prompt' },
+    { key: 'programacion', label: 'Programación' },
   ]
 
   return (
@@ -309,13 +310,32 @@ export default function PaginaTiposTarea() {
             </>
           )}
 
-          {tabModal === 'prompts' && (
+          {tabModal === 'system_prompt' && (
             <TabPrompts
               tabla="tipos_tarea"
               pkColumna="codigo_tipo_tarea"
               pkValor={crud.editando?.codigo_tipo_tarea ?? null}
               campos={crud.form}
               onCampoCambiado={(campo, valor) => crud.updateForm(campo as keyof FormTipoTarea, valor as string | boolean)}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {tabModal === 'programacion' && (
+            <TabPrompts
+              tabla="tipos_tarea"
+              pkColumna="codigo_tipo_tarea"
+              pkValor={crud.editando?.codigo_tipo_tarea ?? null}
+              campos={crud.form}
+              onCampoCambiado={(campo, valor) => crud.updateForm(campo as keyof FormTipoTarea, valor as string | boolean)}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

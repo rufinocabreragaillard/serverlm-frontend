@@ -36,7 +36,7 @@ export default function PaginaEntidades() {
   const [modalArea, setModalArea] = useState(false)
   const [entidadEditando, setEntidadEditando] = useState<Entidad | null>(null)
   const [formEntidad, setFormEntidad] = useState({ codigo_entidad: '', nombre: '', descripcion: '', prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false })
-  const [tabModalEntidad, setTabModalEntidad] = useState<'datos' | 'prompts'>('datos')
+  const [tabModalEntidad, setTabModalEntidad] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
   const [formArea, setFormArea] = useState({ codigo_area: '', nombre: '', descripcion: '', codigo_area_superior: '' })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -315,7 +315,7 @@ export default function PaginaEntidades() {
         <div className="flex flex-col gap-4 min-w-[520px]">
           {/* Tabs */}
           <div className="flex border-b border-borde">
-            {(['datos', 'prompts'] as const).map((tab) => (
+            {(['datos', 'system_prompt', 'programacion'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalEntidad(tab)}
@@ -325,7 +325,7 @@ export default function PaginaEntidades() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? t('tabDatos') : 'Prompts'}
+                {tab === 'datos' ? t('tabDatos') : tab === 'system_prompt' ? 'System Prompt' : 'Programación'}
               </button>
             ))}
           </div>
@@ -349,8 +349,8 @@ export default function PaginaEntidades() {
             </>
           )}
 
-          {/* Tab Prompts */}
-          {tabModalEntidad === 'prompts' && (
+          {/* Tab System Prompt */}
+          {tabModalEntidad === 'system_prompt' && (
             <div className="flex flex-col gap-4">
               <TabPrompts
                 tabla="entidades"
@@ -358,6 +358,36 @@ export default function PaginaEntidades() {
                 pkValor={entidadEditando?.codigo_entidad ?? null}
                 campos={formEntidad}
                 onCampoCambiado={(campo, valor) => setFormEntidad({ ...formEntidad, [campo]: valor })}
+                mostrarPrompt={false}
+                mostrarSystemPrompt={true}
+                mostrarPython={false}
+                mostrarJavaScript={false}
+                mostrarBotones={false}
+              />
+              {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
+              <PieBotonesModal
+                editando={!!entidadEditando}
+                onGuardar={() => guardarEntidad(false)}
+                onGuardarYSalir={() => guardarEntidad(true)}
+                onCerrar={() => setModalEntidad(false)}
+                cargando={guardando}
+              />
+            </div>
+          )}
+
+          {/* Tab Programación */}
+          {tabModalEntidad === 'programacion' && (
+            <div className="flex flex-col gap-4">
+              <TabPrompts
+                tabla="entidades"
+                pkColumna="codigo_entidad"
+                pkValor={entidadEditando?.codigo_entidad ?? null}
+                campos={formEntidad}
+                onCampoCambiado={(campo, valor) => setFormEntidad({ ...formEntidad, [campo]: valor })}
+                mostrarPrompt={true}
+                mostrarSystemPrompt={false}
+                mostrarPython={true}
+                mostrarJavaScript={false}
               />
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <PieBotonesModal

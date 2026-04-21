@@ -52,7 +52,7 @@ export default function PaginaGrupos() {
   const [modalGrupo, setModalGrupo] = useState(false)
   const [grupoEditando, setGrupoEditando] = useState<Grupo | null>(null)
   const [formGrupo, setFormGrupo] = useState({ codigo_grupo: '', nombre: '', descripcion: '', tipo: 'USUARIO' as TipoElemento, prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false })
-  const [tabModalGrupo, setTabModalGrupo] = useState<'datos' | 'prompts'>('datos')
+  const [tabModalGrupo, setTabModalGrupo] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -1020,7 +1020,7 @@ export default function PaginaGrupos() {
       <Modal abierto={modalGrupo} alCerrar={() => setModalGrupo(false)} titulo={grupoEditando ? 'Editar grupo' : 'Nuevo grupo'} className="max-w-3xl">
         <div className="flex flex-col gap-4 min-w-[520px]">
           <div className="flex border-b border-borde">
-            {(['datos', 'prompts'] as const).map((tab) => (
+            {(['datos', 'system_prompt', 'programacion'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalGrupo(tab)}
@@ -1028,7 +1028,7 @@ export default function PaginaGrupos() {
                   tabModalGrupo === tab ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : 'Prompts'}
+                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : 'Programación'}
               </button>
             ))}
           </div>
@@ -1048,7 +1048,7 @@ export default function PaginaGrupos() {
             </>
           )}
 
-          {tabModalGrupo === 'prompts' && grupoEditando && (
+          {tabModalGrupo === 'system_prompt' && grupoEditando && (
             <TabPrompts
               tabla="grupos_entidades"
               pkColumna="codigo_grupo"
@@ -1062,6 +1062,32 @@ export default function PaginaGrupos() {
                 javascript_editado_manual: formGrupo.javascript_editado_manual,
               }}
               onCampoCambiado={(c, v) => setFormGrupo({ ...formGrupo, [c]: v })}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {tabModalGrupo === 'programacion' && grupoEditando && (
+            <TabPrompts
+              tabla="grupos_entidades"
+              pkColumna="codigo_grupo"
+              pkValor={grupoEditando.codigo_grupo}
+              campos={{
+                prompt: formGrupo.prompt,
+                system_prompt: formGrupo.system_prompt,
+                python: formGrupo.python,
+                javascript: formGrupo.javascript,
+                python_editado_manual: formGrupo.python_editado_manual,
+                javascript_editado_manual: formGrupo.javascript_editado_manual,
+              }}
+              onCampoCambiado={(c, v) => setFormGrupo({ ...formGrupo, [c]: v })}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

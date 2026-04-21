@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
-import { ModalEditorPrompts } from '@/components/ui/modal-editor-prompts'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { aplicacionesApi, funcionesApi, gruposApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
@@ -35,9 +34,8 @@ export default function PaginaAplicaciones() {
   // ── Modal Aplicacion ──────────────────────────────────────────────────────
   const [modalApp, setModalApp] = useState(false)
   const [appEditando, setAppEditando] = useState<Aplicacion | null>(null)
-  const [appContexto, setAppContexto] = useState<Aplicacion | null>(null)
   const [formApp, setFormApp] = useState<{ codigo_aplicacion: string; nombre: string; alias: string; descripcion: string; tipo: TipoElemento; sidebar_ancho: boolean; prompt: string; system_prompt: string; python: string; javascript: string; python_editado_manual: boolean; javascript_editado_manual: boolean }>({ codigo_aplicacion: '', nombre: '', alias: '', descripcion: '', tipo: 'USUARIO', sidebar_ancho: true, prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false })
-  const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos' | 'prompts'>('datos')
+  const [tabModalApp, setTabModalApp] = useState<'datos' | 'funciones' | 'grupos' | 'system_prompt' | 'programacion'>('datos')
   const [guardandoApp, setGuardandoApp] = useState(false)
   const [errorApp, setErrorApp] = useState('')
 
@@ -105,7 +103,7 @@ export default function PaginaAplicaciones() {
     setAppEditando(null); setFormApp({ codigo_aplicacion: '', nombre: '', alias: '', descripcion: '', tipo: 'USUARIO', sidebar_ancho: true, prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false })
     setErrorApp(''); setTabModalApp('datos'); setModalApp(true)
   }
-  const abrirEditarApp = (a: Aplicacion) => {
+  const abrirEditarApp = (a: Aplicacion, tabInicial: 'datos' | 'funciones' | 'grupos' | 'system_prompt' | 'programacion' = 'datos') => {
     setAppEditando(a); setFormApp({
       codigo_aplicacion: a.codigo_aplicacion, nombre: a.nombre, alias: a.alias || '', descripcion: a.descripcion || '',
       tipo: normalizarTipo(a.tipo), sidebar_ancho: a.sidebar_ancho !== false,
@@ -116,7 +114,7 @@ export default function PaginaAplicaciones() {
       python_editado_manual: ((a as Record<string, unknown>).python_editado_manual as boolean) ?? false,
       javascript_editado_manual: ((a as Record<string, unknown>).javascript_editado_manual as boolean) ?? false,
     })
-    setErrorApp(''); setTabModalApp('datos'); cargarFuncionesApp(a.codigo_aplicacion); cargarGruposApp(a.codigo_aplicacion); setModalApp(true)
+    setErrorApp(''); setTabModalApp(tabInicial); cargarFuncionesApp(a.codigo_aplicacion); cargarGruposApp(a.codigo_aplicacion); setModalApp(true)
   }
   const guardarApp = async (cerrar: boolean) => {
     if (!formApp.codigo_aplicacion || !formApp.nombre) { setErrorApp('Codigo y nombre son obligatorios'); return }
@@ -233,7 +231,7 @@ export default function PaginaAplicaciones() {
                 <TablaTd className="text-texto-muted text-sm">{a.descripcion || '—'}</TablaTd>
                 <TablaTd>
                   <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => setAppContexto(a)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editor de contexto"><Brain size={14} /></button>
+                    <button onClick={() => abrirEditarApp(a, 'programacion')} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editor de contexto"><Brain size={14} /></button>
                     <button onClick={() => abrirEditarApp(a)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
                     <button onClick={() => setConfirmacion(a)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
                   </div>
@@ -253,7 +251,8 @@ export default function PaginaAplicaciones() {
                 { key: 'datos', label: 'Datos' },
                 { key: 'funciones', label: `${t('tabFunciones')} (${funcionesApp.length})` },
                 { key: 'grupos', label: `${t('tabGrupos')} (${gruposApp.length})` },
-                { key: 'prompts', label: 'Prompts' },
+                { key: 'system_prompt', label: 'System Prompt' },
+                { key: 'programacion', label: 'Programación' },
               ] as { key: typeof tabModalApp; label: string }[]).map((tab) => (
                 <button key={tab.key} onClick={() => setTabModalApp(tab.key)} className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${tabModalApp === tab.key ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>
                   {tab.label}
@@ -360,7 +359,7 @@ export default function PaginaAplicaciones() {
               <div className="flex justify-end pt-2"><Boton variante="contorno" onClick={() => setModalApp(false)}>Salir</Boton></div>
             </div>
           )}
-          {tabModalApp === 'prompts' && appEditando && (
+          {tabModalApp === 'system_prompt' && appEditando && (
             <div className="flex flex-col gap-3">
               <TabPrompts
                 tabla="aplicaciones"
@@ -375,6 +374,35 @@ export default function PaginaAplicaciones() {
                   javascript_editado_manual: formApp.javascript_editado_manual,
                 }}
                 onCampoCambiado={(c, v) => setFormApp({ ...formApp, [c]: v })}
+                mostrarPrompt={false}
+                mostrarSystemPrompt={true}
+                mostrarPython={false}
+                mostrarJavaScript={false}
+                mostrarBotones={false}
+              />
+              {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
+              <PieBotonesModal editando={!!appEditando} onGuardar={() => guardarApp(false)} onGuardarYSalir={() => guardarApp(true)} onCerrar={() => setModalApp(false)} cargando={guardandoApp} />
+            </div>
+          )}
+          {tabModalApp === 'programacion' && appEditando && (
+            <div className="flex flex-col gap-3">
+              <TabPrompts
+                tabla="aplicaciones"
+                pkColumna="codigo_aplicacion"
+                pkValor={appEditando.codigo_aplicacion}
+                campos={{
+                  prompt: formApp.prompt,
+                  system_prompt: formApp.system_prompt,
+                  python: formApp.python,
+                  javascript: formApp.javascript,
+                  python_editado_manual: formApp.python_editado_manual,
+                  javascript_editado_manual: formApp.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setFormApp({ ...formApp, [c]: v })}
+                mostrarPrompt={true}
+                mostrarSystemPrompt={false}
+                mostrarPython={true}
+                mostrarJavaScript={false}
               />
               {errorApp && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorApp}</p></div>}
               <PieBotonesModal editando={!!appEditando} onGuardar={() => guardarApp(false)} onGuardarYSalir={() => guardarApp(true)} onCerrar={() => setModalApp(false)} cargando={guardandoApp} />
@@ -409,18 +437,6 @@ export default function PaginaAplicaciones() {
           )}
         </div>
       </Modal>
-
-      {/* ── MODAL EDITOR CONTEXTO APP ── */}
-      {appContexto && (
-        <ModalEditorPrompts
-          abierto={!!appContexto}
-          onCerrar={() => setAppContexto(null)}
-          tabla="aplicaciones"
-          pkColumna="codigo_aplicacion"
-          pkValor={appContexto.codigo_aplicacion}
-          titulo={appContexto.nombre}
-        />
-      )}
 
       {/* ── MODAL CONFIRMAR ── */}
       <ModalConfirmar

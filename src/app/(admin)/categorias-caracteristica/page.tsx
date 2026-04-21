@@ -32,7 +32,7 @@ export default function PaginaCategoriasCaracteristica() {
   const [cargandoCat, setCargandoCat] = useState(true)
   const [busquedaCat, setBusquedaCat] = useState('')
   const [modalCat, setModalCat] = useState(false)
-  const [tabModalCat, setTabModalCat] = useState<'datos' | 'prompts'>('datos')
+  const [tabModalCat, setTabModalCat] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
   const [catEditando, setCatEditando] = useState<CategoriaCaractPers | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_cat_pers: '', nombre_cat_pers: '', descripcion_cat_pers: '',
@@ -552,7 +552,7 @@ export default function PaginaCategoriasCaracteristica() {
         <div className="flex flex-col gap-4 min-w-[520px]">
           {/* Tabs */}
           <div className="flex border-b border-borde">
-            {(['datos', 'prompts'] as const).map((tab) => (
+            {(['datos', 'system_prompt', 'programacion'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalCat(tab)}
@@ -562,7 +562,7 @@ export default function PaginaCategoriasCaracteristica() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : 'Prompts'}
+                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : 'Programación'}
               </button>
             ))}
           </div>
@@ -596,13 +596,32 @@ export default function PaginaCategoriasCaracteristica() {
             )}
           </>)}
 
-          {tabModalCat === 'prompts' && (
+          {tabModalCat === 'system_prompt' && (
             <TabPrompts
               tabla="categorias_caract_pers"
               pkColumna="codigo_cat_pers"
               pkValor={catEditando?.codigo_cat_pers ?? null}
               campos={formCat}
               onCampoCambiado={(campo, valor) => setFormCat({ ...formCat, [campo]: valor })}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {tabModalCat === 'programacion' && (
+            <TabPrompts
+              tabla="categorias_caract_pers"
+              pkColumna="codigo_cat_pers"
+              pkValor={catEditando?.codigo_cat_pers ?? null}
+              campos={formCat}
+              onCampoCambiado={(campo, valor) => setFormCat({ ...formCat, [campo]: valor })}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

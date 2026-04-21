@@ -32,7 +32,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const [cargandoCat, setCargandoCat] = useState(true)
   const [busquedaCat, setBusquedaCat] = useState('')
   const [modalCat, setModalCat] = useState(false)
-  const [tabModalCat, setTabModalCat] = useState<'datos' | 'prompts' | 'llm'>('datos')
+  const [tabModalCat, setTabModalCat] = useState<'datos' | 'system_prompt' | 'programacion' | 'llm'>('datos')
   const [catEditando, setCatEditando] = useState<CategoriaCaractDocs | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_cat_docs: '', nombre_cat_docs: '', descripcion_cat_docs: '',
@@ -53,7 +53,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
   const [tipos, setTipos] = useState<TipoCaractDocs[]>([])
   const [cargandoTipos, setCargandoTipos] = useState(false)
   const [modalTipo, setModalTipo] = useState(false)
-  const [tabModalTipo, setTabModalTipo] = useState<'datos' | 'prompts'>('datos')
+  const [tabModalTipo, setTabModalTipo] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
   const [tipoEditando, setTipoEditando] = useState<TipoCaractDocs | null>(null)
   const [formTipo, setFormTipo] = useState({
     codigo_tipo_docs: '', nombre_tipo_docs: '',
@@ -456,7 +456,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
         <div className="flex flex-col gap-4 min-w-[520px]">
           {/* Tabs */}
           <div className="flex border-b border-borde">
-            {(['datos', 'prompts', 'llm'] as const).map((tab) => (
+            {(['datos', 'system_prompt', 'programacion', 'llm'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalCat(tab)}
@@ -466,7 +466,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : tab === 'prompts' ? 'Prompts' : 'LLM'}
+                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : tab === 'programacion' ? 'Programación' : 'LLM'}
               </button>
             ))}
           </div>
@@ -509,14 +509,34 @@ export default function PaginaCategoriasCaracteristicaDocs() {
             </>
           )}
 
-          {/* Tab Prompts */}
-          {tabModalCat === 'prompts' && (
+          {/* Tab System Prompt */}
+          {tabModalCat === 'system_prompt' && (
             <TabPrompts
               tabla="categorias_caract_docs"
               pkColumna="codigo_cat_docs"
               pkValor={catEditando?.codigo_cat_docs ?? null}
               campos={formCat}
               onCampoCambiado={(campo, valor) => setFormCat({ ...formCat, [campo]: valor })}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {/* Tab Programación */}
+          {tabModalCat === 'programacion' && (
+            <TabPrompts
+              tabla="categorias_caract_docs"
+              pkColumna="codigo_cat_docs"
+              pkValor={catEditando?.codigo_cat_docs ?? null}
+              campos={formCat}
+              onCampoCambiado={(campo, valor) => setFormCat({ ...formCat, [campo]: valor })}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 
@@ -560,7 +580,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
         <div className="flex flex-col gap-4 min-w-[520px]">
           {/* Tabs */}
           <div className="flex border-b border-borde">
-            {(['datos', 'prompts'] as const).map((tab) => (
+            {(['datos', 'system_prompt', 'programacion'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalTipo(tab)}
@@ -570,7 +590,7 @@ export default function PaginaCategoriasCaracteristicaDocs() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : 'Prompts'}
+                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : 'Programación'}
               </button>
             ))}
           </div>
@@ -586,13 +606,32 @@ export default function PaginaCategoriasCaracteristicaDocs() {
             </>
           )}
 
-          {tabModalTipo === 'prompts' && (
+          {tabModalTipo === 'system_prompt' && (
             <TabPrompts
               tabla="tipos_caract_docs"
               pkColumna="codigo_tipo_docs"
               pkValor={tipoEditando?.codigo_tipo_docs ?? null}
               campos={formTipo}
               onCampoCambiado={(campo, valor) => setFormTipo({ ...formTipo, [campo]: valor })}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {tabModalTipo === 'programacion' && (
+            <TabPrompts
+              tabla="tipos_caract_docs"
+              pkColumna="codigo_tipo_docs"
+              pkValor={tipoEditando?.codigo_tipo_docs ?? null}
+              campos={formTipo}
+              onCampoCambiado={(campo, valor) => setFormTipo({ ...formTipo, [campo]: valor })}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

@@ -40,7 +40,7 @@ type FormProceso = {
   json: string
 }
 
-type TabProceso = 'datos' | 'prompts' | 'json'
+type TabProceso = 'datos' | 'system_prompt' | 'programacion' | 'json'
 
 export default function PaginaProcesos() {
   const t = useTranslations('procesos')
@@ -198,7 +198,8 @@ export default function PaginaProcesos() {
             <div className="flex gap-2 border-b border-borde -mt-2">
               {([
                 { key: 'datos' as TabProceso, label: 'Datos' },
-                { key: 'prompts' as TabProceso, label: 'Prompts' },
+                { key: 'system_prompt' as TabProceso, label: 'System Prompt' },
+                { key: 'programacion' as TabProceso, label: 'Programación' },
                 { key: 'json' as TabProceso, label: 'JSON' },
               ]).map((tb) => (
                 <button
@@ -236,7 +237,7 @@ export default function PaginaProcesos() {
             rows={3}
           />}
 
-          {tabModal === 'prompts' && crud.editando && (
+          {tabModal === 'system_prompt' && crud.editando && (
             <TabPrompts
               tabla="procesos"
               pkColumna="codigo_proceso"
@@ -250,6 +251,32 @@ export default function PaginaProcesos() {
                 javascript_editado_manual: crud.form.javascript_editado_manual,
               }}
               onCampoCambiado={(c, v) => crud.updateForm(c as keyof typeof crud.form, v as never)}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {tabModal === 'programacion' && crud.editando && (
+            <TabPrompts
+              tabla="procesos"
+              pkColumna="codigo_proceso"
+              pkValor={crud.editando.codigo_proceso}
+              campos={{
+                prompt: crud.form.prompt,
+                system_prompt: crud.form.system_prompt,
+                python: crud.form.python,
+                javascript: crud.form.javascript,
+                python_editado_manual: crud.form.python_editado_manual,
+                javascript_editado_manual: crud.form.javascript_editado_manual,
+              }}
+              onCampoCambiado={(c, v) => crud.updateForm(c as keyof typeof crud.form, v as never)}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

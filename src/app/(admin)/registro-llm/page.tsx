@@ -54,7 +54,7 @@ export default function PaginaRegistroLLM() {
   const [busqueda, setBusqueda] = useState('')
   const [modalModelo, setModalModelo] = useState(false)
   const [editandoModelo, setEditandoModelo] = useState<RegistroLLM | null>(null)
-  const [tabModal, setTabModal] = useState<'datos' | 'probar' | 'prompts'>('datos')
+  const [tabModal, setTabModal] = useState<'datos' | 'probar' | 'system_prompt' | 'programacion'>('datos')
   const [formModelo, setFormModelo] = useState({
     proveedor: '', nombre_tecnico: '', nombre_visible: '', descripcion: '', estado_valido: false,
     prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false,
@@ -486,7 +486,8 @@ export default function PaginaRegistroLLM() {
                 <div className="flex border-b border-borde -mx-1">
                   <button onClick={() => setTabModal('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabDatos')}</button>
                   <button onClick={() => setTabModal('probar')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'probar' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabProbarConexion')}</button>
-                  <button onClick={() => setTabModal('prompts')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'prompts' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Prompts</button>
+                  <button onClick={() => setTabModal('system_prompt')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'system_prompt' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>System Prompt</button>
+                  <button onClick={() => setTabModal('programacion')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModal === 'programacion' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Programación</button>
                 </div>
               )}
 
@@ -511,13 +512,32 @@ export default function PaginaRegistroLLM() {
                 <PieBotonesModal editando={!!editandoModelo} onGuardar={() => guardarModelo(false)} onGuardarYSalir={() => guardarModelo(true)} onCerrar={() => setModalModelo(false)} cargando={guardandoModelo} />
               </>)}
 
-              {tabModal === 'prompts' && editandoModelo && (
+              {tabModal === 'system_prompt' && editandoModelo && (
                 <TabPrompts
                   tabla="registro_llm"
                   pkColumna="id_modelo"
                   pkValor={editandoModelo.id_modelo}
                   campos={formModelo}
                   onCampoCambiado={(campo, valor) => setFormModelo({ ...formModelo, [campo]: valor })}
+                  mostrarPrompt={false}
+                  mostrarSystemPrompt={true}
+                  mostrarPython={false}
+                  mostrarJavaScript={false}
+                  mostrarBotones={false}
+                />
+              )}
+
+              {tabModal === 'programacion' && editandoModelo && (
+                <TabPrompts
+                  tabla="registro_llm"
+                  pkColumna="id_modelo"
+                  pkValor={editandoModelo.id_modelo}
+                  campos={formModelo}
+                  onCampoCambiado={(campo, valor) => setFormModelo({ ...formModelo, [campo]: valor })}
+                  mostrarPrompt={true}
+                  mostrarSystemPrompt={false}
+                  mostrarPython={true}
+                  mostrarJavaScript={false}
                 />
               )}
 

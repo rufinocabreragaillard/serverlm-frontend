@@ -16,7 +16,7 @@ import { useCrudPage } from '@/hooks/useCrudPage'
 import { BotonChat } from '@/components/ui/boton-chat'
 import { TabPrompts } from '@/components/ui/tab-prompts'
 
-type TabModal = 'datos' | 'prompts'
+type TabModal = 'datos' | 'system_prompt' | 'programacion'
 
 export default function PaginaEstadosDocs() {
   const t = useTranslations('estadosDocs')
@@ -129,7 +129,8 @@ export default function PaginaEstadosDocs() {
 
   const TABS: { key: TabModal; label: string }[] = [
     { key: 'datos', label: 'Datos' },
-    { key: 'prompts', label: 'Prompts' },
+    { key: 'system_prompt', label: 'System Prompt' },
+    { key: 'programacion', label: 'Programación' },
   ]
 
   return (
@@ -223,8 +224,8 @@ export default function PaginaEstadosDocs() {
             </div>
           )}
 
-          {/* Tab Prompts — sistema "Todo por Prompts" */}
-          {crud.editando && tabModal === 'prompts' && (
+          {/* Tab System Prompt */}
+          {crud.editando && tabModal === 'system_prompt' && (
             <div className="flex flex-col gap-3">
               <TabPrompts
                 tabla="estados_docs"
@@ -239,6 +240,42 @@ export default function PaginaEstadosDocs() {
                   javascript_editado_manual: crud.form.javascript_editado_manual,
                 }}
                 onCampoCambiado={(c, v) => crud.updateForm(c as keyof typeof crud.form, v as never)}
+                mostrarPrompt={false}
+                mostrarSystemPrompt={true}
+                mostrarPython={false}
+                mostrarJavaScript={false}
+                mostrarBotones={false}
+              />
+              <PieBotonesModal
+                editando={!!crud.editando}
+                onGuardar={() => guardarEstado(false)}
+                onGuardarYSalir={() => guardarEstado(true)}
+                onCerrar={crud.cerrarModal}
+                cargando={guardandoEstado}
+              />
+            </div>
+          )}
+
+          {/* Tab Programación */}
+          {crud.editando && tabModal === 'programacion' && (
+            <div className="flex flex-col gap-3">
+              <TabPrompts
+                tabla="estados_docs"
+                pkColumna="codigo_estado_doc"
+                pkValor={crud.editando.codigo_estado_doc}
+                campos={{
+                  prompt: crud.form.prompt,
+                  system_prompt: crud.form.system_prompt,
+                  python: crud.form.python,
+                  javascript: crud.form.javascript,
+                  python_editado_manual: crud.form.python_editado_manual,
+                  javascript_editado_manual: crud.form.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => crud.updateForm(c as keyof typeof crud.form, v as never)}
+                mostrarPrompt={true}
+                mostrarSystemPrompt={false}
+                mostrarPython={true}
+                mostrarJavaScript={false}
               />
               <PieBotonesModal
                 editando={!!crud.editando}

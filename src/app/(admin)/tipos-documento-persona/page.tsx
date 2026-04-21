@@ -31,7 +31,7 @@ export default function PaginaTiposDocumentoPersona() {
   const { grupoActivo } = useAuth()
   const t = useTranslations('tiposDocumentoPersona')
   const tc = useTranslations('common')
-  const [tabModal, setTabModal] = useState<'datos' | 'prompts'>('datos')
+  const [tabModal, setTabModal] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
 
   const crud = useCrudPage<TipoDocumentoPersona, FormTipoDocPers>({
     cargarFn: tiposDocumentoPersonaApi.listar,
@@ -122,7 +122,7 @@ export default function PaginaTiposDocumentoPersona() {
         <div className="flex flex-col gap-4 min-w-[480px]">
           {/* Tabs */}
           <div className="flex border-b border-borde">
-            {(['datos', 'prompts'] as const).map((tab) => (
+            {(['datos', 'system_prompt', 'programacion'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModal(tab)}
@@ -132,7 +132,7 @@ export default function PaginaTiposDocumentoPersona() {
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : 'Prompts'}
+                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : 'Programación'}
               </button>
             ))}
           </div>
@@ -158,13 +158,32 @@ export default function PaginaTiposDocumentoPersona() {
             )}
           </>)}
 
-          {tabModal === 'prompts' && (
+          {tabModal === 'system_prompt' && (
             <TabPrompts
               tabla="tipos_documento_persona"
               pkColumna="codigo_tipo_doc"
               pkValor={crud.editando?.codigo_tipo_doc ?? null}
               campos={crud.form}
               onCampoCambiado={(campo, valor) => crud.updateForm(campo as keyof FormTipoDocPers, valor as string | boolean)}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {tabModal === 'programacion' && (
+            <TabPrompts
+              tabla="tipos_documento_persona"
+              pkColumna="codigo_tipo_doc"
+              pkValor={crud.editando?.codigo_tipo_doc ?? null}
+              campos={crud.form}
+              onCampoCambiado={(campo, valor) => crud.updateForm(campo as keyof FormTipoDocPers, valor as string | boolean)}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
-import { ModalEditorPrompts } from '@/components/ui/modal-editor-prompts'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/components/ui/tarjeta'
 import { rolesApi, funcionesApi, aplicacionesApi, registroLLMApi } from '@/lib/api'
@@ -37,9 +36,8 @@ export default function PaginaRoles() {
   // Modal rol
   const [modalRol, setModalRol] = useState(false)
   const [rolEditando, setRolEditando] = useState<Rol | null>(null)
-  const [rolContexto, setRolContexto] = useState<Rol | null>(null)
   const [formRol, setFormRol] = useState({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', funcion_por_defecto: '', codigo_aplicacion_origen: '', tipo: 'USUARIO' as TipoElemento, prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false, inicial: false })
-  const [tabModalRol, setTabModalRol] = useState<'datos' | 'funciones' | 'prompts'>('datos')
+  const [tabModalRol, setTabModalRol] = useState<'datos' | 'funciones' | 'system_prompt' | 'programacion'>('datos')
 
   // Funciones del rol en edición
   const [funcionesRol, setFuncionesRol] = useState<FuncionAsignada[]>([])
@@ -162,11 +160,11 @@ export default function PaginaRoles() {
     setModalRol(true)
   }
 
-  const abrirEditarRol = (r: Rol) => {
+  const abrirEditarRol = (r: Rol, tabInicial: 'datos' | 'funciones' | 'system_prompt' | 'programacion' = 'datos') => {
     setRolEditando(r)
     setFormRol({ codigo_rol: r.codigo_rol, nombre: r.nombre, alias_de_rol: r.alias_de_rol || '', descripcion: r.descripcion || '', url_inicio: r.url_inicio || '', funcion_por_defecto: r.funcion_por_defecto || '', codigo_aplicacion_origen: r.codigo_aplicacion_origen || '', tipo: normalizarTipo(r.tipo), prompt: (r as unknown as Record<string, unknown>).prompt as string || '', system_prompt: (r as unknown as Record<string, unknown>).system_prompt as string || '', python: (r as unknown as Record<string, unknown>).python as string || '', javascript: (r as unknown as Record<string, unknown>).javascript as string || '', python_editado_manual: ((r as unknown as Record<string, unknown>).python_editado_manual as boolean) ?? false, javascript_editado_manual: ((r as unknown as Record<string, unknown>).javascript_editado_manual as boolean) ?? false, inicial: r.inicial ?? false })
     setError('')
-    setTabModalRol('datos')
+    setTabModalRol(tabInicial)
     setFuncionNueva('')
     setBusquedaFuncionRol('')
     cargarFuncionesRol(r.id_rol)
@@ -574,7 +572,7 @@ export default function PaginaRoles() {
                   </TablaTd>
                   <TablaTd>
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setRolContexto(r)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editor de contexto"><Brain size={14} /></button>
+                      <button onClick={() => abrirEditarRol(r, 'programacion')} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editor de contexto"><Brain size={14} /></button>
                       <button onClick={() => abrirEditarRol(r)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
                       <button
                         onClick={() => guardarInline(r.id_rol)}
@@ -675,7 +673,8 @@ export default function PaginaRoles() {
               {([
                 { key: 'datos', label: t('tabDatos') },
                 { key: 'funciones', label: t('tabFuncionesAsignadas') },
-                { key: 'prompts', label: 'Prompts' },
+                { key: 'system_prompt', label: 'System Prompt' },
+                { key: 'programacion', label: 'Programación' },
               ] as { key: typeof tabModalRol; label: string }[]).map((tab) => (
                 <button
                   key={tab.key}
@@ -881,8 +880,8 @@ export default function PaginaRoles() {
             </div>
           )}
 
-          {/* Tab Prompts — rol */}
-          {tabModalRol === 'prompts' && rolEditando && (
+          {/* Tab System Prompt — rol */}
+          {tabModalRol === 'system_prompt' && rolEditando && (
             <div className="flex flex-col gap-3">
               <TabPrompts
                 tabla="roles"
@@ -897,6 +896,37 @@ export default function PaginaRoles() {
                   javascript_editado_manual: formRol.javascript_editado_manual,
                 }}
                 onCampoCambiado={(c, v) => setFormRol({ ...formRol, [c]: v })}
+                mostrarPrompt={false}
+                mostrarSystemPrompt={true}
+                mostrarPython={false}
+                mostrarJavaScript={false}
+                mostrarBotones={false}
+              />
+              {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
+              <PieBotonesModal editando={!!rolEditando} onGuardar={() => guardarRol(false)} onGuardarYSalir={() => guardarRol(true)} onCerrar={() => setModalRol(false)} cargando={guardando} />
+            </div>
+          )}
+
+          {/* Tab Programación — rol */}
+          {tabModalRol === 'programacion' && rolEditando && (
+            <div className="flex flex-col gap-3">
+              <TabPrompts
+                tabla="roles"
+                pkColumna="id_rol"
+                pkValor={String(rolEditando.id_rol)}
+                campos={{
+                  prompt: formRol.prompt,
+                  system_prompt: formRol.system_prompt,
+                  python: formRol.python,
+                  javascript: formRol.javascript,
+                  python_editado_manual: formRol.python_editado_manual,
+                  javascript_editado_manual: formRol.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setFormRol({ ...formRol, [c]: v })}
+                mostrarPrompt={true}
+                mostrarSystemPrompt={false}
+                mostrarPython={true}
+                mostrarJavaScript={false}
               />
               {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
               <PieBotonesModal editando={!!rolEditando} onGuardar={() => guardarRol(false)} onGuardarYSalir={() => guardarRol(true)} onCerrar={() => setModalRol(false)} cargando={guardando} />
@@ -1028,18 +1058,6 @@ export default function PaginaRoles() {
           )}
         </div>
       </Modal>
-
-      {/* ── MODAL EDITOR CONTEXTO ROL ── */}
-      {rolContexto && (
-        <ModalEditorPrompts
-          abierto={!!rolContexto}
-          onCerrar={() => setRolContexto(null)}
-          tabla="roles"
-          pkColumna="id_rol"
-          pkValor={rolContexto.id_rol}
-          titulo={rolContexto.nombre}
-        />
-      )}
 
       {/* Modal Confirmar Eliminación */}
       <ModalConfirmar

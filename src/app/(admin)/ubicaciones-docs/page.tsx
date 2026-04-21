@@ -33,7 +33,7 @@ export default function PaginaUbicacionesDocs() {
   // ── Modal CRUD ────────────────────────────────────────────────────────────
   const [modal, setModal] = useState(false)
   const [editando, setEditando] = useState<UbicacionDoc | null>(null)
-  const [tabModal, setTabModal] = useState<'datos' | 'prompts'>('datos')
+  const [tabModal, setTabModal] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
   const [form, setForm] = useState({
     codigo_ubicacion: '',
     nombre_ubicacion: '',
@@ -687,7 +687,7 @@ export default function PaginaUbicacionesDocs() {
           {/* Tabs — siempre en edición */}
           {editando && (
             <div className="flex border-b border-borde">
-              {(['datos', 'prompts'] as const).map((tab) => (
+              {(['datos', 'system_prompt', 'programacion'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setTabModal(tab)}
@@ -697,7 +697,7 @@ export default function PaginaUbicacionesDocs() {
                       : 'text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {tab === 'datos' ? 'Datos' : 'Prompts'}
+                  {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : 'Programación'}
                 </button>
               ))}
             </div>
@@ -760,8 +760,8 @@ export default function PaginaUbicacionesDocs() {
             </div>
           )}
 
-          {/* Tab Prompts */}
-          {tabModal === 'prompts' && editando && (
+          {/* Tab System Prompt */}
+          {tabModal === 'system_prompt' && editando && (
             <TabPrompts
               tabla="ubicaciones_docs"
               pkColumna="codigo_ubicacion"
@@ -775,6 +775,33 @@ export default function PaginaUbicacionesDocs() {
                 javascript_editado_manual: form.javascript_editado_manual,
               }}
               onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+              mostrarPrompt={false}
+              mostrarSystemPrompt={true}
+              mostrarPython={false}
+              mostrarJavaScript={false}
+              mostrarBotones={false}
+            />
+          )}
+
+          {/* Tab Programación */}
+          {tabModal === 'programacion' && editando && (
+            <TabPrompts
+              tabla="ubicaciones_docs"
+              pkColumna="codigo_ubicacion"
+              pkValor={editando.codigo_ubicacion}
+              campos={{
+                prompt: form.prompt,
+                system_prompt: form.system_prompt,
+                python: form.python,
+                javascript: form.javascript,
+                python_editado_manual: form.python_editado_manual,
+                javascript_editado_manual: form.javascript_editado_manual,
+              }}
+              onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+              mostrarPrompt={true}
+              mostrarSystemPrompt={false}
+              mostrarPython={true}
+              mostrarJavaScript={false}
             />
           )}
 

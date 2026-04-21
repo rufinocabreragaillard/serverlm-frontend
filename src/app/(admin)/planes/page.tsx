@@ -11,7 +11,7 @@ import { TabPrompts } from '@/components/ui/tab-prompts'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { planesApi, type Plan } from '@/lib/api'
 
-type TabModal = 'datos' | 'features' | 'prompts'
+type TabModal = 'datos' | 'features' | 'system_prompt' | 'programacion'
 
 const PLAN_VACIO: Partial<Plan> = {
   codigo_plan: '',
@@ -176,7 +176,10 @@ export default function PaginaPlanes() {
               {([
                 { key: 'datos', label: 'Datos' },
                 { key: 'features', label: 'Features' },
-                ...(editando ? [{ key: 'prompts' as TabModal, label: 'Prompts' }] : []),
+                ...(editando ? [
+                  { key: 'system_prompt' as TabModal, label: 'System Prompt' },
+                  { key: 'programacion' as TabModal, label: 'Programación' },
+                ] : []),
               ] as { key: TabModal; label: string }[]).map((t) => (
                 <button
                   key={t.key}
@@ -278,7 +281,7 @@ export default function PaginaPlanes() {
               </div>
             )}
 
-            {tab === 'prompts' && editando && (
+            {tab === 'system_prompt' && editando && (
               <div className="flex flex-col gap-3">
                 <TabPrompts
                   tabla="planes_clientes"
@@ -293,6 +296,36 @@ export default function PaginaPlanes() {
                     javascript_editado_manual: form.javascript_editado_manual ?? false,
                   }}
                   onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+                  mostrarPrompt={false}
+                  mostrarSystemPrompt={true}
+                  mostrarPython={false}
+                  mostrarJavaScript={false}
+                  mostrarBotones={false}
+                />
+                {error && <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-sm text-error">{error}</div>}
+                <PieBotonesModal editando={!!editando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModal(false)} cargando={guardando} />
+              </div>
+            )}
+
+            {tab === 'programacion' && editando && (
+              <div className="flex flex-col gap-3">
+                <TabPrompts
+                  tabla="planes_clientes"
+                  pkColumna="codigo_plan"
+                  pkValor={editando.codigo_plan}
+                  campos={{
+                    prompt: form.prompt ?? null,
+                    system_prompt: form.system_prompt ?? null,
+                    python: form.python ?? null,
+                    javascript: form.javascript ?? null,
+                    python_editado_manual: form.python_editado_manual ?? false,
+                    javascript_editado_manual: form.javascript_editado_manual ?? false,
+                  }}
+                  onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+                  mostrarPrompt={true}
+                  mostrarSystemPrompt={false}
+                  mostrarPython={true}
+                  mostrarJavaScript={false}
                 />
                 {error && <div className="bg-red-50 border border-red-200 rounded px-3 py-2 text-sm text-error">{error}</div>}
                 <PieBotonesModal editando={!!editando} onGuardar={() => guardar(false)} onGuardarYSalir={() => guardar(true)} onCerrar={() => setModal(false)} cargando={guardando} />
