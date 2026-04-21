@@ -10,7 +10,7 @@ interface BotonesAccionPromptsProps {
   pkColumna: string
   pkValor: string | number | null
   tienePrompt: boolean
-  onCodigoGenerado?: (r: { python?: string | null; javascript?: string | null }) => void
+  onCodigoGenerado?: (r: { python_insert?: string | null; python_update?: string | null; javascript?: string | null }) => void
   onSincronizado?: (r: { codigo_documento: number; accion: string }) => void
   onMensaje?: (m: { tipo: 'ok' | 'error'; texto: string }) => void
 }
@@ -52,7 +52,7 @@ export function BotonesAccionPrompts({
         tabla, pk_columna: pkColumna, pk_valor: String(pkValor),
         lenguaje: 'ambos', forzar: false,
       })
-      onCodigoGenerado?.({ python: res.python, javascript: res.javascript })
+      onCodigoGenerado?.({ python_insert: res.python_insert, python_update: res.python_update, javascript: res.javascript })
       onMensaje?.({ tipo: 'ok', texto: 'Código Python y JavaScript generado desde el prompt.' })
     } catch (e: unknown) {
       const err = e as { message?: string; response?: { data?: { detail?: string } } }

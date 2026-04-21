@@ -35,7 +35,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [catEditando, setCatEditando] = useState<CategoriaProceso | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '',
-    prompt: '', system_prompt: '',
+    prompt_insert: '', prompt_update: '', system_prompt: '',
   })
   const [guardandoCat, setGuardandoCat] = useState(false)
   const [errorCat, setErrorCat] = useState('')
@@ -48,7 +48,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [tipoEditando, setTipoEditando] = useState<TipoProceso | null>(null)
   const [formTipo, setFormTipo] = useState({
     codigo_categoria_proceso: '', codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '',
-    prompt: '', system_prompt: '',
+    prompt_insert: '', prompt_update: '', system_prompt: '',
     orden: '', codigo_funcion: '', ayuda: '', traducir: true, tipo: 'USUARIO',
     n_parallel: '', n_parallel_inicial: '', batch_size: '', batch_timeout_seg: '',
     created_at: '', updated_at: '',
@@ -73,7 +73,8 @@ export default function PaginaProcesosDatosBasicos() {
     codigo_estado_proceso: string
     nombre_estado: string
     secuencia: number
-    prompt: string
+    prompt_insert: string
+    prompt_update: string
     system_prompt: string
     codigo_funcion: string
     n_parallel: string
@@ -84,7 +85,7 @@ export default function PaginaProcesosDatosBasicos() {
   }>({
     codigo_categoria_proceso: '', codigo_tipo_proceso: '', codigo_estado_proceso: '',
     nombre_estado: '', secuencia: 0,
-    prompt: '', system_prompt: '', codigo_funcion: '',
+    prompt_insert: '', prompt_update: '', system_prompt: '', codigo_funcion: '',
     n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
   })
   const [guardandoEst, setGuardandoEst] = useState(false)
@@ -141,7 +142,7 @@ export default function PaginaProcesosDatosBasicos() {
   // ── CRUD Categorías ────────────────────────────────────────────────────────
   const abrirNuevaCat = () => {
     setCatEditando(null)
-    setFormCat({ codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '', prompt: '', system_prompt: '' })
+    setFormCat({ codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '', prompt_insert: '', prompt_update: '', system_prompt: '' })
     setErrorCat('')
     setModalCat(true)
   }
@@ -153,7 +154,8 @@ export default function PaginaProcesosDatosBasicos() {
       nombre_categoria_proceso: c.nombre_categoria_proceso,
       descripcion_categoria_proceso: c.descripcion_categoria_proceso || '',
       alias: c.alias || '',
-      prompt: c.prompt || '',
+      prompt_insert: c.prompt_insert || '',
+      prompt_update: c.prompt_update || '',
       system_prompt: c.system_prompt || '',
     })
     setErrorCat('')
@@ -169,7 +171,8 @@ export default function PaginaProcesosDatosBasicos() {
           nombre_categoria_proceso: formCat.nombre_categoria_proceso,
           descripcion_categoria_proceso: formCat.descripcion_categoria_proceso || undefined,
           alias: formCat.alias || undefined,
-          prompt: formCat.prompt || undefined,
+          prompt_insert: formCat.prompt_insert || undefined,
+          prompt_update: formCat.prompt_update || undefined,
           system_prompt: formCat.system_prompt || undefined,
         })
       } else {
@@ -178,7 +181,8 @@ export default function PaginaProcesosDatosBasicos() {
           nombre_categoria_proceso: formCat.nombre_categoria_proceso,
           descripcion_categoria_proceso: formCat.descripcion_categoria_proceso || undefined,
           alias: formCat.alias || undefined,
-          prompt: formCat.prompt || undefined,
+          prompt_insert: formCat.prompt_insert || undefined,
+          prompt_update: formCat.prompt_update || undefined,
           system_prompt: formCat.system_prompt || undefined,
         })
       }
@@ -195,7 +199,7 @@ export default function PaginaProcesosDatosBasicos() {
     setFormTipo({
       codigo_categoria_proceso: filtroCategoria || '',
       codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '',
-      prompt: '', system_prompt: '',
+      prompt_insert: '', prompt_update: '', system_prompt: '',
       orden: '', codigo_funcion: '', ayuda: '', traducir: true, tipo: 'USUARIO',
       n_parallel: '', n_parallel_inicial: '', batch_size: '', batch_timeout_seg: '',
       created_at: '', updated_at: '',
@@ -212,7 +216,8 @@ export default function PaginaProcesosDatosBasicos() {
       nombre_tipo_proceso: t.nombre_tipo_proceso,
       descripcion_tipo_proceso: t.descripcion_tipo_proceso || '',
       alias: t.alias || '',
-      prompt: t.prompt || '',
+      prompt_insert: t.prompt_insert || '',
+      prompt_update: t.prompt_update || '',
       system_prompt: t.system_prompt || '',
       orden: t.orden != null ? String(t.orden) : '',
       codigo_funcion: t.codigo_funcion || '',
@@ -299,7 +304,8 @@ export default function PaginaProcesosDatosBasicos() {
             nombre_tipo_proceso: formTipo.nombre_tipo_proceso,
             descripcion_tipo_proceso: formTipo.descripcion_tipo_proceso || undefined,
             alias: formTipo.alias || undefined,
-            prompt: formTipo.prompt || undefined,
+            prompt_insert: formTipo.prompt_insert || undefined,
+            prompt_update: formTipo.prompt_update || undefined,
             system_prompt: formTipo.system_prompt || undefined,
           }
         )
@@ -310,7 +316,8 @@ export default function PaginaProcesosDatosBasicos() {
           nombre_tipo_proceso: formTipo.nombre_tipo_proceso,
           descripcion_tipo_proceso: formTipo.descripcion_tipo_proceso || undefined,
           alias: formTipo.alias || undefined,
-          prompt: formTipo.prompt || undefined,
+          prompt_insert: formTipo.prompt_insert || undefined,
+          prompt_update: formTipo.prompt_update || undefined,
           system_prompt: formTipo.system_prompt || undefined,
         })
       }
@@ -320,7 +327,7 @@ export default function PaginaProcesosDatosBasicos() {
         setFormTipo({
           codigo_categoria_proceso: formTipo.codigo_categoria_proceso,
           codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '',
-          alias: '', prompt: '', system_prompt: '',
+          alias: '', prompt_insert: '', prompt_update: '', system_prompt: '',
         })
       }
       cargarTipos()
@@ -337,7 +344,7 @@ export default function PaginaProcesosDatosBasicos() {
       codigo_tipo_proceso: filtroTipo || '',
       codigo_estado_proceso: '',
       nombre_estado: '', secuencia: 0,
-      prompt: '', system_prompt: '', codigo_funcion: '',
+      prompt_insert: '', prompt_update: '', system_prompt: '', codigo_funcion: '',
       n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
     })
     setErrorEst('')
@@ -352,7 +359,8 @@ export default function PaginaProcesosDatosBasicos() {
       codigo_estado_proceso: e.codigo_estado_proceso,
       nombre_estado: e.nombre_estado,
       secuencia: e.secuencia,
-      prompt: e.prompt || '',
+      prompt_insert: e.prompt_insert || '',
+      prompt_update: e.prompt_update || '',
       system_prompt: e.system_prompt || '',
       codigo_funcion: e.codigo_funcion || '',
       n_parallel: e.n_parallel != null ? String(e.n_parallel) : '',
@@ -378,7 +386,8 @@ export default function PaginaProcesosDatosBasicos() {
           {
             nombre_estado: formEst.nombre_estado,
             secuencia: formEst.secuencia,
-            prompt: formEst.prompt || undefined,
+            prompt_insert: formEst.prompt_insert || undefined,
+            prompt_update: formEst.prompt_update || undefined,
             system_prompt: formEst.system_prompt || undefined,
             codigo_funcion: formEst.codigo_funcion || undefined,
             n_parallel: toInt(formEst.n_parallel),
@@ -395,7 +404,8 @@ export default function PaginaProcesosDatosBasicos() {
           codigo_estado_proceso: formEst.codigo_estado_proceso || undefined,
           nombre_estado: formEst.nombre_estado,
           secuencia: formEst.secuencia,
-          prompt: formEst.prompt || undefined,
+          prompt_insert: formEst.prompt_insert || undefined,
+          prompt_update: formEst.prompt_update || undefined,
           system_prompt: formEst.system_prompt || undefined,
           codigo_funcion: formEst.codigo_funcion || undefined,
           n_parallel: toInt(formEst.n_parallel),
@@ -958,8 +968,8 @@ export default function PaginaProcesosDatosBasicos() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-texto">Prompt</label>
-                <textarea value={formCat.prompt}
-                  onChange={(e) => setFormCat({ ...formCat, prompt: e.target.value })}
+                <textarea value={formCat.prompt_insert}
+                  onChange={(e) => setFormCat({ ...formCat, prompt_insert: e.target.value })}
                   rows={catEditando ? 7 : 8}
                   placeholder="Prompt de la categoría"
                   className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
@@ -1018,8 +1028,8 @@ export default function PaginaProcesosDatosBasicos() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-texto">Prompt</label>
-                <textarea value={formTipo.prompt}
-                  onChange={(e) => setFormTipo({ ...formTipo, prompt: e.target.value })}
+                <textarea value={formTipo.prompt_insert}
+                  onChange={(e) => setFormTipo({ ...formTipo, prompt_insert: e.target.value })}
                   rows={tipoEditando ? 7 : 8}
                   placeholder="Prompt del tipo de proceso"
                   className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
@@ -1168,8 +1178,8 @@ export default function PaginaProcesosDatosBasicos() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-texto">Prompt</label>
-            <textarea value={formEst.prompt}
-              onChange={(e) => setFormEst({ ...formEst, prompt: e.target.value })}
+            <textarea value={formEst.prompt_insert}
+              onChange={(e) => setFormEst({ ...formEst, prompt_insert: e.target.value })}
               rows={3}
               placeholder="Prompt específico del estado"
               className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />

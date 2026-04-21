@@ -122,7 +122,8 @@ export default function PaginaUsuarios() {
     codigo_area: '',
     aplicacion_por_defecto: '',
     invitar: true,
-    prompt: '',
+    prompt_insert: '',
+    prompt_update: '',
     fecha_inicial: '',
     fecha_final: '',
   })
@@ -232,7 +233,7 @@ export default function PaginaUsuarios() {
   const abrirNuevo = () => {
     setUsuarioEditando(null)
     setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '', tipo: 'USUARIO', id_rol_principal: '',
-      grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '', aplicacion_por_defecto: '', invitar: true, prompt: '', fecha_inicial: '', fecha_final: '' })
+      grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '', aplicacion_por_defecto: '', invitar: true, prompt_insert: '', prompt_update: '', fecha_inicial: '', fecha_final: '' })
     setError('')
     setGuardando(false)
     setTabActiva('datos')
@@ -258,7 +259,8 @@ export default function PaginaUsuarios() {
       codigo_area: u.codigo_area || '',
       aplicacion_por_defecto: u.aplicacion_por_defecto || '',
       invitar: false,
-      prompt: u.prompt || '',
+      prompt_insert: u.prompt_insert || '',
+      prompt_update: u.prompt_update || '',
       fecha_inicial: u.fecha_inicial || '',
       fecha_final: u.fecha_final || '',
     })
@@ -299,7 +301,8 @@ export default function PaginaUsuarios() {
           entidad_por_defecto: form.entidad_por_defecto || undefined,
           codigo_area: form.codigo_area || undefined,
           aplicacion_por_defecto: form.aplicacion_por_defecto || undefined,
-          prompt: form.prompt || undefined,
+          prompt_insert: form.prompt_insert || undefined,
+          prompt_update: form.prompt_update || undefined,
           fecha_inicial: form.fecha_inicial || undefined,
           fecha_final: form.fecha_final || undefined,
         })

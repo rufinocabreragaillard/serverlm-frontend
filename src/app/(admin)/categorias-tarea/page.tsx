@@ -27,7 +27,8 @@ type FormCategoriaTarea = {
   ayuda: string
   generacion: string
   programa: string
-  prompt: string
+  prompt_insert: string
+  prompt_update: string
   system_prompt: string
 }
 
@@ -40,7 +41,8 @@ const FORM_INICIAL: FormCategoriaTarea = {
   ayuda: '',
   generacion: '',
   programa: '',
-  prompt: '',
+  prompt_insert: '',
+  prompt_update: '',
   system_prompt: '',
 }
 
@@ -57,7 +59,8 @@ export default function PaginaCategoriasTarea() {
         ayuda: f.ayuda.trim() || undefined,
         generacion: f.generacion.trim() || undefined,
         programa: f.programa.trim() || undefined,
-        prompt: f.prompt.trim() || undefined,
+        prompt_insert: f.prompt_insert.trim() || undefined,
+        prompt_update: f.prompt_update.trim() || undefined,
         system_prompt: f.system_prompt.trim() || undefined,
       }) as Promise<CategoriaTarea>,
     actualizarFn: (id, f) =>
@@ -67,7 +70,8 @@ export default function PaginaCategoriasTarea() {
         ayuda: f.ayuda?.trim() || undefined,
         generacion: f.generacion?.trim() || undefined,
         programa: f.programa?.trim() || undefined,
-        prompt: f.prompt?.trim() || undefined,
+        prompt_insert: f.prompt_insert?.trim() || undefined,
+        prompt_update: f.prompt_update?.trim() || undefined,
         system_prompt: f.system_prompt?.trim() || undefined,
       }) as Promise<CategoriaTarea>,
     eliminarFn: async (id) => { await tareasDatosBasicosApi.eliminarCategoria(id) },
@@ -81,7 +85,8 @@ export default function PaginaCategoriasTarea() {
       ayuda: (c as any).ayuda ?? '',
       generacion: (c as any).generacion ?? '',
       programa: (c as any).programa ?? '',
-      prompt: (c as any).prompt ?? '',
+      prompt_insert: (c as any).prompt_insert ?? '',
+      prompt_update: (c as any).prompt_update ?? '',
       system_prompt: (c as any).system_prompt ?? '',
     }),
   })
@@ -229,8 +234,8 @@ export default function PaginaCategoriasTarea() {
           {tabModal === 'prompt' && (
             <Textarea
               etiqueta="Prompt"
-              value={crud.form.prompt}
-              onChange={(e) => crud.updateForm('prompt', e.target.value)}
+              value={crud.form.prompt_insert}
+              onChange={(e) => crud.updateForm('prompt_insert', e.target.value)}
               placeholder="Prompt principal para el LLM..."
               rows={14}
             />
