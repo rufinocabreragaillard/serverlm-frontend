@@ -5,9 +5,10 @@ import { Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
-import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
+import { Tabla, TablaCabecera, TablaCuerpo, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Insignia } from '@/components/ui/insignia'
 import { TabPrompts, type CamposPrompt } from '@/components/ui/tab-prompts'
+import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
 import { datosBasicosApi } from '@/lib/api'
 import type { CategoriaParametro, TipoParametro } from '@/lib/tipos'
 import { BotonChat } from '@/components/ui/boton-chat'
@@ -65,6 +66,32 @@ export default function PaginaParametrosGenerales() {
     try { setTipos(await datosBasicosApi.listarTipos()) }
     finally { setCargandoTipo(false) }
   }, [])
+
+  // ── Reordenar ─────────────────────────────────────────────────────────────
+  const reordenarCategorias = async (nuevas: CategoriaParametro[]) => {
+    const conOrden = nuevas.map((c, idx) => ({ ...c, orden: idx + 1 }))
+    setCategorias(conOrden)
+    try {
+      await datosBasicosApi.reordenarCategorias(
+        conOrden.map((c) => ({ categoria_parametro: c.categoria_parametro, orden: c.orden ?? 0 }))
+      )
+    } catch { cargarCategorias() }
+  }
+
+  const reordenarTipos = async (nuevos: TipoParametro[]) => {
+    const conOrden = nuevos.map((t, idx) => ({ ...t, orden: idx + 1 }))
+    if (filtroCategoria) {
+      const resto = tipos.filter((t) => t.categoria_parametro !== filtroCategoria)
+      setTipos([...resto, ...conOrden])
+    } else {
+      setTipos(conOrden)
+    }
+    try {
+      await datosBasicosApi.reordenarTipos(
+        conOrden.map((t) => ({ categoria_parametro: t.categoria_parametro, tipo_parametro: t.tipo_parametro, orden: t.orden ?? 0 }))
+      )
+    } catch { cargarTipos() }
+  }
 
   useEffect(() => { cargarCategorias(); cargarTipos() }, [cargarCategorias, cargarTipos])
 
@@ -159,31 +186,42 @@ export default function PaginaParametrosGenerales() {
           ) : (
             <Tabla>
               <TablaCabecera><tr>
+                <TablaTh className="w-8"></TablaTh>
+                <TablaTh className="w-10">#</TablaTh>
                 <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Estado</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr></TablaCabecera>
               <TablaCuerpo>
                 {categorias.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={5 as never}>No hay categorías registradas</TablaTd></TablaFila>
-                ) : categorias.map((c) => (
-                  <TablaFila key={c.categoria_parametro}
-                    onDoubleClick={() => { setFiltroCategoria(c.categoria_parametro); setTabActiva('tipos') }}
+                  <tr><TablaTd className="text-center text-texto-muted py-8" colSpan={7 as never}>No hay categorías registradas</TablaTd></tr>
+                ) : (
+                  <SortableDndContext
+                    items={categorias as unknown as Record<string, unknown>[]}
+                    getId={(item) => (item as unknown as CategoriaParametro).categoria_parametro}
+                    onReorder={(items) => reordenarCategorias(items as unknown as CategoriaParametro[])}
                   >
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.categoria_parametro}</code></TablaTd>
-                    <TablaTd className="font-medium">{c.nombre}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{c.descripcion || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd>
-                      <Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                    </TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => { setFiltroCategoria(c.categoria_parametro); setTabActiva('tipos') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver tipos"><Eye size={14} /></button>
-                        <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => setItemAEliminar({ tipo: 'categoria', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
+                    {categorias.map((c, idx) => (
+                      <SortableRow key={c.categoria_parametro} id={c.categoria_parametro}
+                        onDoubleClick={() => { setFiltroCategoria(c.categoria_parametro); setTabActiva('tipos') }}
+                      >
+                        <TablaTd className="text-xs text-texto-muted w-10 text-center">{c.orden ?? idx + 1}</TablaTd>
+                        <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.categoria_parametro}</code></TablaTd>
+                        <TablaTd className="font-medium">{c.nombre}</TablaTd>
+                        <TablaTd className="text-texto-muted text-sm">{c.descripcion || <span className="text-texto-light">—</span>}</TablaTd>
+                        <TablaTd>
+                          <Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia>
+                        </TablaTd>
+                        <TablaTd>
+                          <div className="flex items-center justify-end gap-1">
+                            <button onClick={() => { setFiltroCategoria(c.categoria_parametro); setTabActiva('tipos') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver tipos"><Eye size={14} /></button>
+                            <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                            <button onClick={() => setItemAEliminar({ tipo: 'categoria', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                          </div>
+                        </TablaTd>
+                      </SortableRow>
+                    ))}
+                  </SortableDndContext>
+                )}
               </TablaCuerpo>
             </Tabla>
           )}
@@ -215,30 +253,41 @@ export default function PaginaParametrosGenerales() {
           ) : (
             <Tabla>
               <TablaCabecera><tr>
+                <TablaTh className="w-8"></TablaTh>
+                <TablaTh className="w-10">#</TablaTh>
                 <TablaTh>Categoría</TablaTh><TablaTh>Código tipo</TablaTh><TablaTh>Nombre</TablaTh>
                 <TablaTh>Descripción</TablaTh><TablaTh>Estado</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr></TablaCabecera>
               <TablaCuerpo>
                 {tiposFiltrados.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={6 as never}>No hay tipos registrados</TablaTd></TablaFila>
-                ) : tiposFiltrados.map((t) => (
-                  <TablaFila key={`${t.categoria_parametro}/${t.tipo_parametro}`}>
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.categoria_parametro}</code></TablaTd>
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.tipo_parametro}</code></TablaTd>
-                    <TablaTd className="font-medium">{t.nombre}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{t.descripcion || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd>
-                      <Insignia variante={t.activo ? 'exito' : 'error'}>{t.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                    </TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => setItemAEliminar({ tipo: 'tipoparam', item: t })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
+                  <tr><TablaTd className="text-center text-texto-muted py-8" colSpan={8 as never}>No hay tipos registrados</TablaTd></tr>
+                ) : (
+                  <SortableDndContext
+                    items={tiposFiltrados as unknown as Record<string, unknown>[]}
+                    getId={(item) => { const t = item as unknown as TipoParametro; return `${t.categoria_parametro}/${t.tipo_parametro}` }}
+                    onReorder={(items) => reordenarTipos(items as unknown as TipoParametro[])}
+                  >
+                    {tiposFiltrados.map((t, idx) => (
+                      <SortableRow key={`${t.categoria_parametro}/${t.tipo_parametro}`} id={`${t.categoria_parametro}/${t.tipo_parametro}`}>
+                        <TablaTd className="text-xs text-texto-muted w-10 text-center">{t.orden ?? idx + 1}</TablaTd>
+                        <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.categoria_parametro}</code></TablaTd>
+                        <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.tipo_parametro}</code></TablaTd>
+                        <TablaTd className="font-medium">{t.nombre}</TablaTd>
+                        <TablaTd className="text-texto-muted text-sm">{t.descripcion || <span className="text-texto-light">—</span>}</TablaTd>
+                        <TablaTd>
+                          <Insignia variante={t.activo ? 'exito' : 'error'}>{t.activo ? 'Activo' : 'Inactivo'}</Insignia>
+                        </TablaTd>
+                        <TablaTd>
+                          <div className="flex items-center justify-end gap-1">
+                            <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                            <button onClick={() => setItemAEliminar({ tipo: 'tipoparam', item: t })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                          </div>
+                        </TablaTd>
+                      </SortableRow>
+                    ))}
+                  </SortableDndContext>
+                )}
               </TablaCuerpo>
             </Tabla>
           )}

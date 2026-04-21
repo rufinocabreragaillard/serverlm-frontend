@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/modal'
 import { Tarjeta, TarjetaContenido } from '@/components/ui/tarjeta'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { gruposApi, usuariosApi, entidadesApi } from '@/lib/api'
+import { SortableDndContext, SortableListItem } from '@/components/ui/sortable'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { useAuth } from '@/context/AuthContext'
 import type { Grupo, Entidad, Usuario } from '@/lib/tipos'
@@ -111,6 +112,24 @@ export default function PaginaGrupos() {
       setCargando(false)
     }
   }, [grupoSeleccionado])
+
+  const reordenarGrupos = async (nuevos: Grupo[]) => {
+    const conOrden = nuevos.map((g, idx) => ({ ...g, orden: idx + 1 }))
+    const filtrados = grupos.filter((g) =>
+      busquedaGrupos.length === 0 ||
+      g.nombre.toLowerCase().includes(busquedaGrupos.toLowerCase()) ||
+      g.codigo_grupo.toLowerCase().includes(busquedaGrupos.toLowerCase())
+    )
+    if (busquedaGrupos) {
+      const resto = grupos.filter((g) => !filtrados.find((f) => f.codigo_grupo === g.codigo_grupo))
+      setGrupos([...resto, ...conOrden])
+    } else {
+      setGrupos(conOrden)
+    }
+    try {
+      await gruposApi.reordenar(conOrden.map((g) => ({ codigo_grupo: g.codigo_grupo, orden: g.orden ?? 0 })))
+    } catch { cargar() }
+  }
 
   const cargarDetalle = useCallback(async (codigoGrupo: string) => {
     setCargandoDetalle(true)
@@ -479,49 +498,57 @@ export default function PaginaGrupos() {
                     <div key={i} className="h-16 bg-surface border border-borde rounded-xl animate-pulse" />
                   ))}
                 </div>
-              ) : grupos.filter((g) =>
-                busquedaGrupos.length === 0 ||
-                g.nombre.toLowerCase().includes(busquedaGrupos.toLowerCase()) ||
-                g.codigo_grupo.toLowerCase().includes(busquedaGrupos.toLowerCase())
-              ).sort((a, b) => {
-                const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'TEST' ? 1 : n === 'ADMINISTRADOR' ? 2 : 3 }
-                const dt = peso(a.tipo) - peso(b.tipo)
-                return dt !== 0 ? dt : a.nombre.localeCompare(b.nombre)
-              }).map((g) => (
-                <button
-                  key={g.codigo_grupo}
-                  onClick={() => setGrupoSeleccionado(g)}
-                  onDoubleClick={() => { setGrupoSeleccionado(g); setTabPrincipal('entidades') }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
-                    grupoSeleccionado?.codigo_grupo === g.codigo_grupo
-                      ? 'border-primario bg-primario-muy-claro'
-                      : 'border-borde bg-surface hover:bg-fondo'
-                  }`}
-                >
-                  <div className={`p-2 rounded-lg ${
-                    grupoSeleccionado?.codigo_grupo === g.codigo_grupo
-                      ? 'bg-primario text-primario-texto'
-                      : 'bg-fondo text-texto-muted'
-                  }`}>
-                    <Layers size={16} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-texto truncate">{g.nombre}</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-texto-muted">{g.codigo_grupo}</p>
-                      <Insignia variante={varianteTipo(g.tipo)}>{etiquetaTipo(g.tipo)}</Insignia>
-                    </div>
-                  </div>
-                  <div className="ml-auto flex gap-1">
-                    <button onClick={(ev) => { ev.stopPropagation(); setGrupoSeleccionado(g); setTabPrincipal('entidades') }} className="p-1 rounded hover:bg-white text-texto-muted hover:text-primario transition-colors" title="Ver entidades">
-                      <Eye size={13} />
-                    </button>
-                    <button onClick={(ev) => { ev.stopPropagation(); abrirEditarGrupo(g) }} className="p-1 rounded hover:bg-white text-texto-muted hover:text-primario transition-colors">
-                      <Pencil size={13} />
-                    </button>
-                  </div>
-                </button>
-              ))}
+              ) : (() => {
+                const gruposFiltrados = grupos.filter((g) =>
+                  busquedaGrupos.length === 0 ||
+                  g.nombre.toLowerCase().includes(busquedaGrupos.toLowerCase()) ||
+                  g.codigo_grupo.toLowerCase().includes(busquedaGrupos.toLowerCase())
+                )
+                return (
+                  <SortableDndContext
+                    items={gruposFiltrados as unknown as Record<string, unknown>[]}
+                    getId={(item) => (item as unknown as Grupo).codigo_grupo}
+                    onReorder={(items) => reordenarGrupos(items as unknown as Grupo[])}
+                  >
+                    {gruposFiltrados.map((g) => (
+                      <SortableListItem key={g.codigo_grupo} id={g.codigo_grupo} className="flex items-center gap-1">
+                        <button
+                          onClick={() => setGrupoSeleccionado(g)}
+                          onDoubleClick={() => { setGrupoSeleccionado(g); setTabPrincipal('entidades') }}
+                          className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
+                            grupoSeleccionado?.codigo_grupo === g.codigo_grupo
+                              ? 'border-primario bg-primario-muy-claro'
+                              : 'border-borde bg-surface hover:bg-fondo'
+                          }`}
+                        >
+                          <div className={`p-2 rounded-lg ${
+                            grupoSeleccionado?.codigo_grupo === g.codigo_grupo
+                              ? 'bg-primario text-primario-texto'
+                              : 'bg-fondo text-texto-muted'
+                          }`}>
+                            <Layers size={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-texto truncate">{g.nombre}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-texto-muted">{g.codigo_grupo}</p>
+                              <Insignia variante={varianteTipo(g.tipo)}>{etiquetaTipo(g.tipo)}</Insignia>
+                            </div>
+                          </div>
+                          <div className="ml-auto flex gap-1">
+                            <button onClick={(ev) => { ev.stopPropagation(); setGrupoSeleccionado(g); setTabPrincipal('entidades') }} className="p-1 rounded hover:bg-white text-texto-muted hover:text-primario transition-colors" title="Ver entidades">
+                              <Eye size={13} />
+                            </button>
+                            <button onClick={(ev) => { ev.stopPropagation(); abrirEditarGrupo(g) }} className="p-1 rounded hover:bg-white text-texto-muted hover:text-primario transition-colors">
+                              <Pencil size={13} />
+                            </button>
+                          </div>
+                        </button>
+                      </SortableListItem>
+                    ))}
+                  </SortableDndContext>
+                )
+              })()}
             </div>
 
             {/* Detalle del grupo seleccionado */}

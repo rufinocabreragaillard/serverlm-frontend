@@ -10,6 +10,7 @@ import { TabPrompts } from '@/components/ui/tab-prompts'
 import { Modal } from '@/components/ui/modal'
 import { Insignia } from '@/components/ui/insignia'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
+import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
 import { entidadesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Entidad, Area } from '@/lib/tipos'
@@ -54,6 +55,16 @@ export default function PaginaEntidades() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entidadSeleccionada])
+
+  const reordenarEntidades = async (nuevas: Entidad[]) => {
+    const conOrden = nuevas.map((e, idx) => ({ ...e, orden: idx + 1 }))
+    setEntidades(conOrden)
+    try {
+      await entidadesApi.reordenar(
+        conOrden.map((e) => ({ codigo_grupo: e.codigo_grupo || grupoActivo || '', codigo_entidad: e.codigo_entidad, orden: e.orden ?? 0 }))
+      )
+    } catch { cargar() }
+  }
 
   const cargarAreas = useCallback(async (codigoEntidad: string) => {
     setCargandoAreas(true)
@@ -189,27 +200,38 @@ export default function PaginaEntidades() {
           ) : (
             <Tabla>
               <TablaCabecera><tr>
+                <TablaTh className="w-8"></TablaTh>
+                <TablaTh className="w-10">#</TablaTh>
                 <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh>
                 <TablaTh className="text-right">Acciones</TablaTh>
               </tr></TablaCabecera>
               <TablaCuerpo>
                 {entidades.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={4 as never}>No hay entidades registradas</TablaTd></TablaFila>
-                ) : entidades.map((e) => (
-                  <TablaFila key={e.codigo_entidad}
-                    onDoubleClick={() => { setEntidadSeleccionada(e); setTabActiva('areas') }}
+                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={6 as never}>No hay entidades registradas</TablaTd></TablaFila>
+                ) : (
+                  <SortableDndContext
+                    items={entidades as unknown as Record<string, unknown>[]}
+                    getId={(item) => (item as unknown as Entidad).codigo_entidad}
+                    onReorder={(items) => reordenarEntidades(items as unknown as Entidad[])}
                   >
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_entidad}</code></TablaTd>
-                    <TablaTd className="font-medium">{e.nombre}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{e.descripcion || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => { setEntidadSeleccionada(e); setTabActiva('areas') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver áreas"><Eye size={14} /></button>
-                        <button onClick={() => abrirEditarEntidad(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
+                    {entidades.map((e, idx) => (
+                      <SortableRow key={e.codigo_entidad} id={e.codigo_entidad}
+                        onDoubleClick={() => { setEntidadSeleccionada(e); setTabActiva('areas') }}
+                      >
+                        <TablaTd className="text-xs text-texto-muted w-10 text-center">{e.orden ?? idx + 1}</TablaTd>
+                        <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_entidad}</code></TablaTd>
+                        <TablaTd className="font-medium">{e.nombre}</TablaTd>
+                        <TablaTd className="text-texto-muted text-sm">{e.descripcion || <span className="text-texto-light">—</span>}</TablaTd>
+                        <TablaTd>
+                          <div className="flex items-center justify-end gap-1">
+                            <button onClick={() => { setEntidadSeleccionada(e); setTabActiva('areas') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver áreas"><Eye size={14} /></button>
+                            <button onClick={() => abrirEditarEntidad(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                          </div>
+                        </TablaTd>
+                      </SortableRow>
+                    ))}
+                  </SortableDndContext>
+                )}
               </TablaCuerpo>
             </Tabla>
           )}

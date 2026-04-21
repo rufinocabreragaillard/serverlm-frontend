@@ -394,6 +394,8 @@ export const entidadesApi = {
     api.get<{ codigo_usuario: string; usuarios: { nombre_usuario: string; activo: boolean } }[]>(
       `/entidades/${id}/usuarios`, { params: codigoGrupo ? { codigo_grupo: codigoGrupo } : {} }
     ).then((r) => r.data),
+  reordenar: (items: { codigo_grupo: string; codigo_entidad: string; orden: number }[]) =>
+    api.put('/entidades/reordenar', items).then((r) => r.data),
 }
 
 // ─── Grupos de Entidades ──────────────────────────────────────────────────────
@@ -415,6 +417,8 @@ export const gruposApi = {
     api.get(`/grupos/${id}/usuarios`).then((r) => r.data),
   quitarUsuario: (id: string, codigoUsuario: string) =>
     api.delete(`/grupos/${id}/usuarios/${codigoUsuario}`),
+  reordenar: (items: { codigo_grupo: string; orden: number }[]) =>
+    api.put('/grupos/reordenar', items).then((r) => r.data),
 }
 
 // ─── Parámetros ───────────────────────────────────────────────────────────────
@@ -465,6 +469,9 @@ export const datosBasicosApi = {
   eliminarCategoria: (categoria: string) =>
     api.delete(`/datos-basicos/categorias/${categoria}`),
 
+  reordenarCategorias: (items: { categoria_parametro: string; orden: number }[]) =>
+    api.put('/datos-basicos/categorias/reordenar', items).then((r) => r.data),
+
   listarTipos: (categoria?: string) =>
     api.get<TipoParametro[]>('/datos-basicos/tipos', { params: categoria ? { categoria } : {} }).then((r) => r.data),
   crearTipo: (datos: Partial<TipoParametro>) =>
@@ -473,6 +480,8 @@ export const datosBasicosApi = {
     api.put<TipoParametro>(`/datos-basicos/tipos/${categoria}/${tipo}`, datos).then((r) => r.data),
   eliminarTipo: (categoria: string, tipo: string) =>
     api.delete(`/datos-basicos/tipos/${categoria}/${tipo}`),
+  reordenarTipos: (items: { categoria_parametro: string; tipo_parametro: string; orden: number }[]) =>
+    api.put('/datos-basicos/tipos/reordenar', items).then((r) => r.data),
 }
 
 // ─── Documentos ──────────────────────────────────────────────────────────────
