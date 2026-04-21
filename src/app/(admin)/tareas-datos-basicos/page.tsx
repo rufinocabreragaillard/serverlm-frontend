@@ -10,6 +10,7 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
+import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
 import { TabPrompts, type CamposPrompt } from '@/components/ui/tab-prompts'
 import { tareasDatosBasicosApi } from '@/lib/api'
 import type { CategoriaTarea, TipoTarea, EstadoTarea, EstadoCanonicoTarea, TipoCanonicoTarea } from '@/lib/tipos'
@@ -307,7 +308,7 @@ export default function PaginaTareasDatosBasicos() {
           nombre_estado_tarea: formEst.nombre_estado_tarea,
           descripcion_estado_tarea: formEst.descripcion_estado_tarea || undefined,
           codigo_estado_canonico: formEst.codigo_estado_canonico,
-          orden: formEst.orden,
+          // orden se auto-asigna en el backend
         })
       }
       if (cerrar) setModalEst(false)
@@ -315,6 +316,58 @@ export default function PaginaTareasDatosBasicos() {
     } catch (e) {
       setErrorEst(e instanceof Error ? e.message : 'Error al guardar')
     } finally { setGuardandoEst(false) }
+  }
+
+  // ── Reordenar ──────────────────────────────────────────────────────────────
+  const reordenarCategorias = async (nuevos: CategoriaTarea[]) => {
+    const nuevosConOrden = nuevos.map((c, idx) => ({ ...c, orden: idx + 1 }))
+    setCategorias(nuevosConOrden)
+    try {
+      await tareasDatosBasicosApi.reordenarCategorias(
+        nuevosConOrden.map((c) => ({ codigo_categoria_tarea: c.codigo_categoria_tarea, orden: c.orden ?? 0 }))
+      )
+    } catch { cargarCategorias() }
+  }
+
+  const reordenarTipos = async (nuevos: TipoTarea[]) => {
+    const nuevosConOrden = nuevos.map((t, idx) => ({ ...t, orden: idx + 1 }))
+    if (filtroCatTipo) {
+      const resto = tipos.filter((t) => t.codigo_categoria_tarea !== filtroCatTipo)
+      setTipos([...resto, ...nuevosConOrden])
+    } else {
+      setTipos(nuevosConOrden)
+    }
+    try {
+      await tareasDatosBasicosApi.reordenarTiposTar(
+        nuevosConOrden.map((t) => ({
+          codigo_categoria_tarea: t.codigo_categoria_tarea,
+          codigo_tipo_tarea: t.codigo_tipo_tarea,
+          orden: t.orden ?? 0,
+        }))
+      )
+    } catch { cargarTipos() }
+  }
+
+  const reordenarEstados = async (nuevos: EstadoTarea[]) => {
+    const nuevosConOrden = nuevos.map((e, idx) => ({ ...e, orden: idx + 1 }))
+    if (filtroCatEst || filtroTipoEst) {
+      const resto = estados.filter(
+        (e) => e.codigo_categoria_tarea !== filtroCatEst || e.codigo_tipo_tarea !== filtroTipoEst
+      )
+      setEstados([...resto, ...nuevosConOrden])
+    } else {
+      setEstados(nuevosConOrden)
+    }
+    try {
+      await tareasDatosBasicosApi.reordenarEstadosTar(
+        nuevosConOrden.map((e) => ({
+          codigo_categoria_tarea: e.codigo_categoria_tarea,
+          codigo_tipo_tarea: e.codigo_tipo_tarea,
+          codigo_estado_tarea: e.codigo_estado_tarea,
+          orden: e.orden ?? 0,
+        }))
+      )
+    } catch { cargarEstados() }
   }
 
   const toggleActivoTipo = async (t: TipoTarea) => {
@@ -464,36 +517,46 @@ export default function PaginaTareasDatosBasicos() {
 
           {cargandoCat ? (
             <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+          ) : categorias.length === 0 ? (
+            <div className="text-center text-texto-muted py-12 border border-dashed border-borde rounded-lg">No hay categorías registradas</div>
           ) : (
-            <Tabla>
-              <TablaCabecera><tr>
-                <TablaTh>Código</TablaTh><TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Estado</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
-              </tr></TablaCabecera>
-              <TablaCuerpo>
-                {categorias.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={5 as never}>No hay categorías registradas</TablaTd></TablaFila>
-                ) : categorias.map((c) => (
-                  <TablaFila key={c.codigo_categoria_tarea}
-                    onDoubleClick={() => { setFiltroCatTipo(c.codigo_categoria_tarea); setTabActiva('tipos') }}
-                  >
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_categoria_tarea}</code></TablaTd>
-                    <TablaTd className="font-medium">{c.nombre_categoria_tarea}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{c.descripcion_categoria_tarea || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd>
-                      <Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                    </TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => { setFiltroCatTipo(c.codigo_categoria_tarea); setTabActiva('tipos') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver tipos"><Eye size={14} /></button>
-                        <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => setItemAEliminar({ tipo: 'categoria', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
-              </TablaCuerpo>
-            </Tabla>
+            <SortableDndContext
+              items={categorias as unknown as Record<string, unknown>[]}
+              getId={(c) => (c as unknown as CategoriaTarea).codigo_categoria_tarea}
+              onReorder={(n) => reordenarCategorias(n as unknown as CategoriaTarea[])}
+            >
+              <Tabla>
+                <TablaCabecera><tr>
+                  <TablaTh className="w-8" />
+                  <TablaTh className="w-16 text-center">Orden</TablaTh>
+                  <TablaTh>Nombre</TablaTh><TablaTh>Descripción</TablaTh><TablaTh>Estado</TablaTh>
+                  <TablaTh className="w-48">Código</TablaTh>
+                  <TablaTh className="text-right w-28">Acciones</TablaTh>
+                </tr></TablaCabecera>
+                <TablaCuerpo>
+                  {categorias.map((c) => (
+                    <SortableRow key={c.codigo_categoria_tarea} id={c.codigo_categoria_tarea}
+                      onDoubleClick={() => { setFiltroCatTipo(c.codigo_categoria_tarea); setTabActiva('tipos') }}
+                    >
+                      <TablaTd className="text-center text-texto-muted text-sm">{c.orden ?? '—'}</TablaTd>
+                      <TablaTd className="font-medium">{c.nombre_categoria_tarea}</TablaTd>
+                      <TablaTd className="text-texto-muted text-sm">{c.descripcion_categoria_tarea || <span className="text-texto-light">—</span>}</TablaTd>
+                      <TablaTd>
+                        <Insignia variante={c.activo ? 'exito' : 'error'}>{c.activo ? 'Activo' : 'Inactivo'}</Insignia>
+                      </TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{c.codigo_categoria_tarea}</code></TablaTd>
+                      <TablaTd>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setFiltroCatTipo(c.codigo_categoria_tarea); setTabActiva('tipos') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver tipos"><Eye size={14} /></button>
+                          <button onClick={() => abrirEditarCat(c)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                          <button onClick={() => setItemAEliminar({ tipo: 'categoria', item: c })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                        </div>
+                      </TablaTd>
+                    </SortableRow>
+                  ))}
+                </TablaCuerpo>
+              </Tabla>
+            </SortableDndContext>
           )}
         </>
       )}
@@ -527,40 +590,49 @@ export default function PaginaTareasDatosBasicos() {
 
           {cargandoTipo ? (
             <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+          ) : tiposFiltrados.length === 0 ? (
+            <div className="text-center text-texto-muted py-12 border border-dashed border-borde rounded-lg">No hay tipos registrados</div>
           ) : (
-            <Tabla>
-              <TablaCabecera><tr>
-                <TablaTh>Categoría</TablaTh><TablaTh>Código tipo</TablaTh><TablaTh>Nombre</TablaTh>
-                <TablaTh>Tipo canónico</TablaTh><TablaTh>Estado</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
-              </tr></TablaCabecera>
-              <TablaCuerpo>
-                {tiposFiltrados.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={6 as never}>No hay tipos registrados</TablaTd></TablaFila>
-                ) : tiposFiltrados.map((t) => (
-                  <TablaFila key={`${t.codigo_categoria_tarea}/${t.codigo_tipo_tarea}`}
-                    onDoubleClick={() => { setFiltroCatEst(t.codigo_categoria_tarea); setFiltroTipoEst(t.codigo_tipo_tarea); setTabActiva('estados') }}
-                  >
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.codigo_categoria_tarea}</code></TablaTd>
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.codigo_tipo_tarea}</code></TablaTd>
-                    <TablaTd className="font-medium">{t.nombre_tipo_tarea}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{t.codigo_tipo_canonico || <span className="text-texto-light">—</span>}</TablaTd>
-                    <TablaTd>
-                      <button onClick={() => toggleActivoTipo(t)} title="Cambiar estado">
-                        <Insignia variante={t.activo ? 'exito' : 'error'}>{t.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                      </button>
-                    </TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => { setFiltroCatEst(t.codigo_categoria_tarea); setFiltroTipoEst(t.codigo_tipo_tarea); setTabActiva('estados') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver estados"><Eye size={14} /></button>
-                        <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => setItemAEliminar({ tipo: 'tipotarea', item: t })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
-              </TablaCuerpo>
-            </Tabla>
+            <SortableDndContext
+              items={tiposFiltrados as unknown as Record<string, unknown>[]}
+              getId={(t) => `${(t as unknown as TipoTarea).codigo_categoria_tarea}/${(t as unknown as TipoTarea).codigo_tipo_tarea}`}
+              onReorder={(n) => reordenarTipos(n as unknown as TipoTarea[])}
+            >
+              <Tabla>
+                <TablaCabecera><tr>
+                  <TablaTh className="w-8" />
+                  <TablaTh className="w-16 text-center">Orden</TablaTh>
+                  <TablaTh>Categoría</TablaTh><TablaTh>Código tipo</TablaTh><TablaTh>Nombre</TablaTh>
+                  <TablaTh>Tipo canónico</TablaTh><TablaTh>Estado</TablaTh>
+                  <TablaTh className="text-right w-28">Acciones</TablaTh>
+                </tr></TablaCabecera>
+                <TablaCuerpo>
+                  {tiposFiltrados.map((t) => (
+                    <SortableRow key={`${t.codigo_categoria_tarea}/${t.codigo_tipo_tarea}`} id={`${t.codigo_categoria_tarea}/${t.codigo_tipo_tarea}`}
+                      onDoubleClick={() => { setFiltroCatEst(t.codigo_categoria_tarea); setFiltroTipoEst(t.codigo_tipo_tarea); setTabActiva('estados') }}
+                    >
+                      <TablaTd className="text-center text-texto-muted text-sm">{t.orden ?? '—'}</TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.codigo_categoria_tarea}</code></TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{t.codigo_tipo_tarea}</code></TablaTd>
+                      <TablaTd className="font-medium">{t.nombre_tipo_tarea}</TablaTd>
+                      <TablaTd className="text-texto-muted text-sm">{t.codigo_tipo_canonico || <span className="text-texto-light">—</span>}</TablaTd>
+                      <TablaTd>
+                        <button onClick={() => toggleActivoTipo(t)} title="Cambiar estado">
+                          <Insignia variante={t.activo ? 'exito' : 'error'}>{t.activo ? 'Activo' : 'Inactivo'}</Insignia>
+                        </button>
+                      </TablaTd>
+                      <TablaTd>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => { setFiltroCatEst(t.codigo_categoria_tarea); setFiltroTipoEst(t.codigo_tipo_tarea); setTabActiva('estados') }} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Ver estados"><Eye size={14} /></button>
+                          <button onClick={() => abrirEditarTipo(t)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                          <button onClick={() => setItemAEliminar({ tipo: 'tipotarea', item: t })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                        </div>
+                      </TablaTd>
+                    </SortableRow>
+                  ))}
+                </TablaCuerpo>
+              </Tabla>
+            </SortableDndContext>
           )}
         </>
       )}
@@ -604,39 +676,47 @@ export default function PaginaTareasDatosBasicos() {
 
           {cargandoEst ? (
             <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
+          ) : estadosFiltrados.length === 0 ? (
+            <div className="text-center text-texto-muted py-12 border border-dashed border-borde rounded-lg">No hay estados registrados</div>
           ) : (
-            <Tabla>
-              <TablaCabecera><tr>
-                <TablaTh>Categoría</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Código</TablaTh>
-                <TablaTh>Nombre</TablaTh><TablaTh>Canónico</TablaTh><TablaTh>Ord.</TablaTh><TablaTh>Estado</TablaTh>
-                <TablaTh className="text-right">Acciones</TablaTh>
-              </tr></TablaCabecera>
-              <TablaCuerpo>
-                {estadosFiltrados.length === 0 ? (
-                  <TablaFila><TablaTd className="text-center text-texto-muted py-8" colSpan={8 as never}>No hay estados registrados</TablaTd></TablaFila>
-                ) : estadosFiltrados.map((e) => (
-                  <TablaFila key={`${e.codigo_categoria_tarea}/${e.codigo_tipo_tarea}/${e.codigo_estado_tarea}`}>
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_categoria_tarea}</code></TablaTd>
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_tipo_tarea}</code></TablaTd>
-                    <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_estado_tarea}</code></TablaTd>
-                    <TablaTd className="font-medium">{e.nombre_estado_tarea}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm">{e.codigo_estado_canonico}</TablaTd>
-                    <TablaTd className="text-texto-muted text-sm text-center">{e.orden}</TablaTd>
-                    <TablaTd>
-                      <button onClick={() => toggleActivoEst(e)} title="Cambiar estado">
-                        <Insignia variante={e.activo ? 'exito' : 'error'}>{e.activo ? 'Activo' : 'Inactivo'}</Insignia>
-                      </button>
-                    </TablaTd>
-                    <TablaTd>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => abrirEditarEst(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
-                        <button onClick={() => setItemAEliminar({ tipo: 'estado', item: e })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
-                      </div>
-                    </TablaTd>
-                  </TablaFila>
-                ))}
-              </TablaCuerpo>
-            </Tabla>
+            <SortableDndContext
+              items={estadosFiltrados as unknown as Record<string, unknown>[]}
+              getId={(e) => `${(e as unknown as EstadoTarea).codigo_categoria_tarea}/${(e as unknown as EstadoTarea).codigo_tipo_tarea}/${(e as unknown as EstadoTarea).codigo_estado_tarea}`}
+              onReorder={(n) => reordenarEstados(n as unknown as EstadoTarea[])}
+            >
+              <Tabla>
+                <TablaCabecera><tr>
+                  <TablaTh className="w-8" />
+                  <TablaTh className="w-16 text-center">Orden</TablaTh>
+                  <TablaTh>Categoría</TablaTh><TablaTh>Tipo</TablaTh><TablaTh>Código</TablaTh>
+                  <TablaTh>Nombre</TablaTh><TablaTh>Canónico</TablaTh><TablaTh>Estado</TablaTh>
+                  <TablaTh className="text-right w-24">Acciones</TablaTh>
+                </tr></TablaCabecera>
+                <TablaCuerpo>
+                  {estadosFiltrados.map((e) => (
+                    <SortableRow key={`${e.codigo_categoria_tarea}/${e.codigo_tipo_tarea}/${e.codigo_estado_tarea}`} id={`${e.codigo_categoria_tarea}/${e.codigo_tipo_tarea}/${e.codigo_estado_tarea}`}>
+                      <TablaTd className="text-center text-texto-muted text-sm">{e.orden}</TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_categoria_tarea}</code></TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_tipo_tarea}</code></TablaTd>
+                      <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_estado_tarea}</code></TablaTd>
+                      <TablaTd className="font-medium">{e.nombre_estado_tarea}</TablaTd>
+                      <TablaTd className="text-texto-muted text-sm">{e.codigo_estado_canonico}</TablaTd>
+                      <TablaTd>
+                        <button onClick={() => toggleActivoEst(e)} title="Cambiar estado">
+                          <Insignia variante={e.activo ? 'exito' : 'error'}>{e.activo ? 'Activo' : 'Inactivo'}</Insignia>
+                        </button>
+                      </TablaTd>
+                      <TablaTd>
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => abrirEditarEst(e)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
+                          <button onClick={() => setItemAEliminar({ tipo: 'estado', item: e })} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
+                        </div>
+                      </TablaTd>
+                    </SortableRow>
+                  ))}
+                </TablaCuerpo>
+              </Tabla>
+            </SortableDndContext>
           )}
         </>
       )}
@@ -855,12 +935,6 @@ export default function PaginaTareasDatosBasicos() {
                 <option value="">Seleccionar estado canónico...</option>
                 {canonicosEst.map((c) => <option key={c.codigo_estado_canonico} value={c.codigo_estado_canonico}>{c.nombre_estado_canonico}</option>)}
               </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Orden</label>
-              <input type="number" min={0} value={formEst.orden}
-                onChange={(e) => setFormEst({ ...formEst, orden: parseInt(e.target.value) || 0 })}
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
             </div>
           </>}
           {tabModalEst === 'system_prompt' && estEditando && (

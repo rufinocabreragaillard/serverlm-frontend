@@ -10,7 +10,10 @@ export interface Grupo {
   nombre: string
   descripcion?: string
   tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'SISTEMA'
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -96,7 +99,10 @@ export interface Entidad {
   descripcion?: string
   activo: boolean
   fecha_creacion?: string
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -133,7 +139,10 @@ export interface Usuario {
   fecha_creacion?: string
   ultimo_acceso?: string
   sidebar_colapsado?: boolean
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
   fecha_inicial?: string | null
   fecha_final?: string | null
@@ -172,9 +181,11 @@ export interface Rol {
   codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
   orden?: number
   tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'SISTEMA'
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -194,7 +205,10 @@ export interface Funcion {
   codigo_aplicacion_origen?: string | null  // FK a aplicaciones, agrupa para ordenar/filtrar
   tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'SISTEMA'
   id_modelo?: number | null  // FK a registro_llm. NULL = sin LLM
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null  // instrucciones extra al LLM
   orden?: number
   perm_select?: boolean
@@ -241,7 +255,10 @@ export interface Aplicacion {
   tipo?: 'USUARIO' | 'ADMINISTRADOR' | 'TEST' | 'SISTEMA'
   sidebar_ancho?: boolean
   orden?: number
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -271,9 +288,11 @@ export interface CategoriaParametro {
   descripcion?: string
   activo: boolean
   fecha_creacion?: string
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -287,9 +306,11 @@ export interface TipoParametro {
   activo: boolean
   fecha_creacion?: string
   categorias_parametro?: { nombre: string }
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -331,9 +352,12 @@ export interface CategoriaTarea {
   nombre_categoria_tarea: string
   descripcion_categoria_tarea?: string
   activo: boolean
-  prompt?: string | null
+  orden?: number
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -362,9 +386,12 @@ export interface TipoTarea {
   nombre_tipo_tarea: string
   descripcion_tipo_tarea?: string
   activo: boolean
-  prompt?: string | null
+  orden?: number
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -386,8 +413,11 @@ export interface CategoriaProceso {
   descripcion_categoria_proceso?: string
   alias?: string
   orden?: number
-  prompt?: string
-  system_prompt?: string
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
+  system_prompt?: string | null
 }
 
 export interface TipoProceso {
@@ -405,8 +435,11 @@ export interface TipoProceso {
   n_parallel_inicial?: number | null
   batch_size?: number | null
   batch_timeout_seg?: number | null
-  prompt?: string
-  system_prompt?: string
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
+  system_prompt?: string | null
   created_at?: string
   updated_at?: string
 }
@@ -418,8 +451,11 @@ export interface EstadoProceso {
   secuencia: number
   orden?: number
   nombre_estado: string
-  prompt?: string
-  system_prompt?: string
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
+  system_prompt?: string | null
   codigo_funcion?: string | null
   n_parallel?: number | null
   ayuda?: string | null
@@ -438,9 +474,11 @@ export interface EstadoTarea {
   codigo_estado_canonico: string
   orden: number
   activo: boolean
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -511,9 +549,11 @@ export interface Tarea {
   fecha_esperada?: string
   fecha_cierre?: string
   json?: unknown | null
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
-  python?: string | null
   javascript?: string | null
   python_editado_manual?: boolean
   javascript_editado_manual?: boolean
@@ -612,7 +652,10 @@ export interface CategoriaCaractDocs {
   orden?: number
   id_modelo?: number | null
   activo: boolean
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -623,7 +666,10 @@ export interface TipoCaractDocs {
   descripcion?: string | null
   orden?: number
   activo: boolean
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -665,7 +711,10 @@ export interface EstadoDoc {
   descripcion?: string | null
   orden: number
   activo: boolean
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -728,7 +777,10 @@ export interface UbicacionDoc {
   activo: boolean
   ubicacion_habilitada: boolean
   tipo_ubicacion: 'AREA' | 'CONTENIDO'
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
@@ -741,7 +793,10 @@ export interface Cargo {
   nombre_cargo: string
   alias: string
   descripcion?: string | null
-  prompt?: string | null
+  prompt_insert?: string | null
+  prompt_update?: string | null
+  python_insert?: string | null
+  python_update?: string | null
   system_prompt?: string | null
 }
 
