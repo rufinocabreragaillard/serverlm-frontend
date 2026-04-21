@@ -16,6 +16,7 @@ import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 import { escanearDirectorio, escanearDirectorioSinHijos, soportaDirectoryPicker, type DirectorioEscaneado } from '@/lib/escanear-directorio'
 import { BotonChat } from '@/components/ui/boton-chat'
+import { TabPrompts } from '@/components/ui/tab-prompts'
 
 export default function PaginaUbicacionesDocs() {
   const { grupoActivo } = useAuth()
@@ -30,7 +31,7 @@ export default function PaginaUbicacionesDocs() {
   // ── Modal CRUD ────────────────────────────────────────────────────────────
   const [modal, setModal] = useState(false)
   const [editando, setEditando] = useState<UbicacionDoc | null>(null)
-  const [tabModal, setTabModal] = useState<'datos' | 'prompt' | 'system_prompt'>('datos')
+  const [tabModal, setTabModal] = useState<'datos' | 'prompts'>('datos')
   const [form, setForm] = useState({
     codigo_ubicacion: '',
     nombre_ubicacion: '',
@@ -40,6 +41,10 @@ export default function PaginaUbicacionesDocs() {
     ubicacion_habilitada: true,
     prompt: '',
     system_prompt: '',
+    python: '',
+    javascript: '',
+    python_editado_manual: false,
+    javascript_editado_manual: false,
   })
   const [confirmarTipo, setConfirmarTipo] = useState<{ u: UbicacionDoc; nuevoTipo: 'AREA' | 'CONTENIDO' } | null>(null)
   const [cambiandoTipo, setCambiandoTipo] = useState(false)
@@ -133,6 +138,10 @@ export default function PaginaUbicacionesDocs() {
       ubicacion_habilitada: u.ubicacion_habilitada,
       prompt: u.prompt || '',
       system_prompt: u.system_prompt || '',
+      python: (u as unknown as Record<string, unknown>).python as string || '',
+      javascript: (u as unknown as Record<string, unknown>).javascript as string || '',
+      python_editado_manual: ((u as unknown as Record<string, unknown>).python_editado_manual as boolean) ?? false,
+      javascript_editado_manual: ((u as unknown as Record<string, unknown>).javascript_editado_manual as boolean) ?? false,
     })
     setTabModal('datos')
     setError('')
@@ -152,10 +161,12 @@ export default function PaginaUbicacionesDocs() {
         descripcion: form.descripcion || undefined,
         codigo_ubicacion_superior: form.codigo_ubicacion_superior || undefined,
         ubicacion_habilitada: form.ubicacion_habilitada,
-        ...(editando.tipo_ubicacion === 'AREA' ? {
-          prompt: form.prompt || undefined,
-          system_prompt: form.system_prompt || undefined,
-        } : {}),
+        prompt: form.prompt || undefined,
+        system_prompt: form.system_prompt || undefined,
+        python: form.python || undefined,
+        javascript: form.javascript || undefined,
+        python_editado_manual: form.python_editado_manual,
+        javascript_editado_manual: form.javascript_editado_manual,
       })
       if (cerrar) setModal(false)
       cargar()
@@ -524,10 +535,10 @@ export default function PaginaUbicacionesDocs() {
         className="max-w-3xl"
       >
         <div className="flex flex-col gap-4">
-          {/* Tabs solo cuando se edita un AREA */}
-          {editando?.tipo_ubicacion === 'AREA' && (
+          {/* Tabs — siempre en edición */}
+          {editando && (
             <div className="flex border-b border-borde">
-              {(['datos', 'prompt', 'system_prompt'] as const).map((tab) => (
+              {(['datos', 'prompts'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setTabModal(tab)}
@@ -537,7 +548,7 @@ export default function PaginaUbicacionesDocs() {
                       : 'text-texto-muted hover:text-texto'
                   }`}
                 >
-                  {tab === 'datos' ? 'Datos' : tab === 'prompt' ? 'Prompt' : 'System Prompt'}
+                  {tab === 'datos' ? 'Datos' : 'Prompts'}
                 </button>
               ))}
             </div>
@@ -600,34 +611,22 @@ export default function PaginaUbicacionesDocs() {
             </div>
           )}
 
-          {/* Tab Prompt (solo para AREAs en edición) */}
-          {tabModal === 'prompt' && editando?.tipo_ubicacion === 'AREA' && (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-texto-muted">
-                Texto que se inyecta en el prompt del LLM para dar contexto específico a esta área. Se usa en clasificación de documentos y análisis.
-              </p>
-              <textarea
-                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
-                placeholder="Ej: Esta área gestiona documentos de contratación pública..."
-                value={form.prompt}
-                onChange={(e) => setForm({ ...form, prompt: e.target.value })}
-              />
-            </div>
-          )}
-
-          {/* Tab System Prompt (solo para AREAs en edición) */}
-          {tabModal === 'system_prompt' && editando?.tipo_ubicacion === 'AREA' && (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-texto-muted">
-                Instrucciones de sistema que se prependen a todas las conversaciones y análisis LLM en esta área. Define el tono, restricciones y rol del asistente.
-              </p>
-              <textarea
-                className="w-full h-48 p-3 text-sm border border-borde rounded-lg font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primario/30"
-                placeholder="Ej: Eres un asistente especializado en documentación de esta área..."
-                value={form.system_prompt}
-                onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
-              />
-            </div>
+          {/* Tab Prompts */}
+          {tabModal === 'prompts' && editando && (
+            <TabPrompts
+              tabla="ubicaciones_docs"
+              pkColumna="codigo_ubicacion"
+              pkValor={editando.codigo_ubicacion}
+              campos={{
+                prompt: form.prompt,
+                system_prompt: form.system_prompt,
+                python: form.python,
+                javascript: form.javascript,
+                python_editado_manual: form.python_editado_manual,
+                javascript_editado_manual: form.javascript_editado_manual,
+              }}
+              onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+            />
           )}
 
           {error && (
