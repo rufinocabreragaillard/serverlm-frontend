@@ -37,9 +37,10 @@ type FormProceso = {
   javascript: string
   python_editado_manual: boolean
   javascript_editado_manual: boolean
+  json: string
 }
 
-type TabProceso = 'datos' | 'prompts'
+type TabProceso = 'datos' | 'prompts' | 'json'
 
 export default function PaginaProcesos() {
   const t = useTranslations('procesos')
@@ -54,6 +55,15 @@ export default function PaginaProcesos() {
   const crud = useCrudPage<Proceso, FormProceso>({
     cargarFn: () => procesosApi.listar(),
     actualizarFn: async (id, f) => {
+      let jsonParsed: unknown = null
+      const jsonTxt = (f.json ?? '').trim()
+      if (jsonTxt) {
+        try {
+          jsonParsed = JSON.parse(jsonTxt)
+        } catch {
+          throw new Error(t('errorJsonInvalido'))
+        }
+      }
       const r = await procesosApi.actualizar(id, {
         nombre_proceso: f.nombre_proceso?.trim(),
         descripcion: f.descripcion?.trim() || undefined,
@@ -66,26 +76,32 @@ export default function PaginaProcesos() {
         javascript: f.javascript || undefined,
         python_editado_manual: f.python_editado_manual,
         javascript_editado_manual: f.javascript_editado_manual,
+        json: jsonTxt ? jsonParsed : null,
       } as Record<string, unknown>)
       invalidarCatalogo('procesosDocs')
       return r
     },
     getId: (p) => p.codigo_proceso,
     camposBusqueda: (p) => [p.codigo_proceso, p.nombre_proceso, p.tipo, p.codigo_funcion ?? ''],
-    formInicial: { nombre_proceso: '', descripcion: '', tipo: 'USUARIO', n_parallel: 1, codigo_funcion: '', prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false },
-    itemToForm: (p) => ({
-      nombre_proceso: p.nombre_proceso,
-      descripcion: p.descripcion ?? '',
-      tipo: p.tipo ?? 'USUARIO',
-      n_parallel: p.n_parallel,
-      codigo_funcion: p.codigo_funcion ?? '',
-      prompt: (p as unknown as Record<string, unknown>).prompt as string ?? '',
-      system_prompt: (p as unknown as Record<string, unknown>).system_prompt as string ?? '',
-      python: (p as unknown as Record<string, unknown>).python as string ?? '',
-      javascript: (p as unknown as Record<string, unknown>).javascript as string ?? '',
-      python_editado_manual: ((p as unknown as Record<string, unknown>).python_editado_manual as boolean) ?? false,
-      javascript_editado_manual: ((p as unknown as Record<string, unknown>).javascript_editado_manual as boolean) ?? false,
-    }),
+    formInicial: { nombre_proceso: '', descripcion: '', tipo: 'USUARIO', n_parallel: 1, codigo_funcion: '', prompt: '', system_prompt: '', python: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false, json: '' },
+    itemToForm: (p) => {
+      const jsonVal = (p as unknown as Record<string, unknown>).json
+      const jsonStr = jsonVal == null ? '' : JSON.stringify(jsonVal, null, 2)
+      return {
+        nombre_proceso: p.nombre_proceso,
+        descripcion: p.descripcion ?? '',
+        tipo: p.tipo ?? 'USUARIO',
+        n_parallel: p.n_parallel,
+        codigo_funcion: p.codigo_funcion ?? '',
+        prompt: (p as unknown as Record<string, unknown>).prompt as string ?? '',
+        system_prompt: (p as unknown as Record<string, unknown>).system_prompt as string ?? '',
+        python: (p as unknown as Record<string, unknown>).python as string ?? '',
+        javascript: (p as unknown as Record<string, unknown>).javascript as string ?? '',
+        python_editado_manual: ((p as unknown as Record<string, unknown>).python_editado_manual as boolean) ?? false,
+        javascript_editado_manual: ((p as unknown as Record<string, unknown>).javascript_editado_manual as boolean) ?? false,
+        json: jsonStr,
+      }
+    },
   })
 
   const funcionesOrdenadas = [...funciones].sort((a, b) =>
@@ -183,6 +199,7 @@ export default function PaginaProcesos() {
               {([
                 { key: 'datos' as TabProceso, label: 'Datos' },
                 { key: 'prompts' as TabProceso, label: 'Prompts' },
+                { key: 'json' as TabProceso, label: 'JSON' },
               ]).map((tb) => (
                 <button
                   key={tb.key}
@@ -275,6 +292,20 @@ export default function PaginaProcesos() {
             onChange={(e) => crud.updateForm('n_parallel', Number(e.target.value))}
             placeholder="1"
           />}
+
+          {tabModal === 'json' && crud.editando && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-texto">{t('etiquetaJson')}</label>
+              <textarea
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm font-mono text-texto focus:outline-none focus:ring-2 focus:ring-primario min-h-[300px]"
+                value={crud.form.json}
+                onChange={(e) => crud.updateForm('json', e.target.value)}
+                placeholder='{\n  "clave": "valor"\n}'
+                spellCheck={false}
+              />
+              <p className="text-xs text-texto-muted">{t('descJson')}</p>
+            </div>
+          )}
 
           {crud.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">

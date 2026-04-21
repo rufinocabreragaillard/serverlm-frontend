@@ -476,6 +476,7 @@ export interface Tarea {
   fecha_creacion?: string
   fecha_esperada?: string
   fecha_cierre?: string
+  json?: unknown | null
 }
 
 // ─── Documentos ─────────────────────────────────────────────────────────────

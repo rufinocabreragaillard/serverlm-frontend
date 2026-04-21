@@ -650,6 +650,8 @@ export interface Proceso {
   estado_origen?: string | null
   estado_destino?: string | null
   id_modelo?: number | null
+  /** Campo libre JSONB para configuración/datos arbitrarios del proceso */
+  json?: unknown | null
   /** @deprecated — ya no se devuelve desde el backend; usar estado_origen/estado_destino/id_modelo */
   pasos?: PasoProceso[]
 }
@@ -662,7 +664,7 @@ export const procesosApi = {
       },
     }).then((r) => r.data),
   obtener: (codigo: string) => api.get<Proceso>(`/procesos/${codigo}`).then((r) => r.data),
-  actualizar: (codigo: string, data: { n_parallel?: number; nombre_proceso?: string; descripcion?: string; tipo?: string; orden?: number; codigo_funcion?: string | null }) =>
+  actualizar: (codigo: string, data: { n_parallel?: number; nombre_proceso?: string; descripcion?: string; tipo?: string; orden?: number; codigo_funcion?: string | null; json?: unknown | null }) =>
     api.patch<Proceso>(`/procesos/${codigo}`, data).then((r) => r.data),
   reordenar: (orden: { codigo_proceso: string; orden: number }[]) =>
     api.put('/procesos/reordenar', orden).then((r) => r.data),

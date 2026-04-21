@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,11 +37,25 @@ type FormTarea = {
   descripcion_tarea: string
   prioridad: 'urgente' | 'alto' | 'medio' | 'bajo'
   fecha_esperada: string
+  json: string
 }
+
+type TabTarea = 'datos' | 'json'
 
 export default function PaginaTareasMantenedor() {
   const t = useTranslations('tareas')
   const tc = useTranslations('common')
+  const [tabModal, setTabModal] = useState<TabTarea>('datos')
+
+  const parsearJson = (raw: string | undefined): unknown | null => {
+    const txt = (raw ?? '').trim()
+    if (!txt) return null
+    try {
+      return JSON.parse(txt)
+    } catch {
+      throw new Error(t('errorJsonInvalido'))
+    }
+  }
 
   const crud = useCrudPage<Tarea, FormTarea>({
     cargarFn: () => tareasApi.listarTareas(),
@@ -50,6 +65,7 @@ export default function PaginaTareasMantenedor() {
         descripcion_tarea: f.descripcion_tarea.trim() || undefined,
         prioridad: f.prioridad,
         fecha_esperada: f.fecha_esperada || undefined,
+        json: parsearJson(f.json) ?? undefined,
       }) as Promise<Tarea>,
     actualizarFn: (id, f) =>
       tareasApi.actualizarTarea(Number(id), {
@@ -57,16 +73,18 @@ export default function PaginaTareasMantenedor() {
         descripcion_tarea: f.descripcion_tarea?.trim() || undefined,
         prioridad: f.prioridad,
         fecha_esperada: f.fecha_esperada || undefined,
+        json: parsearJson(f.json),
       }) as Promise<Tarea>,
     eliminarFn: async (id) => { await tareasApi.eliminarTarea(Number(id)) },
     getId: (t) => String(t.id_tarea),
     camposBusqueda: (t) => [t.nombre_tarea, t.descripcion_tarea ?? '', t.codigo_categoria_tarea],
-    formInicial: { nombre_tarea: '', descripcion_tarea: '', prioridad: 'medio', fecha_esperada: '' },
+    formInicial: { nombre_tarea: '', descripcion_tarea: '', prioridad: 'medio', fecha_esperada: '', json: '' },
     itemToForm: (t) => ({
       nombre_tarea: t.nombre_tarea,
       descripcion_tarea: t.descripcion_tarea ?? '',
       prioridad: t.prioridad,
       fecha_esperada: t.fecha_esperada ? t.fecha_esperada.substring(0, 10) : '',
+      json: t.json == null ? '' : JSON.stringify(t.json, null, 2),
     }),
   })
 
@@ -160,23 +178,38 @@ export default function PaginaTareasMantenedor() {
         className="max-w-lg"
       >
         <div className="flex flex-col gap-4 min-w-[400px]">
-          <Input
+          <div className="flex gap-2 border-b border-borde -mt-2">
+            {([
+              { key: 'datos' as TabTarea, label: 'Datos' },
+              { key: 'json' as TabTarea, label: 'JSON' },
+            ]).map((tb) => (
+              <button
+                key={tb.key}
+                onClick={() => setTabModal(tb.key)}
+                className={`px-3 py-2 text-sm border-b-2 ${tabModal === tb.key ? 'border-primario text-primario font-medium' : 'border-transparent text-texto-muted'}`}
+              >
+                {tb.label}
+              </button>
+            ))}
+          </div>
+
+          {tabModal === 'datos' && <Input
             etiqueta={t('etiquetaNombre')}
             value={crud.form.nombre_tarea}
             onChange={(e) => crud.updateForm('nombre_tarea', e.target.value)}
             placeholder={t('placeholderNombre')}
             autoFocus
-          />
+          />}
 
-          <Textarea
+          {tabModal === 'datos' && <Textarea
             etiqueta={t('etiquetaDescripcion')}
             value={crud.form.descripcion_tarea}
             onChange={(e) => crud.updateForm('descripcion_tarea', e.target.value)}
             placeholder={t('placeholderDescripcion')}
             rows={3}
-          />
+          />}
 
-          <div className="flex flex-col gap-1">
+          {tabModal === 'datos' && <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-texto">{t('etiquetaPrioridad')}</label>
             <select
               className={selectClass}
@@ -191,9 +224,9 @@ export default function PaginaTareasMantenedor() {
                 </option>
               ))}
             </select>
-          </div>
+          </div>}
 
-          <div className="flex flex-col gap-1">
+          {tabModal === 'datos' && <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-texto">{t('etiquetaFechaEsperada')}</label>
             <input
               type="date"
@@ -201,7 +234,21 @@ export default function PaginaTareasMantenedor() {
               value={crud.form.fecha_esperada}
               onChange={(e) => crud.updateForm('fecha_esperada', e.target.value)}
             />
-          </div>
+          </div>}
+
+          {tabModal === 'json' && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-texto">{t('etiquetaJson')}</label>
+              <textarea
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm font-mono text-texto focus:outline-none focus:ring-2 focus:ring-primario min-h-[300px]"
+                value={crud.form.json}
+                onChange={(e) => crud.updateForm('json', e.target.value)}
+                placeholder='{\n  "clave": "valor"\n}'
+                spellCheck={false}
+              />
+              <p className="text-xs text-texto-muted">{t('descJson')}</p>
+            </div>
+          )}
 
           {crud.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
