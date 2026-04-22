@@ -44,6 +44,9 @@ export function usePaginacion<T, F extends Record<string, unknown>>({
   // Serializamos filtros para comparar por valor (evita ref re-renders).
   const filtrosKey = JSON.stringify(filtros)
   const filtrosKeyPrev = useRef(filtrosKey)
+  // Ref siempre actualizada para que los callbacks capturen los filtros más recientes.
+  const filtrosRef = useRef(filtros)
+  filtrosRef.current = filtros
 
   const ejecutar = useCallback(async (p: number, l: number, f: F) => {
     setCargando(true)
@@ -62,21 +65,24 @@ export function usePaginacion<T, F extends Record<string, unknown>>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher])
 
-  // Resetear a página 1 cuando cambian los filtros (comparando por valor).
   useEffect(() => {
-    if (filtrosKey !== filtrosKeyPrev.current) {
+    const filtrosChanged = filtrosKey !== filtrosKeyPrev.current
+    if (filtrosChanged) {
       filtrosKeyPrev.current = filtrosKey
       if (page !== 1) {
         setPage(1)
         return   // el cambio de page dispara otro efecto
       }
     }
-    const t = setTimeout(() => ejecutar(page, limit, filtros), debounceMs)
+    // Debounce solo para cambios de filtros (ej. búsqueda mientras escribe).
+    // Cambios de página/limit son inmediatos para evitar el reset accidental a página 1.
+    const delay = filtrosChanged ? debounceMs : 0
+    const t = setTimeout(() => ejecutar(page, limit, filtrosRef.current), delay)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtrosKey, page, limit])
+  }, [filtrosKey, page, limit, ejecutar])
 
-  const refetch = useCallback(() => ejecutar(page, limit, filtros), [ejecutar, page, limit, filtros])
+  const refetch = useCallback(() => ejecutar(page, limit, filtrosRef.current), [ejecutar, page, limit])
 
   return {
     items, total, page, limit, cargando, error,
