@@ -20,6 +20,7 @@ import { exportarExcel } from '@/lib/exportar-excel'
 import { useAuth } from '@/context/AuthContext'
 import { abrirArchivoPorRuta } from '@/lib/extraer-texto'
 import { getDirectoryHandle, ensureReadPermission } from '@/lib/file-handle-store'
+import { descargarDocumento } from '@/lib/abrir-documento'
 import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabModal = 'datos' | 'caracteristicas' | 'texto' | 'chunks'
@@ -451,6 +452,15 @@ export default function PaginaDocumentos() {
                 </TablaTd>
                 <TablaTd>
                   <div className="flex items-center justify-end gap-1">
+                    {d.ubicacion_documento && (
+                      <button
+                        onClick={() => descargarDocumento(d.ubicacion_documento, d.nombre_documento)}
+                        className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
+                        title="Descargar"
+                      >
+                        <Download size={16} />
+                      </button>
+                    )}
                     {d.ubicacion_documento && /^https?:\/\//i.test(d.ubicacion_documento) && (
                       <a
                         href={d.ubicacion_documento}
