@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Save, SlidersHorizontal, Layers, Building2, User, Trash2 } from 'lucide-react'
+import { Save, SlidersHorizontal, Layers, Building2, User, Trash2, Lock, EyeOff } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import { BotonChat } from '@/components/ui/boton-chat'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaDescripcion, TarjetaContenido } from '@/components/ui/tarjeta'
 import { useAuth } from '@/context/AuthContext'
 import { parametrosApi, entidadesApi, datosBasicosApi } from '@/lib/api'
-import type { CategoriaParametro, TipoParametro, ParametroGeneral, ParametroUsuario } from '@/lib/tipos'
+import type { CategoriaParametro, TipoParametro, ParametroGeneral, ParametroGrupo, ParametroUsuario } from '@/lib/tipos'
 
 type TabId = 'generales' | 'grupo' | 'entidad' | 'usuario'
 
@@ -18,6 +18,16 @@ interface ParametroRow {
   tipo_parametro: string
   valor_parametro: string
   descripcion?: string
+  // flags generales
+  replica_grupo?: boolean
+  visible_grupo?: boolean
+  editable_grupo?: boolean
+  replica_usuario?: boolean
+  visible_usuario?: boolean
+  editable_usuario?: boolean
+  // flags grupo/usuario
+  visible?: boolean
+  editable?: boolean
 }
 
 export default function PaginaParametros() {
@@ -29,6 +39,7 @@ export default function PaginaParametros() {
   // Generales
   const [paramsGenerales, setParamsGenerales] = useState<ParametroRow[]>([])
   const [cargandoGenerales, setCargandoGenerales] = useState(false)
+  const [guardandoFlags, setGuardandoFlags] = useState<string | null>(null)
 
   // Grupo
   const [paramsGrupo, setParamsGrupo] = useState<ParametroRow[]>([])
@@ -86,6 +97,12 @@ export default function PaginaParametros() {
         tipo_parametro: p.tipo_parametro,
         valor_parametro: p.valor_parametro,
         descripcion: p.descripcion,
+        replica_grupo: p.replica_grupo ?? false,
+        visible_grupo: p.visible_grupo ?? true,
+        editable_grupo: p.editable_grupo ?? true,
+        replica_usuario: p.replica_usuario ?? false,
+        visible_usuario: p.visible_usuario ?? true,
+        editable_usuario: p.editable_usuario ?? true,
       })))
     } catch { setParamsGenerales([]) }
     finally { setCargandoGenerales(false) }
@@ -96,7 +113,13 @@ export default function PaginaParametros() {
     setCargandoGrupo(true)
     try {
       const data = await parametrosApi.listarGrupo()
-      setParamsGrupo(data)
+      setParamsGrupo(data.map((p: ParametroGrupo) => ({
+        categoria_parametro: p.categoria_parametro,
+        tipo_parametro: p.tipo_parametro,
+        valor_parametro: p.valor_parametro,
+        visible: p.visible ?? true,
+        editable: p.editable ?? true,
+      })))
     } catch { setParamsGrupo([]) }
     finally { setCargandoGrupo(false) }
   }, [])
@@ -121,6 +144,8 @@ export default function PaginaParametros() {
         categoria_parametro: p.categoria_parametro,
         tipo_parametro: p.tipo_parametro,
         valor_parametro: p.valor_parametro,
+        visible: p.visible ?? true,
+        editable: p.editable ?? true,
       })))
     } catch { setParamsUsuario([]) }
     finally { setCargandoUsuario(false) }
@@ -164,6 +189,34 @@ export default function PaginaParametros() {
     }
   }
 
+  // ── Guardar flags de parámetro general ───────────────────────────────────
+  const guardarFlagGeneral = async (cat: string, tipo: string, flag: string, valor: boolean) => {
+    const key = `${cat}/${tipo}/${flag}`
+    setGuardandoFlags(key)
+    const param = paramsGenerales.find(p => p.categoria_parametro === cat && p.tipo_parametro === tipo)
+    if (!param) return
+    // Actualización optimista
+    setParamsGenerales(prev => prev.map(p =>
+      p.categoria_parametro === cat && p.tipo_parametro === tipo ? { ...p, [flag]: valor } : p
+    ))
+    try {
+      await parametrosApi.upsertGenerales({
+        categoria_parametro: cat,
+        tipo_parametro: tipo,
+        valor_parametro: param.valor_parametro,
+        [flag]: valor,
+      })
+    } catch {
+      // revert
+      setParamsGenerales(prev => prev.map(p =>
+        p.categoria_parametro === cat && p.tipo_parametro === tipo ? { ...p, [flag]: !valor } : p
+      ))
+      setError('Error al guardar el flag')
+    } finally {
+      setGuardandoFlags(null)
+    }
+  }
+
   // ── Eliminar parámetro ────────────────────────────────────────────────────
   const [paramAEliminar, setParamAEliminar] = useState<{ cat: string; tipo: string } | null>(null)
   const [eliminandoParam, setEliminandoParam] = useState(false)
@@ -200,6 +253,7 @@ export default function PaginaParametros() {
 
   // ── Tabs config ───────────────────────────────────────────────────────────
   const tabs: { id: TabId; label: string; icon: typeof SlidersHorizontal; visible: boolean }[] = [
+    { id: 'generales', label: 'Generales', icon: SlidersHorizontal, visible: esSuperAdmin() },
     { id: 'grupo', label: t('tabGrupo'), icon: Layers, visible: true },
     { id: 'entidad', label: t('tabEntidad'), icon: Building2, visible: true },
     { id: 'usuario', label: t('tabUsuario'), icon: User, visible: true },
@@ -246,6 +300,82 @@ export default function PaginaParametros() {
   )
 
   const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario disabled:opacity-50'
+  const checkboxCls = 'h-3.5 w-3.5 rounded border-borde text-primario cursor-pointer'
+  const labelFlagCls = 'flex items-center gap-1.5 text-xs text-texto-muted cursor-pointer select-none'
+
+  // Componente inline para los 6 flags de un parámetro general
+  const FlagsGenerales = ({ p }: { p: ParametroRow }) => {
+    const key = `${p.categoria_parametro}/${p.tipo_parametro}`
+    const saving = (flag: string) => guardandoFlags === `${key}/${flag}`
+    return (
+      <div className="mt-2 pt-2 border-t border-borde/60 flex flex-col gap-1.5">
+        {/* Fila Grupo */}
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-medium text-texto-muted w-16 shrink-0">Grupos:</span>
+          <label className={labelFlagCls}>
+            <input type="checkbox" className={checkboxCls}
+              checked={p.replica_grupo ?? false}
+              disabled={saving('replica_grupo')}
+              onChange={e => guardarFlagGeneral(p.categoria_parametro, p.tipo_parametro, 'replica_grupo', e.target.checked)} />
+            Replicar
+          </label>
+          <label className={labelFlagCls}>
+            <input type="checkbox" className={checkboxCls}
+              checked={p.visible_grupo ?? true}
+              disabled={saving('visible_grupo')}
+              onChange={e => guardarFlagGeneral(p.categoria_parametro, p.tipo_parametro, 'visible_grupo', e.target.checked)} />
+            Visible
+          </label>
+          <label className={labelFlagCls}>
+            <input type="checkbox" className={checkboxCls}
+              checked={p.editable_grupo ?? true}
+              disabled={saving('editable_grupo')}
+              onChange={e => guardarFlagGeneral(p.categoria_parametro, p.tipo_parametro, 'editable_grupo', e.target.checked)} />
+            Editable
+          </label>
+        </div>
+        {/* Fila Usuario */}
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-medium text-texto-muted w-16 shrink-0">Usuarios:</span>
+          <label className={labelFlagCls}>
+            <input type="checkbox" className={checkboxCls}
+              checked={p.replica_usuario ?? false}
+              disabled={saving('replica_usuario')}
+              onChange={e => guardarFlagGeneral(p.categoria_parametro, p.tipo_parametro, 'replica_usuario', e.target.checked)} />
+            Replicar
+          </label>
+          <label className={labelFlagCls}>
+            <input type="checkbox" className={checkboxCls}
+              checked={p.visible_usuario ?? true}
+              disabled={saving('visible_usuario')}
+              onChange={e => guardarFlagGeneral(p.categoria_parametro, p.tipo_parametro, 'visible_usuario', e.target.checked)} />
+            Visible
+          </label>
+          <label className={labelFlagCls}>
+            <input type="checkbox" className={checkboxCls}
+              checked={p.editable_usuario ?? true}
+              disabled={saving('editable_usuario')}
+              onChange={e => guardarFlagGeneral(p.categoria_parametro, p.tipo_parametro, 'editable_usuario', e.target.checked)} />
+            Editable
+          </label>
+        </div>
+      </div>
+    )
+  }
+
+  // Indicadores de estado para grupo/usuario
+  const BadgesParam = ({ p }: { p: ParametroRow }) => {
+    if (tabActiva === 'generales') return null
+    const editable = p.editable !== false
+    const visible = p.visible !== false
+    if (editable && visible) return null
+    return (
+      <div className="flex items-center gap-1 shrink-0">
+        {!editable && <span title="Solo lectura" className="text-texto-muted"><Lock size={12} /></span>}
+        {!visible && <span title="Oculto para usuarios" className="text-texto-muted"><EyeOff size={12} /></span>}
+      </div>
+    )
+  }
 
   return (
     <div className="relative flex flex-col gap-6 max-w-3xl">
@@ -306,47 +436,78 @@ export default function PaginaParametros() {
             <p className="text-sm text-texto-muted text-center py-4">{t('sinParametros')}</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {getParams().map((p) => {
+              {/* Separador visual para no-editables en tabs grupo/usuario */}
+              {(tabActiva === 'grupo' || tabActiva === 'usuario') &&
+                getParams().some(p => p.editable === false) &&
+                getParams().some(p => p.editable !== false) && (
+                  <div className="text-xs text-texto-muted font-medium uppercase tracking-wider pb-1 border-b border-borde">
+                    Parámetros editables
+                  </div>
+                )
+              }
+              {getParams().map((p, idx) => {
                 const key = `${p.categoria_parametro}/${p.tipo_parametro}`
+                const esEditable = p.editable !== false
+                const esVisible = p.visible !== false
+                const prevEditable = idx > 0 ? getParams()[idx - 1].editable !== false : true
+                const showSeparadorNoEdit = (tabActiva === 'grupo' || tabActiva === 'usuario') &&
+                  !esEditable && prevEditable && idx > 0
+
                 return (
-                  <div key={key} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-borde bg-surface">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-texto-muted mb-1">
-                        {p.categoria_parametro}
-                        <span className="mx-1 text-texto-light">/</span>
-                        {p.tipo_parametro}
-                      </p>
-                      <input
-                        type="text"
-                        defaultValue={p.valor_parametro}
-                        onBlur={(e) => {
-                          if (e.target.value !== p.valor_parametro) {
-                            guardarInline(tabActiva, p.categoria_parametro, p.tipo_parametro, e.target.value)
-                          }
-                        }}
-                        className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5"
-                      />
+                  <div key={key}>
+                    {showSeparadorNoEdit && (
+                      <div className="text-xs text-texto-muted font-medium uppercase tracking-wider py-1 border-b border-borde mb-3">
+                        Solo lectura
+                      </div>
+                    )}
+                    <div className={`flex flex-col px-3 py-2 rounded-lg border border-borde bg-surface ${!esVisible ? 'opacity-60' : ''}`}>
+                      {/* Fila principal */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-texto-muted mb-1">
+                            {p.categoria_parametro}
+                            <span className="mx-1 text-texto-light">/</span>
+                            {p.tipo_parametro}
+                          </p>
+                          <input
+                            type="text"
+                            defaultValue={p.valor_parametro}
+                            disabled={!esEditable}
+                            onBlur={(e) => {
+                              if (e.target.value !== p.valor_parametro) {
+                                guardarInline(tabActiva, p.categoria_parametro, p.tipo_parametro, e.target.value)
+                              }
+                            }}
+                            className="w-full text-sm text-texto bg-transparent border-b border-transparent hover:border-borde focus:border-primario focus:outline-none py-0.5 disabled:cursor-not-allowed disabled:text-texto-muted"
+                          />
+                        </div>
+                        <BadgesParam p={p} />
+                        {/* Guardar */}
+                        {esEditable && (
+                          <button
+                            onClick={(e) => {
+                              const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement)
+                              if (input) guardarInline(tabActiva, p.categoria_parametro, p.tipo_parametro, input.value)
+                            }}
+                            disabled={guardando === key}
+                            className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors shrink-0"
+                            title={tc('guardar')}
+                          >
+                            <Save size={14} />
+                          </button>
+                        )}
+                        {/* Eliminar */}
+                        <button
+                          onClick={() => setParamAEliminar({ cat: p.categoria_parametro, tipo: p.tipo_parametro })}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
+                          title={t('eliminarTitulo')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      {/* Flags (solo tab generales) */}
+                      {tabActiva === 'generales' && <FlagsGenerales p={p} />}
                     </div>
-                    {/* Guardar */}
-                    <button
-                      onClick={(e) => {
-                        const input = (e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement)
-                        if (input) guardarInline(tabActiva, p.categoria_parametro, p.tipo_parametro, input.value)
-                      }}
-                      disabled={guardando === key}
-                      className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors shrink-0"
-                      title={tc('guardar')}
-                    >
-                      <Save size={14} />
-                    </button>
-                    {/* Eliminar */}
-                    <button
-                      onClick={() => setParamAEliminar({ cat: p.categoria_parametro, tipo: p.tipo_parametro })}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors shrink-0"
-                      title={t('eliminarTitulo')}
-                    >
-                      <Trash2 size={14} />
-                    </button>
                   </div>
                 )
               })}

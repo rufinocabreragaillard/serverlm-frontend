@@ -272,7 +272,19 @@ export interface ParametroGeneral {
   tipo_parametro: string
   valor_parametro: string
   descripcion?: string
-  replica?: boolean
+  replica_grupo?: boolean
+  visible_grupo?: boolean
+  editable_grupo?: boolean
+  replica_usuario?: boolean
+  visible_usuario?: boolean
+  editable_usuario?: boolean
+}
+
+export interface ParametroGrupo {
+  codigo_grupo: string
+  categoria_parametro: string
+  tipo_parametro: string
+  valor_parametro: string
   visible?: boolean
   editable?: boolean
 }
@@ -281,6 +293,8 @@ export interface ParametroUsuario {
   categoria_parametro: string
   tipo_parametro: string
   valor_parametro: string
+  visible?: boolean
+  editable?: boolean
 }
 
 // ─── Datos Básicos ────────────────────────────────────────────────────────────
