@@ -344,7 +344,7 @@ export default function PaginaFunciones() {
       </SortableDndContext>
 
       {/* ── MODAL FUNCION ── */}
-      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? `Editar: ${funcionEditando.nombre}` : 'Nueva función'} className="w-[700px] max-w-[95vw]">
+      <Modal abierto={modalFuncion} alCerrar={() => setModalFuncion(false)} titulo={funcionEditando ? `Editar: ${funcionEditando.nombre}` : 'Nueva función'} className="w-[900px] max-w-[95vw]">
         <div className="flex flex-col gap-4">
           {/* Tabs */}
           <div className="flex border-b border-borde -mx-1 overflow-x-auto">
@@ -525,29 +525,16 @@ export default function PaginaFunciones() {
           {/* Tab System Prompt */}
           {tabModalFuncion === 'system_prompt' && funcionEditando && (
             <div className="flex flex-col gap-3">
-              <TabPrompts
-                tabla="funciones"
-                pkColumna="codigo_funcion"
-                pkValor={funcionEditando.codigo_funcion}
-                campos={{
-                  prompt_insert: formFuncion.prompt_insert,
-                  prompt_update: formFuncion.prompt_update,
-                  system_prompt: formFuncion.system_prompt,
-                  python_insert: formFuncion.python_insert,
-                  python_update: formFuncion.python_update,
-                  javascript: formFuncion.javascript,
-                  python_editado_manual: formFuncion.python_editado_manual,
-                  javascript_editado_manual: formFuncion.javascript_editado_manual,
-                }}
-                onCampoCambiado={(c, v) => setFormFuncion({ ...formFuncion, [c]: v })}
-                mostrarPromptInsert={false}
-                mostrarPromptUpdate={false}
-                mostrarSystemPrompt={true}
-                mostrarPythonInsert={false}
-                mostrarPythonUpdate={false}
-                mostrarJavaScript={false}
-                mostrarBotones={false}
-              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">System Prompt (instrucción base para el LLM)</label>
+                <textarea
+                  value={formFuncion.system_prompt || ''}
+                  onChange={(e) => setFormFuncion({ ...formFuncion, system_prompt: e.target.value })}
+                  rows={16}
+                  placeholder="Instrucción base al LLM (se inyecta en system_prompt del chat)."
+                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto font-mono focus:outline-none focus:ring-2 focus:ring-primario"
+                />
+              </div>
               {errorFuncion && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorFuncion}</p></div>}
               <PieBotonesModal
                 editando={!!funcionEditando}

@@ -666,7 +666,7 @@ export default function PaginaRoles() {
       )}
 
       {/* Modal Rol */}
-      <Modal abierto={modalRol} alCerrar={() => setModalRol(false)} titulo={rolEditando ? t('editarRolTitulo', { nombre: rolEditando.nombre }) : t('nuevoRolTitulo')} className="max-w-2xl">
+      <Modal abierto={modalRol} alCerrar={() => setModalRol(false)} titulo={rolEditando ? t('editarRolTitulo', { nombre: rolEditando.nombre }) : t('nuevoRolTitulo')} className="w-[900px] max-w-[95vw]">
         <div className="flex flex-col gap-4">
           {/* Pestañas (solo en edición) */}
           {rolEditando && (

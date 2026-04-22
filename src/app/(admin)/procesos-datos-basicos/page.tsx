@@ -16,7 +16,7 @@ import { exportarExcel } from '@/lib/exportar-excel'
 import { BotonChat } from '@/components/ui/boton-chat'
 
 type TabId = 'categorias' | 'tipos' | 'estados' | 'canonicos'
-type TabModalTipo = 'general' | 'config'
+type TabModal = 'datos' | 'system_prompt' | 'programacion'
 
 type ItemEliminar =
   | { tipo: 'categoria'; item: CategoriaProceso }
@@ -32,6 +32,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [categorias, setCategorias] = useState<CategoriaProceso[]>([])
   const [cargandoCat, setCargandoCat] = useState(true)
   const [modalCat, setModalCat] = useState(false)
+  const [tabModalCat, setTabModalCat] = useState<TabModal>('datos')
   const [catEditando, setCatEditando] = useState<CategoriaProceso | null>(null)
   const [formCat, setFormCat] = useState({
     codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '',
@@ -44,7 +45,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [tipos, setTipos] = useState<TipoProceso[]>([])
   const [cargandoTipo, setCargandoTipo] = useState(true)
   const [modalTipo, setModalTipo] = useState(false)
-  const [tabModalTipo, setTabModalTipo] = useState<TabModalTipo>('general')
+  const [tabModalTipo, setTabModalTipo] = useState<TabModal>('datos')
   const [tipoEditando, setTipoEditando] = useState<TipoProceso | null>(null)
   const [formTipo, setFormTipo] = useState({
     codigo_categoria_proceso: '', codigo_tipo_proceso: '', nombre_tipo_proceso: '', descripcion_tipo_proceso: '', alias: '',
@@ -66,6 +67,7 @@ export default function PaginaProcesosDatosBasicos() {
   const [estados, setEstados] = useState<EstadoProceso[]>([])
   const [cargandoEst, setCargandoEst] = useState(true)
   const [modalEst, setModalEst] = useState(false)
+  const [tabModalEst, setTabModalEst] = useState<TabModal>('datos')
   const [estEditando, setEstEditando] = useState<EstadoProceso | null>(null)
   const [formEst, setFormEst] = useState<{
     codigo_categoria_proceso: string
@@ -143,6 +145,7 @@ export default function PaginaProcesosDatosBasicos() {
   const abrirNuevaCat = () => {
     setCatEditando(null)
     setFormCat({ codigo_categoria_proceso: '', nombre_categoria_proceso: '', descripcion_categoria_proceso: '', alias: '', prompt_insert: '', prompt_update: '', system_prompt: '' })
+    setTabModalCat('datos')
     setErrorCat('')
     setModalCat(true)
   }
@@ -158,6 +161,7 @@ export default function PaginaProcesosDatosBasicos() {
       prompt_update: c.prompt_update || '',
       system_prompt: c.system_prompt || '',
     })
+    setTabModalCat('datos')
     setErrorCat('')
     setModalCat(true)
   }
@@ -204,6 +208,7 @@ export default function PaginaProcesosDatosBasicos() {
       n_parallel: '', n_parallel_inicial: '', batch_size: '', batch_timeout_seg: '',
       created_at: '', updated_at: '',
     })
+    setTabModalTipo('datos')
     setErrorTipo('')
     setModalTipo(true)
   }
@@ -231,6 +236,7 @@ export default function PaginaProcesosDatosBasicos() {
       created_at: t.created_at || '',
       updated_at: t.updated_at || '',
     })
+    setTabModalTipo('datos')
     setErrorTipo('')
     setModalTipo(true)
   }
@@ -347,6 +353,7 @@ export default function PaginaProcesosDatosBasicos() {
       prompt_insert: '', prompt_update: '', system_prompt: '', codigo_funcion: '',
       n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
     })
+    setTabModalEst('datos')
     setErrorEst('')
     setModalEst(true)
   }
@@ -369,6 +376,7 @@ export default function PaginaProcesosDatosBasicos() {
       batch_size: e.batch_size != null ? String(e.batch_size) : '',
       batch_timeout_seg: e.batch_timeout_seg != null ? String(e.batch_timeout_seg) : '',
     })
+    setTabModalEst('datos')
     setErrorEst('')
     setModalEst(true)
   }
@@ -545,6 +553,10 @@ export default function PaginaProcesosDatosBasicos() {
   const selectCls = 'rounded-lg border border-borde bg-surface px-3 py-1.5 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
   const tabCls = (id: TabId) =>
     `px-5 py-2.5 text-sm font-medium transition-colors ${tabActiva === id ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`
+  const tabModalCls = (activa: string, id: string) =>
+    `px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${activa === id ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`
+  const TABS_MODAL_LABELS: Record<TabModal, string> = { datos: 'Datos', system_prompt: 'System Prompt', programacion: 'Programación' }
+  const textareaCls = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
 
   return (
     <div className="relative flex flex-col gap-6 max-w-6xl">
@@ -948,7 +960,17 @@ export default function PaginaProcesosDatosBasicos() {
       {/* Modal Categoría */}
       <Modal abierto={modalCat} alCerrar={() => setModalCat(false)} titulo={catEditando ? 'Editar categoría' : 'Nueva categoría de proceso'} className="w-[880px] max-w-[95vw]">
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Tabs */}
+          <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+            {(['datos', 'system_prompt', 'programacion'] as TabModal[]).map((tab) => (
+              <button key={tab} onClick={() => setTabModalCat(tab)} className={tabModalCls(tabModalCat, tab)}>
+                {TABS_MODAL_LABELS[tab]}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Datos */}
+          {tabModalCat === 'datos' && (
             <div className="flex flex-col gap-4">
               {!catEditando && (
                 <Input etiqueta="Código (dejar vacío para autogenerar)" value={formCat.codigo_categoria_proceso}
@@ -965,25 +987,42 @@ export default function PaginaProcesosDatosBasicos() {
                 onChange={(e) => setFormCat({ ...formCat, alias: e.target.value })}
                 placeholder="Alias breve" />
             </div>
+          )}
+
+          {/* Tab System Prompt */}
+          {tabModalCat === 'system_prompt' && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">System prompt</label>
+              <textarea value={formCat.system_prompt}
+                onChange={(e) => setFormCat({ ...formCat, system_prompt: e.target.value })}
+                rows={14}
+                placeholder="Instrucciones system para el LLM"
+                className={textareaCls + ' font-mono'} />
+            </div>
+          )}
+
+          {/* Tab Programación */}
+          {tabModalCat === 'programacion' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">Prompt</label>
+                <label className="text-sm font-medium text-texto">Prompt insert</label>
                 <textarea value={formCat.prompt_insert}
                   onChange={(e) => setFormCat({ ...formCat, prompt_insert: e.target.value })}
-                  rows={catEditando ? 7 : 8}
-                  placeholder="Prompt de la categoría"
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                  rows={6}
+                  placeholder="Prompt para INSERT"
+                  className={textareaCls} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">System prompt</label>
-                <textarea value={formCat.system_prompt}
-                  onChange={(e) => setFormCat({ ...formCat, system_prompt: e.target.value })}
-                  rows={catEditando ? 7 : 8}
-                  placeholder="Instrucciones system para el LLM"
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                <label className="text-sm font-medium text-texto">Prompt update</label>
+                <textarea value={formCat.prompt_update}
+                  onChange={(e) => setFormCat({ ...formCat, prompt_update: e.target.value })}
+                  rows={6}
+                  placeholder="Prompt para UPDATE"
+                  className={textareaCls} />
               </div>
             </div>
-          </div>
+          )}
+
           {errorCat && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCat}</p></div>}
           <PieBotonesModal
             editando={!!catEditando}
@@ -998,7 +1037,17 @@ export default function PaginaProcesosDatosBasicos() {
       {/* Modal Tipo */}
       <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? 'Editar tipo' : 'Nuevo tipo de proceso'} className="w-[880px] max-w-[95vw]">
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          {/* Tabs */}
+          <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+            {(['datos', 'system_prompt', 'programacion'] as TabModal[]).map((tab) => (
+              <button key={tab} onClick={() => setTabModalTipo(tab)} className={tabModalCls(tabModalTipo, tab)}>
+                {TABS_MODAL_LABELS[tab]}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Datos */}
+          {tabModalTipo === 'datos' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-texto">Categoría *</label>
@@ -1025,25 +1074,42 @@ export default function PaginaProcesosDatosBasicos() {
                 onChange={(e) => setFormTipo({ ...formTipo, alias: e.target.value })}
                 placeholder="Alias breve" />
             </div>
+          )}
+
+          {/* Tab System Prompt */}
+          {tabModalTipo === 'system_prompt' && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">System prompt</label>
+              <textarea value={formTipo.system_prompt}
+                onChange={(e) => setFormTipo({ ...formTipo, system_prompt: e.target.value })}
+                rows={14}
+                placeholder="Instrucciones system para el LLM"
+                className={textareaCls + ' font-mono'} />
+            </div>
+          )}
+
+          {/* Tab Programación */}
+          {tabModalTipo === 'programacion' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">Prompt</label>
+                <label className="text-sm font-medium text-texto">Prompt insert</label>
                 <textarea value={formTipo.prompt_insert}
                   onChange={(e) => setFormTipo({ ...formTipo, prompt_insert: e.target.value })}
-                  rows={tipoEditando ? 7 : 8}
-                  placeholder="Prompt del tipo de proceso"
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                  rows={6}
+                  placeholder="Prompt para INSERT"
+                  className={textareaCls} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">System prompt</label>
-                <textarea value={formTipo.system_prompt}
-                  onChange={(e) => setFormTipo({ ...formTipo, system_prompt: e.target.value })}
-                  rows={tipoEditando ? 7 : 8}
-                  placeholder="Instrucciones system para el LLM"
-                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                <label className="text-sm font-medium text-texto">Prompt update</label>
+                <textarea value={formTipo.prompt_update}
+                  onChange={(e) => setFormTipo({ ...formTipo, prompt_update: e.target.value })}
+                  rows={6}
+                  placeholder="Prompt para UPDATE"
+                  className={textareaCls} />
               </div>
             </div>
-          </div>
+          )}
+
           {errorTipo && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorTipo}</p></div>}
           <PieBotonesModal
             editando={!!tipoEditando}
@@ -1056,143 +1122,173 @@ export default function PaginaProcesosDatosBasicos() {
       </Modal>
 
       {/* Modal Estado */}
-      <Modal abierto={modalEst} alCerrar={() => setModalEst(false)} titulo={estEditando ? 'Editar estado' : 'Nuevo estado de proceso'} className="w-[720px] max-w-[95vw]">
+      <Modal abierto={modalEst} alCerrar={() => setModalEst(false)} titulo={estEditando ? 'Editar estado' : 'Nuevo estado de proceso'} className="w-[880px] max-w-[95vw]">
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Categoría *</label>
-              <select value={formEst.codigo_categoria_proceso}
-                onChange={(e) => setFormEst({ ...formEst, codigo_categoria_proceso: e.target.value, codigo_tipo_proceso: '' })}
-                disabled={!!estEditando}
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
-                <option value="">Seleccionar categoría...</option>
-                {categorias.map((c) => <option key={c.codigo_categoria_proceso} value={c.codigo_categoria_proceso}>{c.nombre_categoria_proceso}</option>)}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Tipo *</label>
-              <select value={formEst.codigo_tipo_proceso}
-                onChange={(e) => setFormEst({ ...formEst, codigo_tipo_proceso: e.target.value })}
-                disabled={!!estEditando}
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
-                <option value="">Seleccionar tipo...</option>
-                {tipos.filter((t) => t.codigo_categoria_proceso === formEst.codigo_categoria_proceso)
-                  .map((t) => <option key={t.codigo_tipo_proceso} value={t.codigo_tipo_proceso}>{t.nombre_tipo_proceso}</option>)}
-              </select>
-            </div>
+          {/* Tabs */}
+          <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+            {(['datos', 'system_prompt', 'programacion'] as TabModal[]).map((tab) => (
+              <button key={tab} onClick={() => setTabModalEst(tab)} className={tabModalCls(tabModalEst, tab)}>
+                {TABS_MODAL_LABELS[tab]}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {!estEditando ? (
-              <Input etiqueta="Código estado (vacío = autogenerar)" value={formEst.codigo_estado_proceso}
-                onChange={(e) => setFormEst({ ...formEst, codigo_estado_proceso: e.target.value })}
-                placeholder="INGRESADO" />
-            ) : (
-              <Input etiqueta="Código estado" value={formEst.codigo_estado_proceso} disabled />
-            )}
-            <Input etiqueta="Nombre *" value={formEst.nombre_estado}
-              onChange={(e) => setFormEst({ ...formEst, nombre_estado: e.target.value })}
-              placeholder="Ingresado" />
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Secuencia</label>
-              <input type="number" min={0} value={formEst.secuencia}
-                onChange={(e) => setFormEst({ ...formEst, secuencia: parseInt(e.target.value) || 0 })}
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">N paralelo</label>
-              <input type="number" min={1} value={formEst.n_parallel}
-                onChange={(e) => setFormEst({ ...formEst, n_parallel: e.target.value })}
-                placeholder="10"
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Batch size</label>
-              <input type="number" min={1} value={formEst.batch_size}
-                onChange={(e) => setFormEst({ ...formEst, batch_size: e.target.value })}
-                placeholder="50"
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-texto">Batch timeout (s)</label>
-              <input type="number" min={1} value={formEst.batch_timeout_seg}
-                onChange={(e) => setFormEst({ ...formEst, batch_timeout_seg: e.target.value })}
-                placeholder="60"
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Función asociada</label>
-            <div className="relative">
-              <Input
-                placeholder="Buscar función..."
-                value={mostrarListaFunEst ? busquedaFunEst : (funcionSelEst ? `${funcionSelEst.nombre} — ${funcionSelEst.codigo_funcion}` : '')}
-                onChange={(e) => { setBusquedaFunEst(e.target.value); setMostrarListaFunEst(true) }}
-                onFocus={() => { setMostrarListaFunEst(true); setBusquedaFunEst('') }}
-                onBlur={() => setTimeout(() => setMostrarListaFunEst(false), 150)}
-                icono={<Search size={15} />}
-              />
-              {mostrarListaFunEst && (
-                <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
-                  {formEst.codigo_funcion && (
-                    <button type="button" onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { setFormEst({ ...formEst, codigo_funcion: '' }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
-                      className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde">
-                      (sin función)
-                    </button>
-                  )}
-                  {funcionesSugEst.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-texto-muted">Sin resultados</div>
-                  ) : funcionesSugEst.map((f) => (
-                    <button key={f.codigo_funcion} type="button" onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { setFormEst({ ...formEst, codigo_funcion: f.codigo_funcion }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
-                      className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${f.codigo_funcion === formEst.codigo_funcion ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
-                      {f.nombre}
-                      <span className="text-texto-muted text-xs ml-2">— {f.codigo_funcion}</span>
-                    </button>
-                  ))}
+          {/* Tab Datos */}
+          {tabModalEst === 'datos' && (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">Categoría *</label>
+                  <select value={formEst.codigo_categoria_proceso}
+                    onChange={(e) => setFormEst({ ...formEst, codigo_categoria_proceso: e.target.value, codigo_tipo_proceso: '' })}
+                    disabled={!!estEditando}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
+                    <option value="">Seleccionar categoría...</option>
+                    {categorias.map((c) => <option key={c.codigo_categoria_proceso} value={c.codigo_categoria_proceso}>{c.nombre_categoria_proceso}</option>)}
+                  </select>
                 </div>
-              )}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">Tipo *</label>
+                  <select value={formEst.codigo_tipo_proceso}
+                    onChange={(e) => setFormEst({ ...formEst, codigo_tipo_proceso: e.target.value })}
+                    disabled={!!estEditando}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-60">
+                    <option value="">Seleccionar tipo...</option>
+                    {tipos.filter((t) => t.codigo_categoria_proceso === formEst.codigo_categoria_proceso)
+                      .map((t) => <option key={t.codigo_tipo_proceso} value={t.codigo_tipo_proceso}>{t.nombre_tipo_proceso}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {!estEditando ? (
+                  <Input etiqueta="Código estado (vacío = autogenerar)" value={formEst.codigo_estado_proceso}
+                    onChange={(e) => setFormEst({ ...formEst, codigo_estado_proceso: e.target.value })}
+                    placeholder="INGRESADO" />
+                ) : (
+                  <Input etiqueta="Código estado" value={formEst.codigo_estado_proceso} disabled />
+                )}
+                <Input etiqueta="Nombre *" value={formEst.nombre_estado}
+                  onChange={(e) => setFormEst({ ...formEst, nombre_estado: e.target.value })}
+                  placeholder="Ingresado" />
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">Secuencia</label>
+                  <input type="number" min={0} value={formEst.secuencia}
+                    onChange={(e) => setFormEst({ ...formEst, secuencia: parseInt(e.target.value) || 0 })}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">N paralelo</label>
+                  <input type="number" min={1} value={formEst.n_parallel}
+                    onChange={(e) => setFormEst({ ...formEst, n_parallel: e.target.value })}
+                    placeholder="10"
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">Batch size</label>
+                  <input type="number" min={1} value={formEst.batch_size}
+                    onChange={(e) => setFormEst({ ...formEst, batch_size: e.target.value })}
+                    placeholder="50"
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-texto">Batch timeout (s)</label>
+                  <input type="number" min={1} value={formEst.batch_timeout_seg}
+                    onChange={(e) => setFormEst({ ...formEst, batch_timeout_seg: e.target.value })}
+                    placeholder="60"
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Función asociada</label>
+                <div className="relative">
+                  <Input
+                    placeholder="Buscar función..."
+                    value={mostrarListaFunEst ? busquedaFunEst : (funcionSelEst ? `${funcionSelEst.nombre} — ${funcionSelEst.codigo_funcion}` : '')}
+                    onChange={(e) => { setBusquedaFunEst(e.target.value); setMostrarListaFunEst(true) }}
+                    onFocus={() => { setMostrarListaFunEst(true); setBusquedaFunEst('') }}
+                    onBlur={() => setTimeout(() => setMostrarListaFunEst(false), 150)}
+                    icono={<Search size={15} />}
+                  />
+                  {mostrarListaFunEst && (
+                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
+                      {formEst.codigo_funcion && (
+                        <button type="button" onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => { setFormEst({ ...formEst, codigo_funcion: '' }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
+                          className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde">
+                          (sin función)
+                        </button>
+                      )}
+                      {funcionesSugEst.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-texto-muted">Sin resultados</div>
+                      ) : funcionesSugEst.map((f) => (
+                        <button key={f.codigo_funcion} type="button" onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => { setFormEst({ ...formEst, codigo_funcion: f.codigo_funcion }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
+                          className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${f.codigo_funcion === formEst.codigo_funcion ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
+                          {f.nombre}
+                          <span className="text-texto-muted text-xs ml-2">— {f.codigo_funcion}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-texto">
+                <input type="checkbox" checked={formEst.traducir}
+                  onChange={(e) => setFormEst({ ...formEst, traducir: e.target.checked })}
+                  className="h-4 w-4 rounded border-borde text-primario focus:ring-primario" />
+                Traducir este estado a los idiomas configurados
+              </label>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Ayuda</label>
+                <textarea value={formEst.ayuda}
+                  onChange={(e) => setFormEst({ ...formEst, ayuda: e.target.value })}
+                  rows={2}
+                  placeholder="Texto de ayuda contextual para este estado"
+                  className={textareaCls} />
+              </div>
             </div>
-          </div>
+          )}
 
-          <label className="flex items-center gap-2 text-sm text-texto">
-            <input type="checkbox" checked={formEst.traducir}
-              onChange={(e) => setFormEst({ ...formEst, traducir: e.target.checked })}
-              className="h-4 w-4 rounded border-borde text-primario focus:ring-primario" />
-            Traducir este estado a los idiomas configurados
-          </label>
+          {/* Tab System Prompt */}
+          {tabModalEst === 'system_prompt' && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">System prompt</label>
+              <textarea value={formEst.system_prompt}
+                onChange={(e) => setFormEst({ ...formEst, system_prompt: e.target.value })}
+                rows={14}
+                placeholder="Instrucciones system para el LLM"
+                className={textareaCls + ' font-mono'} />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Ayuda</label>
-            <textarea value={formEst.ayuda}
-              onChange={(e) => setFormEst({ ...formEst, ayuda: e.target.value })}
-              rows={2}
-              placeholder="Texto de ayuda contextual para este estado"
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Prompt</label>
-            <textarea value={formEst.prompt_insert}
-              onChange={(e) => setFormEst({ ...formEst, prompt_insert: e.target.value })}
-              rows={3}
-              placeholder="Prompt específico del estado"
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">System prompt</label>
-            <textarea value={formEst.system_prompt}
-              onChange={(e) => setFormEst({ ...formEst, system_prompt: e.target.value })}
-              rows={3}
-              placeholder="Instrucciones system para el LLM"
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-          </div>
+          {/* Tab Programación */}
+          {tabModalEst === 'programacion' && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Prompt insert</label>
+                <textarea value={formEst.prompt_insert}
+                  onChange={(e) => setFormEst({ ...formEst, prompt_insert: e.target.value })}
+                  rows={6}
+                  placeholder="Prompt específico del estado (INSERT)"
+                  className={textareaCls} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Prompt update</label>
+                <textarea value={formEst.prompt_update}
+                  onChange={(e) => setFormEst({ ...formEst, prompt_update: e.target.value })}
+                  rows={6}
+                  placeholder="Prompt específico del estado (UPDATE)"
+                  className={textareaCls} />
+              </div>
+            </div>
+          )}
 
           {errorEst && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEst}</p></div>}
           <PieBotonesModal
