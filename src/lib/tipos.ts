@@ -112,10 +112,11 @@ export interface Area {
   codigo_area: string
   codigo_entidad: string
   nombre: string
+  alias?: string | null
   descripcion?: string
   usuario_responsable?: string
   codigo_area_superior?: string
-  tipo_ubicacion?: 'AREA' | 'CONTENIDO'
+  tipo_ubicacion?: 'AREA' | 'CONTENIDO' | 'VIRTUAL'
   activo: boolean
   nivel?: number
 }

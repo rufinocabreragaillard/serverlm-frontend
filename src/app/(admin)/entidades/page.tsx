@@ -42,7 +42,7 @@ export default function PaginaEntidades() {
   const [entidadEditando, setEntidadEditando] = useState<Entidad | null>(null)
   const [formEntidad, setFormEntidad] = useState({ codigo_entidad: '', nombre: '', descripcion: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false })
   const [tabModalEntidad, setTabModalEntidad] = useState<'datos' | 'system_prompt' | 'programacion'>('datos')
-  const [formArea, setFormArea] = useState({ codigo_area: '', nombre: '', descripcion: '', codigo_area_superior: '', tipo_ubicacion: 'AREA' as 'AREA' | 'CONTENIDO' })
+  const [formArea, setFormArea] = useState({ codigo_area: '', nombre: '', alias: '', descripcion: '', codigo_area_superior: '', tipo_ubicacion: 'VIRTUAL' as 'AREA' | 'CONTENIDO' | 'VIRTUAL' })
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
@@ -133,7 +133,7 @@ export default function PaginaEntidades() {
 
   const abrirNuevaArea = () => {
     setAreaEditando(null)
-    setFormArea({ codigo_area: '', nombre: '', descripcion: '', codigo_area_superior: '', tipo_ubicacion: 'AREA' })
+    setFormArea({ codigo_area: '', nombre: '', alias: '', descripcion: '', codigo_area_superior: '', tipo_ubicacion: 'VIRTUAL' })
     setError('')
     setModalArea(true)
   }
@@ -143,9 +143,10 @@ export default function PaginaEntidades() {
     setFormArea({
       codigo_area: a.codigo_area,
       nombre: a.nombre,
+      alias: a.alias || '',
       descripcion: a.descripcion || '',
       codigo_area_superior: a.codigo_area_superior || '',
-      tipo_ubicacion: a.tipo_ubicacion || 'AREA',
+      tipo_ubicacion: a.tipo_ubicacion || 'CONTENIDO',
     })
     setError('')
     setModalArea(true)
@@ -159,6 +160,7 @@ export default function PaginaEntidades() {
         // Editar via ubicacionesDocsApi (código_area = código_ubicacion)
         await ubicacionesDocsApi.actualizar(areaEditando.codigo_area, {
           nombre_ubicacion: formArea.nombre,
+          alias_ubicacion: formArea.alias || formArea.nombre,
           descripcion: formArea.descripcion || undefined,
           codigo_ubicacion_superior: formArea.codigo_area_superior || null,
           tipo_ubicacion: formArea.tipo_ubicacion,
@@ -168,7 +170,8 @@ export default function PaginaEntidades() {
         const datos: Record<string, string> = {
           codigo_area: formArea.codigo_area,
           nombre: formArea.nombre,
-          tipo_ubicacion: formArea.tipo_ubicacion,
+          alias_ubicacion: formArea.alias || formArea.nombre,
+          tipo_ubicacion: 'VIRTUAL',  // siempre VIRTUAL al crear manualmente
         }
         if (formArea.descripcion) datos.descripcion = formArea.descripcion
         if (formArea.codigo_area_superior) datos.codigo_area_superior = formArea.codigo_area_superior
@@ -340,16 +343,17 @@ export default function PaginaEntidades() {
                 <TablaCabecera><tr>
                   <TablaTh className="w-28">Código</TablaTh>
                   <TablaTh>Nombre</TablaTh>
+                  <TablaTh className="w-36">Alias</TablaTh>
                   <TablaTh className="w-32">Ubic. Superior</TablaTh>
                   <TablaTh className="w-24">Tipo</TablaTh>
-                  <TablaTh className="w-24 text-right">Acciones</TablaTh>
+                  <TablaTh className="w-20 text-right">Acciones</TablaTh>
                 </tr></TablaCabecera>
                 <TablaCuerpo>
                   {cargandoAreas ? (
-                    <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={5 as never}>Cargando áreas...</TablaTd></TablaFila>
+                    <TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={6 as never}>Cargando áreas...</TablaTd></TablaFila>
                   ) : areasFiltradas.length === 0 ? (
                     <TablaFila>
-                      <TablaTd className="py-8 text-center" colSpan={5 as never}>
+                      <TablaTd className="py-8 text-center" colSpan={6 as never}>
                         <div className="flex flex-col items-center gap-2 text-texto-muted">
                           <MapPin size={24} />
                           <p className="text-sm">{busquedaAreas ? 'No se encontraron ubicaciones' : 'No hay ubicaciones configuradas'}</p>
@@ -365,9 +369,10 @@ export default function PaginaEntidades() {
                           {a.nombre}
                         </span>
                       </TablaTd>
+                      <TablaTd className="text-texto-muted text-sm">{a.alias || <span className="text-texto-light italic text-xs">—</span>}</TablaTd>
                       <TablaTd className="text-texto-muted text-xs">{a.codigo_area_superior || '—'}</TablaTd>
                       <TablaTd>
-                        <Insignia variante={a.tipo_ubicacion === 'AREA' ? 'primario' : 'neutro'}>
+                        <Insignia variante={a.tipo_ubicacion === 'AREA' ? 'primario' : a.tipo_ubicacion === 'VIRTUAL' ? 'exito' : 'neutro'}>
                           {a.tipo_ubicacion || 'CONTENIDO'}
                         </Insignia>
                       </TablaTd>
@@ -484,44 +489,63 @@ export default function PaginaEntidades() {
 
       {/* Modal área / ubicación */}
       <Modal abierto={modalArea} alCerrar={() => setModalArea(false)}
-        titulo={areaEditando ? 'Editar ubicación' : 'Nueva ubicación'}
+        titulo={areaEditando ? `Editar Ubicación: ${areaEditando.nombre}` : 'Nueva ubicación'}
         descripcion={`Entidad: ${entidadSeleccionada?.nombre}`}
+        className="max-w-2xl"
       >
-        <div className="flex flex-col gap-4 min-w-[420px]">
-          {/* Código: solo al crear */}
-          {!areaEditando && (
-            <Input etiqueta="Código" value={formArea.codigo_area} onChange={(e) => setFormArea({ ...formArea, codigo_area: e.target.value.toUpperCase() })} placeholder="Ej: SEC-01" />
-          )}
-          {areaEditando && (
-            <Input etiqueta="Código" value={formArea.codigo_area} disabled readOnly />
-          )}
-          <Input etiqueta="Nombre" value={formArea.nombre} onChange={(e) => setFormArea({ ...formArea, nombre: e.target.value })} placeholder="Nombre de la ubicación" />
-          <Input etiqueta="Descripción" value={formArea.descripcion} onChange={(e) => setFormArea({ ...formArea, descripcion: e.target.value })} placeholder="Descripción opcional" />
-          {/* Tipo */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Tipo</label>
-            <select value={formArea.tipo_ubicacion} onChange={(e) => setFormArea({ ...formArea, tipo_ubicacion: e.target.value as 'AREA' | 'CONTENIDO' })} className={selectClass}>
-              <option value="AREA">ÁREA — nivel organizacional</option>
-              <option value="CONTENIDO">CONTENIDO — carpeta de documentos</option>
-            </select>
-            <p className="text-xs text-texto-muted">Las ubicaciones de tipo ÁREA agrupan áreas y contenido subordinado</p>
+        <div className="flex flex-col gap-4 min-w-[560px]">
+          {/* Fila 1: Código + Nombre */}
+          <div className="grid grid-cols-2 gap-4">
+            {!areaEditando ? (
+              <Input etiqueta="Código" value={formArea.codigo_area} onChange={(e) => setFormArea({ ...formArea, codigo_area: e.target.value.toUpperCase() })} placeholder="Ej: SEC-01" />
+            ) : (
+              <Input etiqueta="Código" value={formArea.codigo_area} disabled readOnly />
+            )}
+            <Input etiqueta="Nombre" value={formArea.nombre} onChange={(e) => setFormArea({ ...formArea, nombre: e.target.value })} placeholder="Nombre de la ubicación" />
           </div>
-          {/* Ubicación superior */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-texto">Ubicación superior</label>
-            <select
-              value={formArea.codigo_area_superior}
-              onChange={(e) => setFormArea({ ...formArea, codigo_area_superior: e.target.value })}
-              className={selectClass}
-            >
-              <option value="">Sin ubicación superior (raíz)</option>
-              {areas.filter((a) => a.codigo_area !== formArea.codigo_area).map((a) => (
-                <option key={a.codigo_area} value={a.codigo_area}>
-                  {'  '.repeat(a.nivel || 0)}{(a.nivel || 0) > 0 ? '└ ' : ''}{a.nombre} ({a.codigo_area})
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-texto-muted">Selecciona la ubicación jerárquicamente superior</p>
+          {/* Fila 2: Alias + Descripción */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Input etiqueta="Alias" value={formArea.alias} onChange={(e) => setFormArea({ ...formArea, alias: e.target.value })} placeholder={formArea.nombre || 'Igual al nombre por defecto'} />
+              <p className="text-xs text-texto-muted">Nombre corto de visualización (por defecto = nombre)</p>
+            </div>
+            <Input etiqueta="Descripción" value={formArea.descripcion} onChange={(e) => setFormArea({ ...formArea, descripcion: e.target.value })} placeholder="Descripción opcional" />
+          </div>
+          {/* Fila 3: Tipo (solo edición) + Ubicación superior */}
+          <div className="grid grid-cols-2 gap-4">
+            {areaEditando && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Tipo</label>
+                <select
+                  value={formArea.tipo_ubicacion}
+                  onChange={(e) => setFormArea({ ...formArea, tipo_ubicacion: e.target.value as 'AREA' | 'CONTENIDO' | 'VIRTUAL' })}
+                  className={selectClass}
+                  disabled={formArea.tipo_ubicacion === 'VIRTUAL'}
+                >
+                  <option value="AREA">ÁREA</option>
+                  <option value="CONTENIDO">CONTENIDO</option>
+                  {formArea.tipo_ubicacion === 'VIRTUAL' && <option value="VIRTUAL">VIRTUAL</option>}
+                </select>
+                {formArea.tipo_ubicacion === 'VIRTUAL' && (
+                  <p className="text-xs text-texto-muted">Tipo VIRTUAL — no editable (ubicación manual)</p>
+                )}
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-texto">Ubicación superior</label>
+              <select
+                value={formArea.codigo_area_superior}
+                onChange={(e) => setFormArea({ ...formArea, codigo_area_superior: e.target.value })}
+                className={selectClass}
+              >
+                <option value="">Sin ubicación superior (raíz)</option>
+                {areas.filter((a) => a.codigo_area !== formArea.codigo_area).map((a) => (
+                  <option key={a.codigo_area} value={a.codigo_area}>
+                    {'  '.repeat(a.nivel || 0)}{(a.nivel || 0) > 0 ? '└ ' : ''}{a.alias || a.nombre} ({a.codigo_area})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
           <div className="flex gap-3 justify-end pt-2">
