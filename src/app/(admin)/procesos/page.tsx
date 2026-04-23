@@ -39,6 +39,20 @@ type FormProceso = {
   python_editado_manual: boolean
   javascript_editado_manual: boolean
   json: string
+  // Clasificación
+  codigo_categoria_proceso: string
+  codigo_tipo_proceso: string
+  codigo_estado: string
+  // Actores
+  codigo_grupo: string
+  codigo_entidad: string
+  codigo_usuario: string
+  codigo_usuario_asignado: string
+  fecha_inicio: string
+  fecha_fin: string
+  fecha_comprometida: string
+  costo: string
+  costo_en_tiempo: string
 }
 
 type TabProceso = 'datos' | 'clasificacion' | 'actores' | 'system_prompt' | 'programacion_insert' | 'programacion_update' | 'json'
@@ -85,24 +99,45 @@ export default function PaginaProcesos() {
     },
     getId: (p) => p.codigo_proceso,
     camposBusqueda: (p) => [p.codigo_proceso, p.nombre_proceso, p.codigo_funcion ?? ''],
-    formInicial: { nombre_proceso: '', descripcion: '', n_parallel: 1, codigo_funcion: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false, json: '' },
+    formInicial: {
+      nombre_proceso: '', descripcion: '', n_parallel: 1, codigo_funcion: '',
+      prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '',
+      python_editado_manual: false, javascript_editado_manual: false, json: '',
+      codigo_categoria_proceso: '', codigo_tipo_proceso: '', codigo_estado: '',
+      codigo_grupo: '', codigo_entidad: '', codigo_usuario: '', codigo_usuario_asignado: '',
+      fecha_inicio: '', fecha_fin: '', fecha_comprometida: '', costo: '', costo_en_tiempo: '',
+    },
     itemToForm: (p) => {
-      const jsonVal = (p as unknown as Record<string, unknown>).json
+      const raw = p as unknown as Record<string, unknown>
+      const jsonVal = raw.json
       const jsonStr = jsonVal == null ? '' : JSON.stringify(jsonVal, null, 2)
+      const str = (v: unknown) => (v == null ? '' : String(v))
       return {
         nombre_proceso: p.nombre_proceso,
         descripcion: p.descripcion ?? '',
         n_parallel: p.n_parallel,
         codigo_funcion: p.codigo_funcion ?? '',
-        prompt_insert: (p as unknown as Record<string, unknown>).prompt_insert as string ?? '',
-        prompt_update: (p as unknown as Record<string, unknown>).prompt_update as string ?? '',
-        system_prompt: (p as unknown as Record<string, unknown>).system_prompt as string ?? '',
-        python_insert: (p as unknown as Record<string, unknown>).python_insert as string ?? '',
-        python_update: (p as unknown as Record<string, unknown>).python_update as string ?? '',
-        javascript: (p as unknown as Record<string, unknown>).javascript as string ?? '',
-        python_editado_manual: ((p as unknown as Record<string, unknown>).python_editado_manual as boolean) ?? false,
-        javascript_editado_manual: ((p as unknown as Record<string, unknown>).javascript_editado_manual as boolean) ?? false,
+        prompt_insert: str(raw.prompt_insert),
+        prompt_update: str(raw.prompt_update),
+        system_prompt: str(raw.system_prompt),
+        python_insert: str(raw.python_insert),
+        python_update: str(raw.python_update),
+        javascript: str(raw.javascript),
+        python_editado_manual: (raw.python_editado_manual as boolean) ?? false,
+        javascript_editado_manual: (raw.javascript_editado_manual as boolean) ?? false,
         json: jsonStr,
+        codigo_categoria_proceso: str(raw.codigo_categoria_proceso),
+        codigo_tipo_proceso: str(raw.codigo_tipo_proceso),
+        codigo_estado: str(raw.codigo_estado),
+        codigo_grupo: str(raw.codigo_grupo),
+        codigo_entidad: str(raw.codigo_entidad),
+        codigo_usuario: str(raw.codigo_usuario),
+        codigo_usuario_asignado: str(raw.codigo_usuario_asignado),
+        fecha_inicio: str(raw.fecha_inicio),
+        fecha_fin: str(raw.fecha_fin),
+        fecha_comprometida: str(raw.fecha_comprometida),
+        costo: str(raw.costo),
+        costo_en_tiempo: str(raw.costo_en_tiempo),
       }
     },
   })
@@ -260,17 +295,86 @@ export default function PaginaProcesos() {
                 </select>
                 <p className="text-xs text-texto-muted">{t('descFuncion')}</p>
               </div>
-              <div className="col-span-2 text-xs text-texto-muted italic">
-                Campos pendientes: codigo_categoria_proceso, codigo_tipo_proceso, codigo_estado (FK a estados_procesos).
-              </div>
+              <div />
+              <Input
+                etiqueta="Categoría del proceso"
+                value={crud.form.codigo_categoria_proceso}
+                onChange={(e) => crud.updateForm('codigo_categoria_proceso', e.target.value)}
+                placeholder="codigo_categoria_proceso"
+              />
+              <Input
+                etiqueta="Tipo de proceso"
+                value={crud.form.codigo_tipo_proceso}
+                onChange={(e) => crud.updateForm('codigo_tipo_proceso', e.target.value)}
+                placeholder="codigo_tipo_proceso"
+              />
+              <Input
+                etiqueta="Estado"
+                value={crud.form.codigo_estado}
+                onChange={(e) => crud.updateForm('codigo_estado', e.target.value)}
+                placeholder="codigo_estado (FK a estados_procesos)"
+              />
             </div>
           )}
 
           {tabModal === 'actores' && crud.editando && (
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 text-xs text-texto-muted italic">
-                Campos pendientes: codigo_grupo, codigo_entidad, codigo_usuario, codigo_usuario_asignado, fecha_inicio, fecha_fin, fecha_comprometida, costo, costo_en_tiempo.
-              </div>
+              <Input
+                etiqueta="Grupo"
+                value={crud.form.codigo_grupo}
+                onChange={(e) => crud.updateForm('codigo_grupo', e.target.value)}
+                placeholder="codigo_grupo"
+              />
+              <Input
+                etiqueta="Entidad"
+                value={crud.form.codigo_entidad}
+                onChange={(e) => crud.updateForm('codigo_entidad', e.target.value)}
+                placeholder="codigo_entidad"
+              />
+              <Input
+                etiqueta="Usuario"
+                value={crud.form.codigo_usuario}
+                onChange={(e) => crud.updateForm('codigo_usuario', e.target.value)}
+                placeholder="codigo_usuario"
+              />
+              <Input
+                etiqueta="Usuario asignado"
+                value={crud.form.codigo_usuario_asignado}
+                onChange={(e) => crud.updateForm('codigo_usuario_asignado', e.target.value)}
+                placeholder="codigo_usuario_asignado"
+              />
+              <Input
+                etiqueta="Fecha inicio"
+                type="datetime-local"
+                value={crud.form.fecha_inicio ? crud.form.fecha_inicio.slice(0, 16) : ''}
+                onChange={(e) => crud.updateForm('fecha_inicio', e.target.value)}
+              />
+              <Input
+                etiqueta="Fecha fin"
+                type="datetime-local"
+                value={crud.form.fecha_fin ? crud.form.fecha_fin.slice(0, 16) : ''}
+                onChange={(e) => crud.updateForm('fecha_fin', e.target.value)}
+              />
+              <Input
+                etiqueta="Fecha comprometida"
+                type="datetime-local"
+                value={crud.form.fecha_comprometida ? crud.form.fecha_comprometida.slice(0, 16) : ''}
+                onChange={(e) => crud.updateForm('fecha_comprometida', e.target.value)}
+              />
+              <Input
+                etiqueta="Costo"
+                type="number"
+                step="0.0001"
+                value={crud.form.costo}
+                onChange={(e) => crud.updateForm('costo', e.target.value)}
+                placeholder="0.0000"
+              />
+              <Input
+                etiqueta="Costo en tiempo"
+                value={crud.form.costo_en_tiempo}
+                onChange={(e) => crud.updateForm('costo_en_tiempo', e.target.value)}
+                placeholder="ej: 2 hours 30 minutes"
+              />
             </div>
           )}
 
