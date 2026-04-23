@@ -201,12 +201,12 @@ export default function PaginaUsuariosSemilla() {
 
   // ── Abrir modal ────────────────────────────────────────────────────────────
   // ── Form simplificado para creación (Nuevo Usuario Semilla) ────────────
-  const [formNuevo, setFormNuevo] = useState({ correo: '', nombre: '', empresa: '' })
+  const [formNuevo, setFormNuevo] = useState({ correo: '', nombre: '', empresa: '', tipo: 'ADMINISTRADOR' })
   const [creandoSemilla, setCreandoSemilla] = useState(false)
 
   const abrirNuevo = () => {
     setUsuarioEditando(null)
-    setFormNuevo({ correo: '', nombre: '', empresa: '' })
+    setFormNuevo({ correo: '', nombre: '', empresa: '', tipo: 'ADMINISTRADOR' })
     setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '',
       id_rol_principal: '', aplicacion_por_defecto: '', invitar: true, sidebar_colapsado: false,
@@ -248,13 +248,13 @@ export default function PaginaUsuariosSemilla() {
         codigo_grupo: grupo.codigo_grupo,
       })
 
-      // 4. Crear usuario con tipo ADMINISTRADOR y fecha_inicial = hoy
+      // 4. Crear usuario con el tipo seleccionado y fecha_inicial = hoy
       const hoy = new Date().toISOString().split('T')[0]
       const nuevoUsuario = await usuariosApi.crear({
         codigo_usuario: formNuevo.correo.toLowerCase(),
         nombre: formNuevo.nombre,
         alias: formNuevo.nombre,
-        tipo: 'ADMINISTRADOR',
+        tipo: formNuevo.tipo,
         grupo_por_defecto: grupo.codigo_grupo,
         entidad_por_defecto: entidad.codigo_entidad,
         aplicacion_por_defecto: appActiva,
@@ -262,10 +262,10 @@ export default function PaginaUsuariosSemilla() {
         invitar: true,
       })
 
-      // 5. Asignar roles con inicial=true + todos los de tipo ADMINISTRADOR
+      // 5. Asignar roles con inicial=true + todos los del mismo tipo del usuario
       const rolesDelGrupo = await rolesApi.listar(grupo.codigo_grupo, true)
       const rolesAAsignar = rolesDelGrupo.filter(
-        (r: Rol) => r.inicial === true || normalizarTipo(r.tipo) === 'ADMINISTRADOR'
+        (r: Rol) => r.inicial === true || normalizarTipo(r.tipo) === normalizarTipo(formNuevo.tipo)
       )
       for (const rol of rolesAAsignar) {
         try {
@@ -671,6 +671,17 @@ export default function PaginaUsuariosSemilla() {
                     onChange={(e) => setFormNuevo({ ...formNuevo, empresa: e.target.value })}
                     placeholder="Mi Empresa S.A."
                   />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-texto">Tipo de usuario *</label>
+                  <select
+                    value={formNuevo.tipo}
+                    onChange={(e) => setFormNuevo({ ...formNuevo, tipo: e.target.value })}
+                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                  >
+                    <option value="ADMINISTRADOR">Administrador</option>
+                    <option value="USUARIO">Usuario</option>
+                  </select>
                 </div>
               </div>
 
