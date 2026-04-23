@@ -198,9 +198,9 @@ export default function PaginaProcesos() {
             ? t('editarTitulo', { nombre: crud.editando.nombre_proceso })
             : t('editarTitulo', { nombre: '' })
         }
-        className="max-w-lg"
+        className="max-w-2xl"
       >
-        <div className="flex flex-col gap-4 min-w-[400px] min-h-[500px]">
+        <div className="flex flex-col gap-4 min-w-[520px] min-h-[500px]">
           {crud.editando && (
             <div className="flex gap-2 border-b border-borde -mt-2">
               {([
@@ -220,30 +220,74 @@ export default function PaginaProcesos() {
               ))}
             </div>
           )}
-          {(tabModal === 'datos' || !crud.editando) && crud.editando && (
-            <Input
-              etiqueta={t('etiquetaCodigo')}
-              value={crud.editando.codigo_proceso}
-              onChange={() => {}}
-              disabled
-            />
+          {tabModal === 'datos' && crud.editando && (
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                etiqueta={t('etiquetaCodigo')}
+                value={crud.editando.codigo_proceso}
+                onChange={() => {}}
+                disabled
+              />
+
+              <Input
+                etiqueta={t('etiquetaNombre')}
+                value={crud.form.nombre_proceso}
+                onChange={(e) => crud.updateForm('nombre_proceso', e.target.value)}
+                placeholder={t('placeholderNombre')}
+                autoFocus
+              />
+
+              <div className="col-span-2">
+                <Textarea
+                  etiqueta={t('etiquetaDescripcion')}
+                  value={crud.form.descripcion}
+                  onChange={(e) => crud.updateForm('descripcion', e.target.value)}
+                  placeholder={t('placeholderDescripcion')}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">{t('etiquetaFuncion')}</label>
+                <select
+                  className={selectClass}
+                  value={crud.form.codigo_funcion}
+                  onChange={(e) => crud.updateForm('codigo_funcion', e.target.value)}
+                >
+                  <option value="">{t('sinFuncion')}</option>
+                  {funcionesOrdenadas.map((f) => (
+                    <option key={f.codigo_funcion} value={f.codigo_funcion}>
+                      {f.nombre}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-texto-muted">{t('descFuncion')}</p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-texto">{t('etiquetaTipo')}</label>
+                <select
+                  className={selectClass}
+                  value={crud.form.tipo}
+                  onChange={(e) => crud.updateForm('tipo', e.target.value)}
+                >
+                  {TIPOS_ELEMENTO.map((tp) => (
+                    <option key={tp} value={tp}>
+                      {etiquetaTipo(tp)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Input
+                etiqueta={t('etiquetaParalelo')}
+                type="number"
+                value={String(crud.form.n_parallel)}
+                onChange={(e) => crud.updateForm('n_parallel', Number(e.target.value))}
+                placeholder="1"
+              />
+            </div>
           )}
-
-          {tabModal === 'datos' && <Input
-            etiqueta={t('etiquetaNombre')}
-            value={crud.form.nombre_proceso}
-            onChange={(e) => crud.updateForm('nombre_proceso', e.target.value)}
-            placeholder={t('placeholderNombre')}
-            autoFocus
-          />}
-
-          {tabModal === 'datos' && <Textarea
-            etiqueta={t('etiquetaDescripcion')}
-            value={crud.form.descripcion}
-            onChange={(e) => crud.updateForm('descripcion', e.target.value)}
-            placeholder={t('placeholderDescripcion')}
-            rows={3}
-          />}
 
           {tabModal === 'system_prompt' && crud.editando && (
             <TabPrompts
@@ -315,51 +359,11 @@ export default function PaginaProcesos() {
             />
           )}
 
-          {tabModal === 'datos' && <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">{t('etiquetaFuncion')}</label>
-            <select
-              className={selectClass}
-              value={crud.form.codigo_funcion}
-              onChange={(e) => crud.updateForm('codigo_funcion', e.target.value)}
-            >
-              <option value="">{t('sinFuncion')}</option>
-              {funcionesOrdenadas.map((f) => (
-                <option key={f.codigo_funcion} value={f.codigo_funcion}>
-                  {f.nombre}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-texto-muted">{t('descFuncion')}</p>
-          </div>}
-
-          {tabModal === 'datos' && <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">{t('etiquetaTipo')}</label>
-            <select
-              className={selectClass}
-              value={crud.form.tipo}
-              onChange={(e) => crud.updateForm('tipo', e.target.value)}
-            >
-              {TIPOS_ELEMENTO.map((tp) => (
-                <option key={tp} value={tp}>
-                  {etiquetaTipo(tp)}
-                </option>
-              ))}
-            </select>
-          </div>}
-
-          {tabModal === 'datos' && <Input
-            etiqueta={t('etiquetaParalelo')}
-            type="number"
-            value={String(crud.form.n_parallel)}
-            onChange={(e) => crud.updateForm('n_parallel', Number(e.target.value))}
-            placeholder="1"
-          />}
-
           {tabModal === 'json' && crud.editando && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-texto">{t('etiquetaJson')}</label>
               <textarea
-                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm font-mono text-texto focus:outline-none focus:ring-2 focus:ring-primario min-h-[300px]"
+                className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm font-mono text-texto focus:outline-none focus:ring-2 focus:ring-primario min-h-[75px]"
                 value={crud.form.json}
                 onChange={(e) => crud.updateForm('json', e.target.value)}
                 placeholder='{\n  "clave": "valor"\n}'

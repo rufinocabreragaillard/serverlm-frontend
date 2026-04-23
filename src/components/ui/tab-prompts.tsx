@@ -61,9 +61,7 @@ export function TabPrompts({
 
       {/* ── Bloque INSERT ─────────────────────────────────────────────────── */}
       {(mostrarPromptInsert || mostrarPythonInsert) && (
-        <div className="rounded border border-borde p-3 space-y-3">
-          <p className="text-xs font-semibold text-texto-muted uppercase tracking-wide">Trigger INSERT (post-creación)</p>
-
+        <div className="space-y-3">
           {mostrarPromptInsert && (
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-1">
@@ -114,9 +112,7 @@ export function TabPrompts({
 
       {/* ── Bloque UPDATE ─────────────────────────────────────────────────── */}
       {(mostrarPromptUpdate || mostrarPythonUpdate) && (
-        <div className="rounded border border-borde p-3 space-y-3">
-          <p className="text-xs font-semibold text-texto-muted uppercase tracking-wide">Trigger UPDATE (post-modificación)</p>
-
+        <div className="space-y-3">
           {mostrarPromptUpdate && (
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-1">
@@ -167,7 +163,7 @@ export function TabPrompts({
         <div>
           <label className="block text-sm font-medium mb-1">System Prompt (instrucción base LLM)</label>
           <textarea
-            className="w-full border border-borde rounded px-3 py-2 text-sm min-h-[250px] font-mono"
+            className="w-full border border-borde rounded px-3 py-2 text-sm min-h-[50px] font-mono"
             value={campos.system_prompt || ''}
             onChange={(e) => onCampoCambiado('system_prompt', e.target.value)}
             placeholder="Instrucción base al LLM (se inyecta en system_prompt del chat)."
