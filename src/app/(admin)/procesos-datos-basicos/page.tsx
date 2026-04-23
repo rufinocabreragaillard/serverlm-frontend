@@ -78,22 +78,16 @@ export default function PaginaProcesosDatosBasicos() {
     prompt_insert: string
     prompt_update: string
     system_prompt: string
-    codigo_funcion: string
-    n_parallel: string
     ayuda: string
     traducir: boolean
-    batch_size: string
-    batch_timeout_seg: string
   }>({
     codigo_categoria_proceso: '', codigo_tipo_proceso: '', codigo_estado_proceso: '',
     nombre_estado: '', secuencia: 0,
-    prompt_insert: '', prompt_update: '', system_prompt: '', codigo_funcion: '',
-    n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
+    prompt_insert: '', prompt_update: '', system_prompt: '',
+    ayuda: '', traducir: false,
   })
   const [guardandoEst, setGuardandoEst] = useState(false)
   const [errorEst, setErrorEst] = useState('')
-  const [busquedaFunEst, setBusquedaFunEst] = useState('')
-  const [mostrarListaFunEst, setMostrarListaFunEst] = useState(false)
   const [funciones, setFunciones] = useState<Funcion[]>([])
 
   // ── Canónicos ──────────────────────────────────────────────────────────────
@@ -350,8 +344,8 @@ export default function PaginaProcesosDatosBasicos() {
       codigo_tipo_proceso: filtroTipo || '',
       codigo_estado_proceso: '',
       nombre_estado: '', secuencia: 0,
-      prompt_insert: '', prompt_update: '', system_prompt: '', codigo_funcion: '',
-      n_parallel: '', ayuda: '', traducir: false, batch_size: '', batch_timeout_seg: '',
+      prompt_insert: '', prompt_update: '', system_prompt: '',
+      ayuda: '', traducir: false,
     })
     setTabModalEst('datos')
     setErrorEst('')
@@ -369,12 +363,8 @@ export default function PaginaProcesosDatosBasicos() {
       prompt_insert: e.prompt_insert || '',
       prompt_update: e.prompt_update || '',
       system_prompt: e.system_prompt || '',
-      codigo_funcion: e.codigo_funcion || '',
-      n_parallel: e.n_parallel != null ? String(e.n_parallel) : '',
       ayuda: e.ayuda || '',
       traducir: e.traducir,
-      batch_size: e.batch_size != null ? String(e.batch_size) : '',
-      batch_timeout_seg: e.batch_timeout_seg != null ? String(e.batch_timeout_seg) : '',
     })
     setTabModalEst('datos')
     setErrorEst('')
@@ -386,7 +376,6 @@ export default function PaginaProcesosDatosBasicos() {
       setErrorEst('Categoría, tipo y nombre son obligatorios'); return
     }
     setGuardandoEst(true); setErrorEst('')
-    const toInt = (s: string) => (s.trim() === '' ? undefined : parseInt(s, 10))
     try {
       if (estEditando) {
         await procesosDatosBasicosApi.actualizarEstado(
@@ -397,12 +386,8 @@ export default function PaginaProcesosDatosBasicos() {
             prompt_insert: formEst.prompt_insert || undefined,
             prompt_update: formEst.prompt_update || undefined,
             system_prompt: formEst.system_prompt || undefined,
-            codigo_funcion: formEst.codigo_funcion || undefined,
-            n_parallel: toInt(formEst.n_parallel),
             ayuda: formEst.ayuda || undefined,
             traducir: formEst.traducir,
-            batch_size: toInt(formEst.batch_size),
-            batch_timeout_seg: toInt(formEst.batch_timeout_seg),
           }
         )
       } else {
@@ -415,12 +400,8 @@ export default function PaginaProcesosDatosBasicos() {
           prompt_insert: formEst.prompt_insert || undefined,
           prompt_update: formEst.prompt_update || undefined,
           system_prompt: formEst.system_prompt || undefined,
-          codigo_funcion: formEst.codigo_funcion || undefined,
-          n_parallel: toInt(formEst.n_parallel),
           ayuda: formEst.ayuda || undefined,
           traducir: formEst.traducir,
-          batch_size: toInt(formEst.batch_size),
-          batch_timeout_seg: toInt(formEst.batch_timeout_seg),
         })
       }
       if (cerrar) setModalEst(false)
@@ -535,14 +516,6 @@ export default function PaginaProcesosDatosBasicos() {
   const funcionesFiltradas = aplicacionActiva
     ? [...funciones].filter((f) => f.codigo_aplicacion_origen === aplicacionActiva).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
     : [...funciones].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  const funcionSelEst = funcionesFiltradas.find((f) => f.codigo_funcion === formEst.codigo_funcion) || null
-  const funcionesSugEst = !busquedaFunEst.trim()
-    ? funcionesFiltradas
-    : funcionesFiltradas.filter((f) =>
-        f.nombre.toLowerCase().includes(busquedaFunEst.toLowerCase()) ||
-        f.codigo_funcion.toLowerCase().includes(busquedaFunEst.toLowerCase())
-      )
-
   const canonicosFiltrados = busquedaCan
     ? canonicos.filter((c) =>
         c.codigo_estado_canonico.toLowerCase().includes(busquedaCan.toLowerCase()) ||
@@ -825,10 +798,6 @@ export default function PaginaProcesosDatosBasicos() {
                   { titulo: 'Código estado', campo: 'codigo_estado_proceso' },
                   { titulo: 'Nombre', campo: 'nombre_estado' },
                   { titulo: 'Secuencia', campo: 'secuencia' },
-                  { titulo: 'Función', campo: 'codigo_funcion' },
-                  { titulo: 'N paralelo', campo: 'n_parallel' },
-                  { titulo: 'Batch size', campo: 'batch_size' },
-                  { titulo: 'Batch timeout (s)', campo: 'batch_timeout_seg' },
                   { titulo: 'Traducir', campo: 'traducir', formato: (v) => v ? 'Sí' : 'No' },
                 ], 'estados_proceso')}
                 disabled={estadosFiltrados.length === 0}>
@@ -859,9 +828,6 @@ export default function PaginaProcesosDatosBasicos() {
                   <TablaTh className="w-8" />
                   <TablaTh className="w-16 text-center">Orden</TablaTh>
                   <TablaTh>Nombre</TablaTh>
-                  <TablaTh>Función</TablaTh>
-                  <TablaTh className="text-center">N par.</TablaTh>
-                  <TablaTh className="text-center">Batch</TablaTh>
                   <TablaTh className="w-36">Código</TablaTh>
                   <TablaTh className="text-right w-24">Acciones</TablaTh>
                 </tr></TablaCabecera>
@@ -870,9 +836,6 @@ export default function PaginaProcesosDatosBasicos() {
                     <SortableRow key={`${e.codigo_categoria_proceso}/${e.codigo_tipo_proceso}/${e.codigo_estado_proceso}`} id={`${e.codigo_categoria_proceso}/${e.codigo_tipo_proceso}/${e.codigo_estado_proceso}`}>
                       <TablaTd className="text-center text-texto-muted text-sm">{e.orden ?? '—'}</TablaTd>
                       <TablaTd className="font-medium">{e.nombre_estado}</TablaTd>
-                      <TablaTd className="text-texto-muted text-sm">{e.codigo_funcion || <span className="text-texto-light">—</span>}</TablaTd>
-                      <TablaTd className="text-texto-muted text-sm text-center">{e.n_parallel ?? <span className="text-texto-light">—</span>}</TablaTd>
-                      <TablaTd className="text-texto-muted text-sm text-center">{e.batch_size ?? <span className="text-texto-light">—</span>}</TablaTd>
                       <TablaTd><code className="text-xs bg-surface border border-borde rounded px-1.5 py-0.5">{e.codigo_estado_proceso}</code></TablaTd>
                       <TablaTd>
                         <div className="flex items-center justify-end gap-1">
@@ -1183,68 +1146,12 @@ export default function PaginaProcesosDatosBasicos() {
                   placeholder="Ingresado" />
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-texto">Secuencia</label>
                   <input type="number" min={0} value={formEst.secuencia}
                     onChange={(e) => setFormEst({ ...formEst, secuencia: parseInt(e.target.value) || 0 })}
                     className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-texto">N paralelo</label>
-                  <input type="number" min={1} value={formEst.n_parallel}
-                    onChange={(e) => setFormEst({ ...formEst, n_parallel: e.target.value })}
-                    placeholder="10"
-                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-texto">Batch size</label>
-                  <input type="number" min={1} value={formEst.batch_size}
-                    onChange={(e) => setFormEst({ ...formEst, batch_size: e.target.value })}
-                    placeholder="50"
-                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-texto">Batch timeout (s)</label>
-                  <input type="number" min={1} value={formEst.batch_timeout_seg}
-                    onChange={(e) => setFormEst({ ...formEst, batch_timeout_seg: e.target.value })}
-                    placeholder="60"
-                    className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-texto">Función asociada</label>
-                <div className="relative">
-                  <Input
-                    placeholder="Buscar función..."
-                    value={mostrarListaFunEst ? busquedaFunEst : (funcionSelEst ? `${funcionSelEst.nombre} — ${funcionSelEst.codigo_funcion}` : '')}
-                    onChange={(e) => { setBusquedaFunEst(e.target.value); setMostrarListaFunEst(true) }}
-                    onFocus={() => { setMostrarListaFunEst(true); setBusquedaFunEst('') }}
-                    onBlur={() => setTimeout(() => setMostrarListaFunEst(false), 150)}
-                    icono={<Search size={15} />}
-                  />
-                  {mostrarListaFunEst && (
-                    <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-surface border border-borde rounded-lg shadow-lg">
-                      {formEst.codigo_funcion && (
-                        <button type="button" onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { setFormEst({ ...formEst, codigo_funcion: '' }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
-                          className="block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm text-texto-muted border-b border-borde">
-                          (sin función)
-                        </button>
-                      )}
-                      {funcionesSugEst.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-texto-muted">Sin resultados</div>
-                      ) : funcionesSugEst.map((f) => (
-                        <button key={f.codigo_funcion} type="button" onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => { setFormEst({ ...formEst, codigo_funcion: f.codigo_funcion }); setMostrarListaFunEst(false); setBusquedaFunEst('') }}
-                          className={`block w-full text-left px-3 py-2 hover:bg-primario-muy-claro text-sm ${f.codigo_funcion === formEst.codigo_funcion ? 'bg-primario-muy-claro text-primario font-medium' : ''}`}>
-                          {f.nombre}
-                          <span className="text-texto-muted text-xs ml-2">— {f.codigo_funcion}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
 
