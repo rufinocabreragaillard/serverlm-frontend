@@ -185,7 +185,7 @@ export default function PaginaParametrosGenerales() {
     <div className="relative flex flex-col gap-6">
       <BotonChat />
       <div>
-        <h2 className="page-heading">Parámetros — Datos Básicos</h2>
+        <h2 className="page-heading">Parámetros Generales</h2>
         <p className="text-sm text-texto-muted mt-1">Administra las categorías y tipos de parámetros del sistema</p>
       </div>
 
@@ -516,76 +516,193 @@ export default function PaginaParametrosGenerales() {
       </Modal>
 
       {/* ── Modal Tipo ── */}
-      <Modal abierto={modalTipo} alCerrar={() => setModalTipo(false)} titulo={tipoEditando ? 'Editar tipo' : 'Nuevo tipo de parámetro'}>
-        <div className="flex flex-col gap-4 p-4">
+      <Modal
+        abierto={modalTipo}
+        alCerrar={() => setModalTipo(false)}
+        titulo={tipoEditando ? `Editar tipo: ${tipoEditando.nombre}` : 'Nuevo tipo de parámetro'}
+        className="w-[683px] max-w-[95vw]"
+      >
+        <div className="flex flex-col gap-4 min-h-[500px]">
           {/* Tabs */}
-          <div className="flex gap-1 border-b border-borde -mt-2">
-            {(['datos', 'system_prompt', 'programacion_insert', 'programacion_update'] as const).map((tab) => (
+          <div className="flex gap-1 border-b border-borde -mt-2 overflow-x-auto">
+            {(['datos', 'system_prompt', 'programacion_insert', 'programacion_update', 'md'] as const).map((tab) => (
               <button key={tab} onClick={() => setTabModalTipo(tab)}
-                className={`flex-1 text-center px-3 py-2 text-sm border-b-2 ${tabModalTipo === tab ? 'border-primario text-primario font-medium' : 'border-transparent text-texto-muted'}`}>
-                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : tab === 'programacion_insert' ? 'Prog. Insert' : 'Prog. Update'}
+                className={`flex-1 text-center px-3 py-2 text-sm border-b-2 whitespace-nowrap ${tabModalTipo === tab ? 'border-primario text-primario font-medium' : 'border-transparent text-texto-muted'}`}>
+                {tab === 'datos' ? 'Datos' : tab === 'system_prompt' ? 'System Prompt' : tab === 'programacion_insert' ? 'Prompt Insert' : tab === 'programacion_update' ? 'Prompt Update' : '.md'}
               </button>
             ))}
           </div>
 
-          {tabModalTipo === 'datos' && <>
-            <div>
-              <label className="block text-sm font-medium text-texto mb-1">Categoría *</label>
-              <select className={selectCls} value={formTipo.categoria_parametro}
-                onChange={(e) => setFormTipo({ ...formTipo, categoria_parametro: e.target.value })}
-                disabled={!!tipoEditando}>
-                <option value="">Selecciona categoría</option>
-                {categorias.map((c) => <option key={c.categoria_parametro} value={c.categoria_parametro}>{c.nombre}</option>)}
-              </select>
-            </div>
-            {!tipoEditando && (
+          {tabModalTipo === 'datos' && (
+            <div className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-texto mb-1">Código *</label>
-                <input className={inputCls} placeholder="ej: TIMEOUT" value={formTipo.tipo_parametro}
-                  onChange={(e) => setFormTipo({ ...formTipo, tipo_parametro: e.target.value.toUpperCase() })} />
+                <label className="block text-sm font-medium text-texto mb-1">Categoría *</label>
+                <select className={selectCls} value={formTipo.categoria_parametro}
+                  onChange={(e) => setFormTipo({ ...formTipo, categoria_parametro: e.target.value })}
+                  disabled={!!tipoEditando}>
+                  <option value="">Selecciona categoría</option>
+                  {categorias.map((c) => <option key={c.categoria_parametro} value={c.categoria_parametro}>{c.nombre}</option>)}
+                </select>
               </div>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-texto mb-1">Nombre *</label>
-              <input className={inputCls} placeholder="Nombre del tipo" value={formTipo.nombre}
-                onChange={(e) => setFormTipo({ ...formTipo, nombre: e.target.value })} />
+              {!tipoEditando && (
+                <div>
+                  <label className="block text-sm font-medium text-texto mb-1">Código *</label>
+                  <input className={inputCls} placeholder="ej: TIMEOUT" value={formTipo.tipo_parametro}
+                    onChange={(e) => setFormTipo({ ...formTipo, tipo_parametro: e.target.value.toUpperCase() })} />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-texto mb-1">Nombre *</label>
+                <input className={inputCls} placeholder="Nombre del tipo" value={formTipo.nombre}
+                  onChange={(e) => setFormTipo({ ...formTipo, nombre: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-texto mb-1">Descripción</label>
+                <textarea className={inputCls} rows={2} placeholder="Descripción opcional" value={formTipo.descripcion}
+                  onChange={(e) => setFormTipo({ ...formTipo, descripcion: e.target.value })} />
+              </div>
+              {tipoEditando && (
+                <label className="flex items-center gap-2 text-sm text-texto cursor-pointer">
+                  <input type="checkbox" checked={formTipo.activo} onChange={(e) => setFormTipo({ ...formTipo, activo: e.target.checked })}
+                    className="rounded border-borde text-primario h-4 w-4" />
+                  Activo
+                </label>
+              )}
+              {errorTipo && <p className="text-sm text-error">{errorTipo}</p>}
+              <PieBotonesModal
+                editando={!!tipoEditando}
+                onGuardar={() => guardarTipo(false)}
+                onGuardarYSalir={() => guardarTipo(true)}
+                onCerrar={() => setModalTipo(false)}
+                cargando={guardandoTipo}
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-texto mb-1">Descripción</label>
-              <textarea className={inputCls} rows={2} placeholder="Descripción opcional" value={formTipo.descripcion}
-                onChange={(e) => setFormTipo({ ...formTipo, descripcion: e.target.value })} />
-            </div>
-            {tipoEditando && (
-              <label className="flex items-center gap-2 text-sm text-texto cursor-pointer">
-                <input type="checkbox" checked={formTipo.activo} onChange={(e) => setFormTipo({ ...formTipo, activo: e.target.checked })}
-                  className="rounded border-borde text-primario h-4 w-4" />
-                Activo
-              </label>
-            )}
-          </>}
+          )}
 
           {tabModalTipo === 'system_prompt' && tipoEditando && (
-            <TabPrompts tabla="tipos_parametro" pkColumna="tipo_parametro" pkValor={tipoEditando.tipo_parametro}
-              campos={promptsTipo} onCampoCambiado={(c, v) => setPromptsTipo({ ...promptsTipo, [c]: v })}
-              mostrarPromptInsert={false} mostrarPromptUpdate={false} mostrarSystemPrompt={true} mostrarPythonInsert={false} mostrarPythonUpdate={false} mostrarJavaScript={false} />
+            <div className="flex flex-col gap-3">
+              <TabPrompts tabla="tipos_parametro" pkColumna="tipo_parametro" pkValor={tipoEditando.tipo_parametro}
+                campos={promptsTipo} onCampoCambiado={(c, v) => setPromptsTipo({ ...promptsTipo, [c]: v })}
+                mostrarPromptInsert={false} mostrarPromptUpdate={false} mostrarSystemPrompt={true} mostrarPythonInsert={false} mostrarPythonUpdate={false} mostrarJavaScript={false} />
+              {errorTipo && <p className="text-sm text-error">{errorTipo}</p>}
+              <PieBotonesModal
+                editando={!!tipoEditando}
+                onGuardar={() => guardarTipo(false)}
+                onGuardarYSalir={() => guardarTipo(true)}
+                onCerrar={() => setModalTipo(false)}
+                cargando={guardandoTipo}
+              />
+            </div>
           )}
 
           {tabModalTipo === 'programacion_insert' && tipoEditando && (
-            <TabPrompts tabla="tipos_parametro" pkColumna="tipo_parametro" pkValor={tipoEditando.tipo_parametro}
-              campos={promptsTipo} onCampoCambiado={(c, v) => setPromptsTipo({ ...promptsTipo, [c]: v })}
-              mostrarSystemPrompt={false} mostrarJavaScript={false} mostrarPromptUpdate={false} mostrarPythonUpdate={false} />
+            <div className="flex flex-col gap-3">
+              <TabPrompts tabla="tipos_parametro" pkColumna="tipo_parametro" pkValor={tipoEditando.tipo_parametro}
+                campos={promptsTipo} onCampoCambiado={(c, v) => setPromptsTipo({ ...promptsTipo, [c]: v })}
+                mostrarSystemPrompt={false} mostrarJavaScript={false} mostrarPromptUpdate={false} mostrarPythonUpdate={false} />
+              {errorTipo && <p className="text-sm text-error">{errorTipo}</p>}
+              <PieBotonesModal
+                editando={!!tipoEditando}
+                onGuardar={() => guardarTipo(false)}
+                onGuardarYSalir={() => guardarTipo(true)}
+                onCerrar={() => setModalTipo(false)}
+                cargando={guardandoTipo}
+                botonesIzquierda={
+                  <PieBotonesPrompts
+                    tabla="tipos_parametro"
+                    pkColumna="tipo_parametro"
+                    pkValor={tipoEditando.tipo_parametro}
+                    promptInsert={promptsTipo.prompt_insert ?? undefined}
+                    promptUpdate={promptsTipo.prompt_update ?? undefined}
+                    mostrarSincronizar={false}
+                  />
+                }
+              />
+            </div>
           )}
           {tabModalTipo === 'programacion_update' && tipoEditando && (
-            <TabPrompts tabla="tipos_parametro" pkColumna="tipo_parametro" pkValor={tipoEditando.tipo_parametro}
-              campos={promptsTipo} onCampoCambiado={(c, v) => setPromptsTipo({ ...promptsTipo, [c]: v })}
-              mostrarSystemPrompt={false} mostrarJavaScript={false} mostrarPromptInsert={false} mostrarPythonInsert={false} />
+            <div className="flex flex-col gap-3">
+              <TabPrompts tabla="tipos_parametro" pkColumna="tipo_parametro" pkValor={tipoEditando.tipo_parametro}
+                campos={promptsTipo} onCampoCambiado={(c, v) => setPromptsTipo({ ...promptsTipo, [c]: v })}
+                mostrarSystemPrompt={false} mostrarJavaScript={false} mostrarPromptInsert={false} mostrarPythonInsert={false} />
+              {errorTipo && <p className="text-sm text-error">{errorTipo}</p>}
+              <PieBotonesModal
+                editando={!!tipoEditando}
+                onGuardar={() => guardarTipo(false)}
+                onGuardarYSalir={() => guardarTipo(true)}
+                onCerrar={() => setModalTipo(false)}
+                cargando={guardandoTipo}
+                botonesIzquierda={
+                  <PieBotonesPrompts
+                    tabla="tipos_parametro"
+                    pkColumna="tipo_parametro"
+                    pkValor={tipoEditando.tipo_parametro}
+                    promptInsert={promptsTipo.prompt_insert ?? undefined}
+                    promptUpdate={promptsTipo.prompt_update ?? undefined}
+                    mostrarSincronizar={false}
+                  />
+                }
+              />
+            </div>
           )}
 
-          {errorTipo && <p className="text-sm text-error">{errorTipo}</p>}
-        </div>
-        <div className="flex gap-3 justify-end px-4 pb-4">
-          <Boton variante="contorno" onClick={() => setModalTipo(false)}>Cancelar</Boton>
-          <Boton variante="primario" onClick={() => guardarTipo(true)} cargando={guardandoTipo}>{tipoEditando ? 'Guardar' : 'Crear'}</Boton>
+          {tabModalTipo === 'md' && tipoEditando && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Markdown generado (solo lectura)</label>
+                <textarea
+                  value={mdTipo || ''}
+                  readOnly
+                  rows={13}
+                  placeholder="Sin contenido. Presiona Generar para crear el documento Markdown."
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto font-mono focus:outline-none resize-none cursor-default"
+                />
+              </div>
+              {mensajeMdTipo && (
+                <p className={`text-xs px-1 ${mensajeMdTipo.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+                  {mensajeMdTipo.texto}
+                </p>
+              )}
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex gap-2">
+                  <Boton
+                    className="bg-primario-hover hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setGenerandoMdTipo(true); setMensajeMdTipo(null)
+                      try {
+                        const r = await datosBasicosApi.generarMdTipo(tipoEditando.categoria_parametro, tipoEditando.tipo_parametro)
+                        setMdTipo(r.md)
+                        setMensajeMdTipo({ tipo: 'ok', texto: 'Markdown generado correctamente.' })
+                      } catch (e) {
+                        setMensajeMdTipo({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al generar' })
+                      } finally { setGenerandoMdTipo(false) }
+                    }}
+                    cargando={generandoMdTipo}
+                    disabled={generandoMdTipo || sincronizandoMdTipo}
+                  >
+                    Generar
+                  </Boton>
+                  <Boton
+                    className="bg-primario-light hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setSincronizandoMdTipo(true); setMensajeMdTipo(null)
+                      try {
+                        const r = await promptsApi.sincronizarFila('tipos_parametro', 'tipo_parametro', tipoEditando.tipo_parametro)
+                        setMensajeMdTipo({ tipo: 'ok', texto: `Documento ${r.accion} (código ${r.codigo_documento}). Listo para CHUNKEAR + VECTORIZAR.` })
+                      } catch (e) {
+                        setMensajeMdTipo({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
+                      } finally { setSincronizandoMdTipo(false) }
+                    }}
+                    cargando={sincronizandoMdTipo}
+                    disabled={generandoMdTipo || sincronizandoMdTipo || !mdTipo}
+                  >
+                    Sincronizar
+                  </Boton>
+                </div>
+                <Boton variante="contorno" onClick={() => setModalTipo(false)}>Salir</Boton>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 
