@@ -824,8 +824,8 @@
     "exportarColumnas": "Grupo|Código|Alias|Nome|Descrição|URL início|Func. padrão|Tipo"
   },
   "rolesGenerales": {
-    "titulo": "Funções Globais",
-    "nuevoRol": "Nova função global",
+    "titulo": "Funções",
+    "nuevoRol": "Nova função",
     "buscarPlaceholder": "Pesquisar por nome ou código...",
     "etiquetaCodigo": "Código *",
     "placeholderCodigo": "Ex: SEG-USUARIOS",

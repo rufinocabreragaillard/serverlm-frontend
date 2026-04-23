@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Copy, Languages, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
+import { Languages, Pencil, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react'
 import { SortableDndContext, SortableRow, SortableListItem } from '@/components/ui/sortable'
 import { Boton } from '@/components/ui/boton'
 import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
@@ -10,20 +10,21 @@ import { Tarjeta, TarjetaCabecera, TarjetaTitulo, TarjetaContenido } from '@/com
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
-import { rolesApi, gruposApi, funcionesApi, aplicacionesApi } from '@/lib/api'
+import { TabPrompts } from '@/components/ui/tab-prompts'
+import { PieBotonesPrompts } from '@/components/ui/pie-botones-prompts'
+import { rolesApi, funcionesApi, aplicacionesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
-import type { Rol, Grupo, Funcion, Aplicacion } from '@/lib/tipos'
+import type { Rol, Funcion, Aplicacion } from '@/lib/tipos'
 import { etiquetaTipo, varianteTipo, normalizarTipo } from '@/lib/tipo-elemento'
 import { Insignia } from '@/components/ui/insignia'
 import { BotonChat } from '@/components/ui/boton-chat'
 
 type FuncionAsignada = { codigo_funcion: string; orden: number; funciones: { nombre_funcion: string } }
 
-type Tab = 'globales' | 'copiar'
+type TabModal = 'datos' | 'funciones' | 'system_prompt' | 'programacion_insert' | 'programacion_update' | 'md'
 
 export default function PaginaRolesGenerales() {
   const t = useTranslations('rolesGenerales')
-  const [tab, setTab] = useState<Tab>('globales')
 
   return (
     <div className="relative flex flex-col gap-6">
@@ -31,44 +32,21 @@ export default function PaginaRolesGenerales() {
       <div className="pr-28">
         <h2 className="page-heading">{t('titulo')}</h2>
         <p className="text-sm text-texto-muted mt-1">
-          Administra roles transversales (sin grupo) y copia roles entre grupos
+          Administra roles
         </p>
       </div>
 
-      <div className="flex gap-1 border-b border-borde">
-        <button
-          onClick={() => setTab('globales')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            tab === 'globales'
-              ? 'border-primario text-primario'
-              : 'border-transparent text-texto-muted hover:text-texto'
-          }`}
-        >
-          Roles generales
-        </button>
-        <button
-          onClick={() => setTab('copiar')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            tab === 'copiar'
-              ? 'border-primario text-primario'
-              : 'border-transparent text-texto-muted hover:text-texto'
-          }`}
-        >
-          Copiar entre grupos
-        </button>
-      </div>
-
-      {tab === 'globales' ? <TabRolesGlobales /> : <TabCopiarRoles />}
+      <TabRolesGlobales />
     </div>
   )
 }
 
-// ── Tab 1: CRUD de Roles Globales ─────────────────────────────────────────
+// ── CRUD de Roles ─────────────────────────────────────────────────────────
 
 function TabRolesGlobales() {
   const t = useTranslations('rolesGenerales')
   const tc = useTranslations('common')
-  const { aplicacionActiva, usuario } = useAuth()
+  const { aplicacionActiva } = useAuth()
   const [roles, setRoles] = useState<Rol[]>([])
   const [aplicaciones, setAplicaciones] = useState<Aplicacion[]>([])
   const [cargando, setCargando] = useState(true)
@@ -84,6 +62,17 @@ function TabRolesGlobales() {
     url_inicio: '',
     codigo_aplicacion_origen: '',
     inicial: false,
+    inicial_admin_grupo: false,
+    inicial_admin_general: false,
+    prompt_insert: '',
+    prompt_update: '',
+    system_prompt: '',
+    python_insert: '',
+    python_update: '',
+    javascript: '',
+    python_editado_manual: false,
+    javascript_editado_manual: false,
+    md: '',
   })
   const [guardando, setGuardando] = useState(false)
 
@@ -123,8 +112,8 @@ function TabRolesGlobales() {
     }
   }
 
-  // Tab dentro del modal de edición: datos | funciones
-  const [tabModal, setTabModal] = useState<'datos' | 'funciones'>('datos')
+  // Tab dentro del modal de edición
+  const [tabModal, setTabModal] = useState<TabModal>('datos')
   const [todasFunciones, setTodasFunciones] = useState<Funcion[]>([])
   const [funcionesRol, setFuncionesRol] = useState<FuncionAsignada[]>([])
   const [cargandoFunciones, setCargandoFunciones] = useState(false)
@@ -221,11 +210,10 @@ function TabRolesGlobales() {
     try {
       const [data, apps] = await Promise.all([rolesApi.listarGlobales(), aplicacionesApi.listar()])
       setAplicaciones(apps)
-      // Ordenar por campo orden del backend
       const ordenado = data.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
       setRoles(ordenado)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar roles generales')
+      setError(e instanceof Error ? e.message : 'Error al cargar roles')
     } finally {
       setCargando(false)
     }
@@ -237,7 +225,26 @@ function TabRolesGlobales() {
 
   const abrirCrear = () => {
     setEditando(null)
-    setForm({ codigo_rol: '', nombre: '', alias_de_rol: '', descripcion: '', url_inicio: '', codigo_aplicacion_origen: aplicacionActiva || '', inicial: false })
+    setForm({
+      codigo_rol: '',
+      nombre: '',
+      alias_de_rol: '',
+      descripcion: '',
+      url_inicio: '',
+      codigo_aplicacion_origen: aplicacionActiva || '',
+      inicial: false,
+      inicial_admin_grupo: false,
+      inicial_admin_general: false,
+      prompt_insert: '',
+      prompt_update: '',
+      system_prompt: '',
+      python_insert: '',
+      python_update: '',
+      javascript: '',
+      python_editado_manual: false,
+      javascript_editado_manual: false,
+      md: '',
+    })
     setError('')
     setTabModal('datos')
     setFuncionesRol([])
@@ -254,6 +261,17 @@ function TabRolesGlobales() {
       url_inicio: r.url_inicio || '',
       codigo_aplicacion_origen: r.codigo_aplicacion_origen || '',
       inicial: r.inicial ?? false,
+      inicial_admin_grupo: r.inicial_admin_grupo ?? false,
+      inicial_admin_general: r.inicial_admin_general ?? false,
+      prompt_insert: r.prompt_insert || '',
+      prompt_update: r.prompt_update || '',
+      system_prompt: r.system_prompt || '',
+      python_insert: r.python_insert || '',
+      python_update: r.python_update || '',
+      javascript: r.javascript || '',
+      python_editado_manual: r.python_editado_manual ?? false,
+      javascript_editado_manual: r.javascript_editado_manual ?? false,
+      md: '',
     })
     setError('')
     setTabModal('datos')
@@ -269,21 +287,31 @@ function TabRolesGlobales() {
     setGuardando(true)
     setError('')
     try {
-      const datos = {
+      const datos: Record<string, unknown> = {
         codigo_rol: form.codigo_rol.trim(),
         nombre: form.nombre.trim(),
         alias_de_rol: form.alias_de_rol.trim() || undefined,
         descripcion: form.descripcion.trim() || undefined,
         url_inicio: form.url_inicio.trim() || undefined,
         codigo_aplicacion_origen: form.codigo_aplicacion_origen || null,
-        codigo_grupo: null, // rol global
+        codigo_grupo: null,
         inicial: form.inicial,
+        inicial_admin_grupo: form.inicial_admin_grupo,
+        inicial_admin_general: form.inicial_admin_general,
       }
       if (editando) {
+        datos.prompt_insert = form.prompt_insert || undefined
+        datos.prompt_update = form.prompt_update || undefined
+        datos.system_prompt = form.system_prompt || undefined
+        datos.python_insert = form.python_insert || undefined
+        datos.python_update = form.python_update || undefined
+        datos.javascript = form.javascript || undefined
+        datos.python_editado_manual = form.python_editado_manual
+        datos.javascript_editado_manual = form.javascript_editado_manual
         await rolesApi.actualizar(editando.id_rol, datos)
       } else {
-        const nuevo = await rolesApi.crear(datos)
-        if (!cerrar) {
+        const nuevo = await rolesApi.crear(datos as Parameters<typeof rolesApi.crear>[0])
+        if (!cerrar && nuevo) {
           setEditando(nuevo)
           cargarFuncionesRol(nuevo.id_rol)
         }
@@ -316,11 +344,22 @@ function TabRolesGlobales() {
 
   const rolesVisibles = roles
 
+  const TABS_MODAL: { key: TabModal; label: string }[] = [
+    { key: 'datos', label: t('tabDatos') },
+    ...(editando ? [
+      { key: 'funciones' as TabModal, label: `${t('tabFunciones')} (${funcionesRol.length})` },
+      { key: 'system_prompt' as TabModal, label: 'System Prompt' },
+      { key: 'programacion_insert' as TabModal, label: 'Prog. Insert' },
+      { key: 'programacion_update' as TabModal, label: 'Prog. Update' },
+      { key: 'md' as TabModal, label: '.md' },
+    ] : []),
+  ]
+
   return (
     <Tarjeta>
       <TarjetaCabecera>
         <div className="flex items-center justify-between w-full">
-          <TarjetaTitulo>Roles generales (sin grupo)</TarjetaTitulo>
+          <TarjetaTitulo>Roles</TarjetaTitulo>
           <Boton variante="primario" onClick={abrirCrear}>
             <Plus size={16} />
             {t('nuevoRol')}
@@ -337,7 +376,7 @@ function TabRolesGlobales() {
           <p className="text-sm text-texto-muted">Cargando...</p>
         ) : rolesVisibles.length === 0 ? (
           <p className="text-sm text-texto-muted">
-            No hay roles generales definidos. Los roles generales son visibles en todos los grupos.
+            No hay roles definidos.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -359,9 +398,6 @@ function TabRolesGlobales() {
               <SortableDndContext items={rolesVisibles as unknown as Record<string, unknown>[]} getId={(r) => String(r.id_rol)} onReorder={(newItems) => reordenarRoles(newItems as unknown as Rol[])}>
               <tbody>
                 {rolesVisibles.map((r) => {
-                  const nombreAppOrigen = r.codigo_aplicacion_origen
-                    ? (aplicaciones.find((a) => a.codigo_aplicacion === r.codigo_aplicacion_origen)?.nombre || r.codigo_aplicacion_origen)
-                    : '—'
                   return (
                   <SortableRow key={r.id_rol} id={String(r.id_rol)}>
                     <td className="py-2 pr-4">
@@ -445,37 +481,27 @@ function TabRolesGlobales() {
       <Modal
         abierto={modalAbierto}
         alCerrar={() => setModalAbierto(false)}
-        titulo={editando ? `Editar rol general "${editando.alias_de_rol || editando.codigo_rol}"` : 'Nuevo rol general'}
-        className="max-w-2xl"
+        titulo={editando ? `Editando rol: ${editando.alias_de_rol || editando.nombre}` : 'Nuevo rol'}
+        className="w-[900px] max-w-[95vw]"
       >
-        <div className="flex flex-col gap-3">
-          {/* Tabs (solo si editando) */}
-          {editando && (
-            <div className="flex gap-1 border-b border-borde -mt-2">
+        <div className="flex flex-col gap-4 min-h-[600px]">
+          {/* Tabs */}
+          <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+            {TABS_MODAL.map((tab) => (
               <button
+                key={tab.key}
                 type="button"
-                onClick={() => setTabModal('datos')}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  tabModal === 'datos'
-                    ? 'border-primario text-primario'
-                    : 'border-transparent text-texto-muted hover:text-texto'
+                onClick={() => setTabModal(tab.key)}
+                className={`flex-1 text-center px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  tabModal === tab.key
+                    ? 'border-b-2 border-primario text-primario'
+                    : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {t('tabDatos')}
+                {tab.label}
               </button>
-              <button
-                type="button"
-                onClick={() => setTabModal('funciones')}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  tabModal === 'funciones'
-                    ? 'border-primario text-primario'
-                    : 'border-transparent text-texto-muted hover:text-texto'
-                }`}
-              >
-                {t('tabFunciones')} ({funcionesRol.length})
-              </button>
-            </div>
-          )}
+            ))}
+          </div>
 
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-error">
@@ -521,7 +547,7 @@ function TabRolesGlobales() {
                   >
                     <option value="">— sin asignar —</option>
                     {[...aplicaciones].sort((a, b) => {
-                      const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'TEST' ? 1 : n === 'ADMINISTRADOR' ? 2 : 3 }
+                      const peso = (t?: string | null) => { const n = normalizarTipo(t); return n === 'USUARIO' ? 0 : n === 'ADMINISTRADOR' ? 1 : 2 }
                       const ta = peso(a.tipo)
                       const tb = peso(b.tipo)
                       if (ta !== tb) return ta - tb
@@ -548,16 +574,33 @@ function TabRolesGlobales() {
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-3 py-1">
-                <input
-                  type="checkbox"
-                  id="chk-inicial-gen"
-                  checked={form.inicial}
-                  onChange={(e) => setForm({ ...form, inicial: e.target.checked })}
-                  className="w-4 h-4 rounded border-borde text-primario focus:ring-primario cursor-pointer"
-                />
-                <label htmlFor="chk-inicial-gen" className="text-sm text-texto cursor-pointer select-none">
-                  Rol inicial (asignar automáticamente a nuevos usuarios)
+              <div className="flex flex-col gap-2 p-3 bg-fondo rounded-lg border border-borde">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.inicial}
+                    onChange={(e) => setForm({ ...form, inicial: e.target.checked })}
+                    className="w-4 h-4 rounded accent-primario"
+                  />
+                  <span className="text-sm text-texto">Rol inicial (asignar automáticamente a nuevos usuarios)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.inicial_admin_grupo}
+                    onChange={(e) => setForm({ ...form, inicial_admin_grupo: e.target.checked })}
+                    className="w-4 h-4 rounded accent-primario"
+                  />
+                  <span className="text-sm text-texto">Inicial Admin Grupo</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.inicial_admin_general}
+                    onChange={(e) => setForm({ ...form, inicial_admin_general: e.target.checked })}
+                    className="w-4 h-4 rounded accent-primario"
+                  />
+                  <span className="text-sm text-texto">Inicial Admin General</span>
                 </label>
               </div>
               <PieBotonesModal
@@ -669,6 +712,149 @@ function TabRolesGlobales() {
               </div>
             </div>
           )}
+
+          {tabModal === 'system_prompt' && editando && (
+            <div className="flex flex-col gap-3">
+              <TabPrompts
+                tabla="roles"
+                pkColumna="id_rol"
+                pkValor={String(editando.id_rol)}
+                campos={{
+                  prompt_insert: form.prompt_insert,
+                  prompt_update: form.prompt_update,
+                  system_prompt: form.system_prompt,
+                  python_insert: form.python_insert,
+                  python_update: form.python_update,
+                  javascript: form.javascript,
+                  python_editado_manual: form.python_editado_manual,
+                  javascript_editado_manual: form.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+                mostrarPromptInsert={false}
+                mostrarPromptUpdate={false}
+                mostrarSystemPrompt={true}
+                mostrarPythonInsert={false}
+                mostrarPythonUpdate={false}
+                mostrarJavaScript={false}
+              />
+              <PieBotonesModal
+                editando={!!editando}
+                onGuardar={() => guardar(false)}
+                onGuardarYSalir={() => guardar(true)}
+                onCerrar={() => setModalAbierto(false)}
+                cargando={guardando}
+                botonesIzquierda={editando ? (
+                  <PieBotonesPrompts
+                    tabla="roles"
+                    pkColumna="id_rol"
+                    pkValor={String(editando.id_rol)}
+                    promptInsert={form.prompt_insert || undefined}
+                    promptUpdate={form.prompt_update || undefined}
+                  />
+                ) : undefined}
+              />
+            </div>
+          )}
+
+          {tabModal === 'programacion_insert' && editando && (
+            <div className="flex flex-col gap-3">
+              <TabPrompts
+                tabla="roles"
+                pkColumna="id_rol"
+                pkValor={String(editando.id_rol)}
+                campos={{
+                  prompt_insert: form.prompt_insert,
+                  prompt_update: form.prompt_update,
+                  system_prompt: form.system_prompt,
+                  python_insert: form.python_insert,
+                  python_update: form.python_update,
+                  javascript: form.javascript,
+                  python_editado_manual: form.python_editado_manual,
+                  javascript_editado_manual: form.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+                mostrarSystemPrompt={false}
+                mostrarJavaScript={false}
+                mostrarPromptUpdate={false}
+                mostrarPythonUpdate={false}
+              />
+              <PieBotonesModal
+                editando={!!editando}
+                onGuardar={() => guardar(false)}
+                onGuardarYSalir={() => guardar(true)}
+                onCerrar={() => setModalAbierto(false)}
+                cargando={guardando}
+                botonesIzquierda={editando ? (
+                  <PieBotonesPrompts
+                    tabla="roles"
+                    pkColumna="id_rol"
+                    pkValor={String(editando.id_rol)}
+                    promptInsert={form.prompt_insert || undefined}
+                    promptUpdate={form.prompt_update || undefined}
+                  />
+                ) : undefined}
+              />
+            </div>
+          )}
+
+          {tabModal === 'programacion_update' && editando && (
+            <div className="flex flex-col gap-3">
+              <TabPrompts
+                tabla="roles"
+                pkColumna="id_rol"
+                pkValor={String(editando.id_rol)}
+                campos={{
+                  prompt_insert: form.prompt_insert,
+                  prompt_update: form.prompt_update,
+                  system_prompt: form.system_prompt,
+                  python_insert: form.python_insert,
+                  python_update: form.python_update,
+                  javascript: form.javascript,
+                  python_editado_manual: form.python_editado_manual,
+                  javascript_editado_manual: form.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setForm({ ...form, [c]: v })}
+                mostrarSystemPrompt={false}
+                mostrarJavaScript={false}
+                mostrarPromptInsert={false}
+                mostrarPythonInsert={false}
+              />
+              <PieBotonesModal
+                editando={!!editando}
+                onGuardar={() => guardar(false)}
+                onGuardarYSalir={() => guardar(true)}
+                onCerrar={() => setModalAbierto(false)}
+                cargando={guardando}
+                botonesIzquierda={editando ? (
+                  <PieBotonesPrompts
+                    tabla="roles"
+                    pkColumna="id_rol"
+                    pkValor={String(editando.id_rol)}
+                    promptInsert={form.prompt_insert || undefined}
+                    promptUpdate={form.prompt_update || undefined}
+                  />
+                ) : undefined}
+              />
+            </div>
+          )}
+
+          {tabModal === 'md' && editando && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Markdown generado (solo lectura)</label>
+                <textarea
+                  value={form.md || ''}
+                  readOnly
+                  rows={13}
+                  placeholder="La generación de .md para roles se configurará en el backend. Esta pestaña queda preparada para cuando esté disponible."
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto font-mono focus:outline-none resize-none cursor-default"
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cerrar')}</Boton>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 
@@ -676,10 +862,10 @@ function TabRolesGlobales() {
         abierto={!!confirmacion}
         alCerrar={() => setConfirmacion(null)}
         alConfirmar={ejecutarEliminar}
-        titulo="Eliminar rol general"
+        titulo="Eliminar rol"
         mensaje={
           confirmacion
-            ? `¿Eliminar el rol general "${confirmacion.nombre}" (${confirmacion.codigo_rol})?\n\n` +
+            ? `¿Eliminar el rol "${confirmacion.nombre}" (${confirmacion.codigo_rol})?\n\n` +
               `Esta acción borra el rol en cascada:\n` +
               `• Asignaciones a funciones (rel_rol_funcion)\n` +
               `• Asignaciones a usuarios en todos los grupos\n\n` +
@@ -690,151 +876,6 @@ function TabRolesGlobales() {
         textoConfirmar="Eliminar definitivamente"
         cargando={eliminando}
       />
-    </Tarjeta>
-  )
-}
-
-// ── Tab 2: Copiar Roles entre Grupos ──────────────────────────────────────
-
-function TabCopiarRoles() {
-  const [grupos, setGrupos] = useState<Grupo[]>([])
-  const [grupoOrigen, setGrupoOrigen] = useState('')
-  const [rolesOrigen, setRolesOrigen] = useState<Rol[]>([])
-  const [rolCopiar, setRolCopiar] = useState('')
-  const [grupoDestino, setGrupoDestino] = useState('')
-  const [cargandoRoles, setCargandoRoles] = useState(false)
-  const [copiando, setCopiando] = useState(false)
-  const [mensaje, setMensaje] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null)
-
-  useEffect(() => {
-    gruposApi.listar().then(setGrupos).catch(() => setGrupos([]))
-  }, [])
-
-  const cargarRoles = async (codigoGrupo: string) => {
-    setGrupoOrigen(codigoGrupo)
-    setRolCopiar('')
-    setRolesOrigen([])
-    setMensaje(null)
-    if (!codigoGrupo) return
-    setCargandoRoles(true)
-    try {
-      setRolesOrigen(await rolesApi.listarPorGrupo(codigoGrupo, false))
-    } catch {
-      setRolesOrigen([])
-    } finally {
-      setCargandoRoles(false)
-    }
-  }
-
-  const ejecutarCopia = async () => {
-    if (!grupoOrigen || !rolCopiar || !grupoDestino) return
-    setCopiando(true)
-    setMensaje(null)
-    try {
-      await rolesApi.copiar({
-        id_rol_origen: Number(rolCopiar),
-        codigo_grupo_destino: grupoDestino,
-      })
-      const rolNombre = rolesOrigen.find((r) => String(r.id_rol) === rolCopiar)?.nombre || rolCopiar
-      setMensaje({ tipo: 'exito', texto: `Rol "${rolNombre}" copiado exitosamente al grupo "${grupoDestino}".` })
-    } catch (e) {
-      setMensaje({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al copiar rol' })
-    } finally {
-      setCopiando(false)
-    }
-  }
-
-  const gruposDestino = useMemo(
-    () => grupos.filter((g) => g.codigo_grupo !== grupoOrigen),
-    [grupos, grupoOrigen],
-  )
-
-  return (
-    <Tarjeta>
-      <TarjetaCabecera>
-        <TarjetaTitulo>Copiar un rol y sus funciones entre grupos</TarjetaTitulo>
-      </TarjetaCabecera>
-      <TarjetaContenido>
-        <div className="flex flex-col gap-4 max-w-xl">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">Grupo de origen *</label>
-            <select
-              value={grupoOrigen}
-              onChange={(e) => cargarRoles(e.target.value)}
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
-            >
-              <option value="">Seleccionar grupo...</option>
-              {grupos.map((g) => (
-                <option key={g.codigo_grupo} value={g.codigo_grupo}>
-                  {g.nombre} ({g.codigo_grupo})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">Rol a copiar *</label>
-            <select
-              value={rolCopiar}
-              onChange={(e) => {
-                setRolCopiar(e.target.value)
-                setMensaje(null)
-              }}
-              disabled={!grupoOrigen || cargandoRoles}
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
-            >
-              <option value="">{cargandoRoles ? 'Cargando...' : 'Seleccionar rol...'}</option>
-              {rolesOrigen.map((r) => (
-                <option key={r.id_rol} value={String(r.id_rol)}>
-                  {r.nombre} ({r.codigo_rol})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-texto">Grupo de destino *</label>
-            <select
-              value={grupoDestino}
-              onChange={(e) => {
-                setGrupoDestino(e.target.value)
-                setMensaje(null)
-              }}
-              disabled={!grupoOrigen}
-              className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario disabled:opacity-50"
-            >
-              <option value="">Seleccionar grupo...</option>
-              {gruposDestino.map((g) => (
-                <option key={g.codigo_grupo} value={g.codigo_grupo}>
-                  {g.nombre} ({g.codigo_grupo})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {mensaje && (
-            <div
-              className={`border rounded-lg px-4 py-3 ${
-                mensaje.tipo === 'exito' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-              }`}
-            >
-              <p className={`text-sm ${mensaje.tipo === 'exito' ? 'text-green-700' : 'text-error'}`}>{mensaje.texto}</p>
-            </div>
-          )}
-
-          <div className="flex justify-end pt-2">
-            <Boton
-              variante="primario"
-              onClick={ejecutarCopia}
-              cargando={copiando}
-              disabled={!grupoOrigen || !rolCopiar || !grupoDestino}
-            >
-              <Copy size={16} />
-              Copiar rol
-            </Boton>
-          </div>
-        </div>
-      </TarjetaContenido>
     </Tarjeta>
   )
 }

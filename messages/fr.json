@@ -824,8 +824,8 @@
     "exportarColumnas": "Groupe|Code|Alias|Nom|Description|URL de démarrage|Fn. par défaut|Type"
   },
   "rolesGenerales": {
-    "titulo": "Rôles Globaux",
-    "nuevoRol": "Nouveau rôle global",
+    "titulo": "Rôles",
+    "nuevoRol": "Nouveau rôle",
     "buscarPlaceholder": "Rechercher par nom ou code...",
     "etiquetaCodigo": "Code *",
     "placeholderCodigo": "Ex: SEG-USUARIOS",
