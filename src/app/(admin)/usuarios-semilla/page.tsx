@@ -204,10 +204,19 @@ export default function PaginaUsuariosSemilla() {
   // ── Form simplificado para creación (Nuevo Usuario Semilla) ────────────
   const [formNuevo, setFormNuevo] = useState({ correo: '', nombre: '', empresa: '', tipo: 'ADMINISTRADOR' })
   const [creandoSemilla, setCreandoSemilla] = useState(false)
+  // Selector grupo existente en creación
+  const [modoGrupo, setModoGrupo] = useState<'nuevo' | 'existente'>('nuevo')
+  const [grupoExistente, setGrupoExistente] = useState('')
+  const [busquedaGrupoNuevo, setBusquedaGrupoNuevo] = useState('')
+  const [dropdownGrupoNuevoAbierto, setDropdownGrupoNuevoAbierto] = useState(false)
+  const dropdownGrupoNuevoRef = useRef<HTMLDivElement>(null)
 
   const abrirNuevo = () => {
     setUsuarioEditando(null)
     setFormNuevo({ correo: '', nombre: '', empresa: '', tipo: 'ADMINISTRADOR' })
+    setModoGrupo('nuevo')
+    setGrupoExistente('')
+    setBusquedaGrupoNuevo('')
     setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '',
       tipo: 'ADMINISTRADOR',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '',
@@ -225,30 +234,42 @@ export default function PaginaUsuariosSemilla() {
 
   const crearUsuarioSemilla = async () => {
     setError('')
-    if (!formNuevo.correo || !formNuevo.nombre || !formNuevo.empresa) {
-      setError('Todos los campos son obligatorios')
+    if (!formNuevo.correo || !formNuevo.nombre) {
+      setError('El correo y el nombre son obligatorios')
+      return
+    }
+    if (modoGrupo === 'nuevo' && !formNuevo.empresa) {
+      setError('El nombre de empresa es obligatorio para crear un nuevo grupo')
+      return
+    }
+    if (modoGrupo === 'existente' && !grupoExistente) {
+      setError('Debe seleccionar un grupo existente')
       return
     }
     setCreandoSemilla(true)
     try {
-      // 1. Crear grupo con el nombre de empresa
-      const grupo = await gruposApi.crear({ nombre: formNuevo.empresa })
-
-      // 2. Asignar solo la aplicación activa al nuevo grupo
       const appActiva = aplicacionActiva || undefined
-      if (appActiva) {
-        try {
-          await aplicacionesApi.asignarGrupo(appActiva, grupo.codigo_grupo)
-        } catch {
-          // Continuar aunque falle la asignación de app
-        }
-      }
+      let codigoGrupo: string
+      let codigoEntidad: string | undefined
 
-      // 3. Crear entidad asociada al grupo con el mismo nombre
-      const entidad = await entidadesApi.crear({
-        nombre: formNuevo.empresa,
-        codigo_grupo: grupo.codigo_grupo,
-      })
+      if (modoGrupo === 'existente') {
+        // Usar grupo existente — no crear grupo ni entidad
+        codigoGrupo = grupoExistente
+        codigoEntidad = undefined
+      } else {
+        // 1. Crear grupo con el nombre de empresa
+        const grupo = await gruposApi.crear({ nombre: formNuevo.empresa })
+        codigoGrupo = grupo.codigo_grupo
+
+        // 2. Asignar solo la aplicación activa al nuevo grupo
+        if (appActiva) {
+          try { await aplicacionesApi.asignarGrupo(appActiva, codigoGrupo) } catch { /* continuar */ }
+        }
+
+        // 3. Crear entidad asociada al grupo con el mismo nombre
+        const entidad = await entidadesApi.crear({ nombre: formNuevo.empresa, codigo_grupo: codigoGrupo })
+        codigoEntidad = entidad.codigo_entidad
+      }
 
       // 4. Crear usuario con el tipo seleccionado y fecha_inicial = hoy
       const hoy = new Date().toISOString().split('T')[0]
@@ -257,24 +278,20 @@ export default function PaginaUsuariosSemilla() {
         nombre: formNuevo.nombre,
         alias: formNuevo.nombre,
         tipo: formNuevo.tipo,
-        grupo_por_defecto: grupo.codigo_grupo,
-        entidad_por_defecto: entidad.codigo_entidad,
+        grupo_por_defecto: codigoGrupo,
+        entidad_por_defecto: codigoEntidad,
         aplicacion_por_defecto: appActiva,
         fecha_inicial: hoy,
         invitar: true,
       })
 
       // 5. Asignar roles con inicial=true + todos los del mismo tipo del usuario
-      const rolesDelGrupo = await rolesApi.listar(grupo.codigo_grupo, true)
+      const rolesDelGrupo = await rolesApi.listar(codigoGrupo, true)
       const rolesAAsignar = rolesDelGrupo.filter(
         (r: Rol) => r.inicial === true || normalizarTipo(r.tipo) === normalizarTipo(formNuevo.tipo)
       )
       for (const rol of rolesAAsignar) {
-        try {
-          await usuariosApi.asignarRol(nuevoUsuario.codigo_usuario, rol.id_rol, grupo.codigo_grupo)
-        } catch {
-          // Si falla un rol individual, continuar con los demás
-        }
+        try { await usuariosApi.asignarRol(nuevoUsuario.codigo_usuario, rol.id_rol, codigoGrupo) } catch { /* continuar */ }
       }
 
       setModalAbierto(false)
@@ -432,6 +449,7 @@ export default function PaginaUsuariosSemilla() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRolRef.current && !dropdownRolRef.current.contains(e.target as Node)) setDropdownRolAbierto(false)
+      if (dropdownGrupoNuevoRef.current && !dropdownGrupoNuevoRef.current.contains(e.target as Node)) setDropdownGrupoNuevoAbierto(false)
       if (dropdownGrupoFormRef.current && !dropdownGrupoFormRef.current.contains(e.target as Node)) setDropdownGrupoFormAbierto(false)
       if (dropdownEntidadFormRef.current && !dropdownEntidadFormRef.current.contains(e.target as Node)) setDropdownEntidadFormAbierto(false)
       if (dropdownAreaFormRef.current && !dropdownAreaFormRef.current.contains(e.target as Node)) setDropdownAreaFormAbierto(false)
@@ -651,7 +669,7 @@ export default function PaginaUsuariosSemilla() {
           {tabActiva === 'datos' && !usuarioEditando && (
             <>
               <p className="text-sm text-texto-muted bg-fondo border border-borde rounded-lg px-4 py-3">
-                El usuario recibirá una invitación por correo. Se creará automáticamente el grupo, la empresa y se asignarán los roles de administración.
+                El usuario recibirá una invitación por correo. Se asignarán los roles correspondientes según el grupo.
               </p>
 
               <div className="flex flex-col gap-3">
@@ -662,20 +680,63 @@ export default function PaginaUsuariosSemilla() {
                   onChange={(e) => setFormNuevo({ ...formNuevo, correo: e.target.value.toLowerCase() })}
                   placeholder="usuario@correo.com"
                 />
-                <div className="grid grid-cols-2 gap-x-4">
-                  <Input
-                    etiqueta="Nombre completo *"
-                    value={formNuevo.nombre}
-                    onChange={(e) => setFormNuevo({ ...formNuevo, nombre: e.target.value })}
-                    placeholder="Nombre Apellido"
-                  />
-                  <Input
-                    etiqueta="Nombre de empresa *"
-                    value={formNuevo.empresa}
-                    onChange={(e) => setFormNuevo({ ...formNuevo, empresa: e.target.value })}
-                    placeholder="Mi Empresa S.A."
-                  />
+                <Input
+                  etiqueta="Nombre completo *"
+                  value={formNuevo.nombre}
+                  onChange={(e) => setFormNuevo({ ...formNuevo, nombre: e.target.value })}
+                  placeholder="Nombre Apellido"
+                />
+
+                {/* Selector modo grupo */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-texto">Grupo *</label>
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-texto">
+                      <input type="radio" name="modoGrupo" value="nuevo" checked={modoGrupo === 'nuevo'}
+                        onChange={() => { setModoGrupo('nuevo'); setGrupoExistente(''); setBusquedaGrupoNuevo('') }}
+                        className="text-primario focus:ring-primario" />
+                      Nuevo grupo
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm text-texto">
+                      <input type="radio" name="modoGrupo" value="existente" checked={modoGrupo === 'existente'}
+                        onChange={() => { setModoGrupo('existente'); setFormNuevo({ ...formNuevo, empresa: '' }) }}
+                        className="text-primario focus:ring-primario" />
+                      Grupo existente
+                    </label>
+                  </div>
+
+                  {modoGrupo === 'nuevo' ? (
+                    <Input
+                      etiqueta="Nombre de empresa (será el nombre del grupo) *"
+                      value={formNuevo.empresa}
+                      onChange={(e) => setFormNuevo({ ...formNuevo, empresa: e.target.value })}
+                      placeholder="Mi Empresa S.A."
+                    />
+                  ) : (
+                    <div className="relative" ref={dropdownGrupoNuevoRef}>
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted pointer-events-none" />
+                      <input type="text" placeholder="Buscar grupo existente..."
+                        value={busquedaGrupoNuevo}
+                        onChange={(e) => { setBusquedaGrupoNuevo(e.target.value); setDropdownGrupoNuevoAbierto(true); if (!e.target.value) setGrupoExistente('') }}
+                        onFocus={() => { setBusquedaGrupoNuevo(''); setDropdownGrupoNuevoAbierto(true) }}
+                        className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario" />
+                      {dropdownGrupoNuevoAbierto && (
+                        <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {grupos.filter((g) => !busquedaGrupoNuevo || g.nombre.toLowerCase().includes(busquedaGrupoNuevo.toLowerCase()) || g.codigo_grupo.toLowerCase().includes(busquedaGrupoNuevo.toLowerCase())).slice(0, 20).map((g) => (
+                            <button key={g.codigo_grupo} type="button"
+                              onClick={() => { setGrupoExistente(g.codigo_grupo); setBusquedaGrupoNuevo(`${g.nombre} — ${g.codigo_grupo}`); setDropdownGrupoNuevoAbierto(false) }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors flex items-center gap-2">
+                              <span className="font-medium">{g.nombre}</span>
+                              <span className="text-texto-muted text-xs">{g.codigo_grupo}</span>
+                            </button>
+                          ))}
+                          {grupos.length === 0 && <div className="px-3 py-2 text-sm text-texto-muted">Sin grupos disponibles</div>}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-texto">Tipo de usuario *</label>
                   <select
