@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { gruposApi, usuariosApi, entidadesApi } from '@/lib/api'
+import { gruposApi, usuariosApi, entidadesApi, promptsApi } from '@/lib/api'
 import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { useAuth } from '@/context/AuthContext'
@@ -190,7 +190,7 @@ export default function PaginaGrupos() {
     setGuardando(true)
     try {
       if (grupoEditando) {
-        await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined, prompt_insert: formGrupo.prompt_insert || undefined, prompt_update: formGrupo.prompt_update || undefined, system_prompt: formGrupo.system_prompt || undefined, python_insert: formGrupo.python_insert || undefined, python_update: formGrupo.python_update || undefined, javascript: formGrupo.javascript || undefined, python_editado_manual: formGrupo.python_editado_manual, javascript_editado_manual: formGrupo.javascript_editado_manual } as Record<string, unknown>)
+        await gruposApi.actualizar(grupoEditando.codigo_grupo, { nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined, prompt_insert: formGrupo.prompt_insert || undefined, prompt_update: formGrupo.prompt_update || undefined, system_prompt: formGrupo.system_prompt || undefined, python_insert: formGrupo.python_insert || undefined, python_update: formGrupo.python_update || undefined, javascript: formGrupo.javascript || undefined, python_editado_manual: formGrupo.python_editado_manual, javascript_editado_manual: formGrupo.javascript_editado_manual, md: formGrupo.md || undefined } as Record<string, unknown>)
         if (cerrar) setModalGrupo(false)
       } else {
         const nuevo = await gruposApi.crear({ nombre: formGrupo.nombre, descripcion: formGrupo.descripcion || undefined })
@@ -238,17 +238,33 @@ export default function PaginaGrupos() {
 
   const abrirNuevaEntidad = () => {
     setEntidadEditando(null)
-    setFormEntidad({ codigo_entidad: '', nombre: '', descripcion: '' })
+    setFormEntidad({ codigo_entidad: '', nombre: '', descripcion: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false, md: '' })
     setErrorEntidad('')
     setTabModalEntidad('datos')
+    setMensajeMdEntidad(null)
     setModalEntidad(true)
   }
 
   const abrirEditarEntidad = async (e: Entidad) => {
     setEntidadEditando(e)
-    setFormEntidad({ codigo_entidad: e.codigo_entidad, nombre: e.nombre, descripcion: e.descripcion || '' })
+    const e2 = e as unknown as Record<string, unknown>
+    setFormEntidad({
+      codigo_entidad: e.codigo_entidad,
+      nombre: e.nombre,
+      descripcion: e.descripcion || '',
+      prompt_insert: (e2.prompt_insert as string) || '',
+      prompt_update: (e2.prompt_update as string) || '',
+      system_prompt: (e2.system_prompt as string) || '',
+      python_insert: (e2.python_insert as string) || '',
+      python_update: (e2.python_update as string) || '',
+      javascript: (e2.javascript as string) || '',
+      python_editado_manual: (e2.python_editado_manual as boolean) ?? false,
+      javascript_editado_manual: (e2.javascript_editado_manual as boolean) ?? false,
+      md: (e2.md as string) || '',
+    })
     setErrorEntidad('')
     setTabModalEntidad('datos')
+    setMensajeMdEntidad(null)
     setBusquedaUsuarioEnt('')
     setUsuarioNuevoEnt('')
     setModalEntidad(true)
@@ -265,7 +281,19 @@ export default function PaginaGrupos() {
     setGuardandoEntidad(true)
     try {
       if (entidadEditando) {
-        await entidadesApi.actualizar(entidadEditando.codigo_entidad, { nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined })
+        await entidadesApi.actualizar(entidadEditando.codigo_entidad, {
+          nombre: formEntidad.nombre,
+          descripcion: formEntidad.descripcion || undefined,
+          prompt_insert: formEntidad.prompt_insert || undefined,
+          prompt_update: formEntidad.prompt_update || undefined,
+          system_prompt: formEntidad.system_prompt || undefined,
+          python_insert: formEntidad.python_insert || undefined,
+          python_update: formEntidad.python_update || undefined,
+          javascript: formEntidad.javascript || undefined,
+          python_editado_manual: formEntidad.python_editado_manual,
+          javascript_editado_manual: formEntidad.javascript_editado_manual,
+          md: formEntidad.md || undefined,
+        } as Record<string, unknown>)
         if (cerrar) setModalEntidad(false)
       } else {
         const nueva = await entidadesApi.crear({ nombre: formEntidad.nombre, descripcion: formEntidad.descripcion || undefined, codigo_grupo: grupoSeleccionado?.codigo_grupo })
@@ -273,7 +301,21 @@ export default function PaginaGrupos() {
           setModalEntidad(false)
         } else {
           setEntidadEditando(nueva)
-          setFormEntidad({ codigo_entidad: nueva.codigo_entidad, nombre: nueva.nombre, descripcion: nueva.descripcion || '' })
+          const n2 = nueva as unknown as Record<string, unknown>
+          setFormEntidad({
+            codigo_entidad: nueva.codigo_entidad,
+            nombre: nueva.nombre,
+            descripcion: nueva.descripcion || '',
+            prompt_insert: (n2.prompt_insert as string) || '',
+            prompt_update: (n2.prompt_update as string) || '',
+            system_prompt: (n2.system_prompt as string) || '',
+            python_insert: (n2.python_insert as string) || '',
+            python_update: (n2.python_update as string) || '',
+            javascript: (n2.javascript as string) || '',
+            python_editado_manual: (n2.python_editado_manual as boolean) ?? false,
+            javascript_editado_manual: (n2.javascript_editado_manual as boolean) ?? false,
+            md: (n2.md as string) || '',
+          })
           setCargandoUsuariosEntidad(true)
           try {
             setUsuariosEntidad(await entidadesApi.listarUsuarios(nueva.codigo_entidad, grupoSeleccionado?.codigo_grupo))
@@ -856,7 +898,7 @@ export default function PaginaGrupos() {
       <Modal abierto={modalGrupo} alCerrar={() => setModalGrupo(false)} titulo={grupoEditando ? 'Editar grupo' : 'Nuevo grupo'} className="max-w-3xl">
         <div className="flex flex-col gap-4 min-w-[520px] min-h-[500px]">
           <div className="flex border-b border-borde">
-            {(['datos', ...(grupoEditando ? ['usuarios'] : []), 'system_prompt', 'programacion_insert', 'programacion_update'] as const).map((tab) => (
+            {(['datos', ...(grupoEditando ? ['usuarios', 'system_prompt', 'programacion_insert', 'programacion_update', 'md'] : [])] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setTabModalGrupo(tab as typeof tabModalGrupo)}
@@ -864,14 +906,17 @@ export default function PaginaGrupos() {
                   tabModalGrupo === tab ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos' ? 'Datos' : tab === 'usuarios' ? `Usuarios${usuariosModalGrupo.length > 0 ? ` (${usuariosModalGrupo.length})` : ''}` : tab === 'system_prompt' ? 'System Prompt' : tab === 'programacion_insert' ? 'Prog. Insert' : 'Prog. Update'}
+                {tab === 'datos' ? 'Datos' : tab === 'usuarios' ? `Usuarios${usuariosModalGrupo.length > 0 ? ` (${usuariosModalGrupo.length})` : ''}` : tab === 'system_prompt' ? 'System Prompt' : tab === 'programacion_insert' ? 'Prog. Insert' : tab === 'programacion_update' ? 'Prog. Update' : '.md'}
               </button>
             ))}
           </div>
 
           {tabModalGrupo === 'datos' && (
             <>
-              <Input etiqueta={t('etiquetaNombre')} value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
+              <div className="grid grid-cols-[180px_1fr] gap-3">
+                <Input etiqueta="Código" value={formGrupo.codigo_grupo} disabled readOnly placeholder="(autogenerado)" />
+                <Input etiqueta={t('etiquetaNombre')} value={formGrupo.nombre} onChange={(e) => setFormGrupo({ ...formGrupo, nombre: e.target.value })} placeholder={t('placeholderNombre')} />
+              </div>
               <Textarea etiqueta="Descripción" value={formGrupo.descripcion} onChange={(e) => setFormGrupo({ ...formGrupo, descripcion: e.target.value })} rows={3} />
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-texto">Tipo</label>
@@ -880,7 +925,6 @@ export default function PaginaGrupos() {
                   <span className="text-xs text-texto-muted">Solo modificable desde la base de datos</span>
                 </div>
               </div>
-              {grupoEditando && <Input etiqueta="Código" value={formGrupo.codigo_grupo} disabled readOnly />}
             </>
           )}
 
@@ -979,44 +1023,287 @@ export default function PaginaGrupos() {
             />
           )}
 
+          {tabModalGrupo === 'md' && grupoEditando && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Markdown generado (solo lectura)</label>
+                <textarea
+                  value={formGrupo.md || ''}
+                  readOnly
+                  rows={13}
+                  placeholder="Sin contenido. Presiona Generar para crear el documento Markdown."
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto font-mono focus:outline-none resize-none cursor-default"
+                />
+              </div>
+              {mensajeMdGrupo && (
+                <p className={`text-xs px-1 ${mensajeMdGrupo.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+                  {mensajeMdGrupo.texto}
+                </p>
+              )}
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex gap-2">
+                  <Boton
+                    className="bg-primario-hover hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setGenerandoMdGrupo(true); setMensajeMdGrupo(null)
+                      try {
+                        const r = await gruposApi.generarMd(grupoEditando.codigo_grupo)
+                        setFormGrupo((prev) => ({ ...prev, md: r.md }))
+                        setMensajeMdGrupo({ tipo: 'ok', texto: 'Markdown generado correctamente.' })
+                      } catch (e) {
+                        setMensajeMdGrupo({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al generar' })
+                      } finally { setGenerandoMdGrupo(false) }
+                    }}
+                    cargando={generandoMdGrupo}
+                    disabled={generandoMdGrupo || sincronizandoMdGrupo}
+                  >
+                    Generar
+                  </Boton>
+                  <Boton
+                    className="bg-primario-light hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setSincronizandoMdGrupo(true); setMensajeMdGrupo(null)
+                      try {
+                        const r = await promptsApi.sincronizarFila('grupos_entidades', 'codigo_grupo', grupoEditando.codigo_grupo)
+                        setMensajeMdGrupo({ tipo: 'ok', texto: `Documento ${r.accion} (código ${r.codigo_documento}). Listo para CHUNKEAR + VECTORIZAR.` })
+                      } catch (e) {
+                        setMensajeMdGrupo({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
+                      } finally { setSincronizandoMdGrupo(false) }
+                    }}
+                    cargando={sincronizandoMdGrupo}
+                    disabled={generandoMdGrupo || sincronizandoMdGrupo || !formGrupo.md}
+                  >
+                    Sincronizar
+                  </Boton>
+                </div>
+                <Boton variante="contorno" onClick={() => setModalGrupo(false)}>Salir</Boton>
+              </div>
+            </div>
+          )}
+
           {error && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{error}</p></div>}
-          <PieBotonesModal
-            editando={!!grupoEditando}
-            onGuardar={() => guardarGrupo(false)}
-            onGuardarYSalir={() => guardarGrupo(true)}
-            onCerrar={() => setModalGrupo(false)}
-            cargando={guardando}
-            botonesIzquierda={(tabModalGrupo === 'system_prompt' || tabModalGrupo === 'programacion_insert' || tabModalGrupo === 'programacion_update') && grupoEditando ? (
-              <PieBotonesPrompts
-                tabla="grupos_entidades"
-                pkColumna="codigo_grupo"
-                pkValor={grupoEditando.codigo_grupo}
-                promptInsert={formGrupo.prompt_insert ?? undefined}
-                promptUpdate={formGrupo.prompt_update ?? undefined}
-              />
-            ) : undefined}
-          />
+          {tabModalGrupo !== 'md' && tabModalGrupo !== 'usuarios' && (
+            <PieBotonesModal
+              editando={!!grupoEditando}
+              onGuardar={() => guardarGrupo(false)}
+              onGuardarYSalir={() => guardarGrupo(true)}
+              onCerrar={() => setModalGrupo(false)}
+              cargando={guardando}
+              botonesIzquierda={(tabModalGrupo === 'programacion_insert' || tabModalGrupo === 'programacion_update') && grupoEditando ? (
+                <PieBotonesPrompts
+                  tabla="grupos_entidades"
+                  pkColumna="codigo_grupo"
+                  pkValor={grupoEditando.codigo_grupo}
+                  promptInsert={formGrupo.prompt_insert ?? undefined}
+                  promptUpdate={formGrupo.prompt_update ?? undefined}
+                  mostrarSincronizar={false}
+                />
+              ) : undefined}
+            />
+          )}
         </div>
       </Modal>
 
       {/* Modal entidad */}
-      <Modal abierto={modalEntidad} alCerrar={() => setModalEntidad(false)} titulo={entidadEditando ? `Editar entidad: ${entidadEditando.nombre}` : 'Nueva entidad'}>
-        <div className="flex flex-col gap-4 min-h-[500px]">
+      <Modal abierto={modalEntidad} alCerrar={() => setModalEntidad(false)} titulo={entidadEditando ? `Editar entidad: ${entidadEditando.nombre}` : 'Nueva entidad'} className="max-w-3xl">
+        <div className="flex flex-col gap-4 min-w-[520px] min-h-[500px]">
           {entidadEditando && (
-            <div className="flex border-b border-borde -mx-1">
-              <button onClick={() => setTabModalEntidad('datos')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalEntidad === 'datos' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>{t('tabDatos')}</button>
-              <button onClick={() => setTabModalEntidad('usuarios')} className={`px-4 py-2 text-sm font-medium transition-colors ${tabModalEntidad === 'usuarios' ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}>Usuarios ({usuariosEntidad.length})</button>
+            <div className="flex border-b border-borde -mx-1 overflow-x-auto">
+              {(['datos', 'usuarios', 'system_prompt', 'programacion_insert', 'programacion_update', 'md'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setTabModalEntidad(tab)}
+                  className={`flex-1 text-center px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${tabModalEntidad === tab ? 'border-b-2 border-primario text-primario' : 'text-texto-muted hover:text-texto'}`}
+                >
+                  {tab === 'datos' ? t('tabDatos') : tab === 'usuarios' ? `Usuarios (${usuariosEntidad.length})` : tab === 'system_prompt' ? 'System Prompt' : tab === 'programacion_insert' ? 'Prog. Insert' : tab === 'programacion_update' ? 'Prog. Update' : '.md'}
+                </button>
+              ))}
             </div>
           )}
 
           {tabModalEntidad === 'datos' && (
             <>
-              <Input etiqueta={t('etiquetaNombre')} value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder={t('placeholderNombreEntidad')} />
+              <div className="grid grid-cols-[180px_1fr] gap-3">
+                <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly placeholder="(autogenerado)" />
+                <Input etiqueta={t('etiquetaNombre')} value={formEntidad.nombre} onChange={(e) => setFormEntidad({ ...formEntidad, nombre: e.target.value })} placeholder={t('placeholderNombreEntidad')} />
+              </div>
               <Textarea etiqueta="Descripción" value={formEntidad.descripcion} onChange={(e) => setFormEntidad({ ...formEntidad, descripcion: e.target.value })} placeholder="Descripción opcional" rows={3} />
-              {entidadEditando && <Input etiqueta="Código" value={formEntidad.codigo_entidad} disabled readOnly />}
               {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
               <PieBotonesModal editando={!!entidadEditando} onGuardar={() => guardarEntidad(false)} onGuardarYSalir={() => guardarEntidad(true)} onCerrar={() => setModalEntidad(false)} cargando={guardandoEntidad} />
             </>
+          )}
+
+          {tabModalEntidad === 'system_prompt' && entidadEditando && (
+            <>
+              <TabPrompts
+                tabla="entidades"
+                pkColumna="codigo_entidad"
+                pkValor={entidadEditando.codigo_entidad}
+                campos={{
+                  prompt_insert: formEntidad.prompt_insert,
+                  prompt_update: formEntidad.prompt_update,
+                  system_prompt: formEntidad.system_prompt,
+                  python_insert: formEntidad.python_insert,
+                  python_update: formEntidad.python_update,
+                  javascript: formEntidad.javascript,
+                  python_editado_manual: formEntidad.python_editado_manual,
+                  javascript_editado_manual: formEntidad.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setFormEntidad({ ...formEntidad, [c]: v })}
+                mostrarPromptInsert={false}
+                mostrarPromptUpdate={false}
+                mostrarSystemPrompt={true}
+                mostrarPythonInsert={false}
+                mostrarPythonUpdate={false}
+                mostrarJavaScript={false}
+              />
+              {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
+              <PieBotonesModal editando={!!entidadEditando} onGuardar={() => guardarEntidad(false)} onGuardarYSalir={() => guardarEntidad(true)} onCerrar={() => setModalEntidad(false)} cargando={guardandoEntidad} />
+            </>
+          )}
+
+          {tabModalEntidad === 'programacion_insert' && entidadEditando && (
+            <>
+              <TabPrompts
+                tabla="entidades"
+                pkColumna="codigo_entidad"
+                pkValor={entidadEditando.codigo_entidad}
+                campos={{
+                  prompt_insert: formEntidad.prompt_insert,
+                  prompt_update: formEntidad.prompt_update,
+                  system_prompt: formEntidad.system_prompt,
+                  python_insert: formEntidad.python_insert,
+                  python_update: formEntidad.python_update,
+                  javascript: formEntidad.javascript,
+                  python_editado_manual: formEntidad.python_editado_manual,
+                  javascript_editado_manual: formEntidad.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setFormEntidad({ ...formEntidad, [c]: v })}
+                mostrarSystemPrompt={false}
+                mostrarJavaScript={false}
+                mostrarPromptUpdate={false}
+                mostrarPythonUpdate={false}
+              />
+              {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
+              <PieBotonesModal
+                editando={!!entidadEditando}
+                onGuardar={() => guardarEntidad(false)}
+                onGuardarYSalir={() => guardarEntidad(true)}
+                onCerrar={() => setModalEntidad(false)}
+                cargando={guardandoEntidad}
+                botonesIzquierda={(
+                  <PieBotonesPrompts
+                    tabla="entidades"
+                    pkColumna="codigo_entidad"
+                    pkValor={entidadEditando.codigo_entidad}
+                    promptInsert={formEntidad.prompt_insert ?? undefined}
+                    promptUpdate={formEntidad.prompt_update ?? undefined}
+                    mostrarSincronizar={false}
+                  />
+                )}
+              />
+            </>
+          )}
+
+          {tabModalEntidad === 'programacion_update' && entidadEditando && (
+            <>
+              <TabPrompts
+                tabla="entidades"
+                pkColumna="codigo_entidad"
+                pkValor={entidadEditando.codigo_entidad}
+                campos={{
+                  prompt_insert: formEntidad.prompt_insert,
+                  prompt_update: formEntidad.prompt_update,
+                  system_prompt: formEntidad.system_prompt,
+                  python_insert: formEntidad.python_insert,
+                  python_update: formEntidad.python_update,
+                  javascript: formEntidad.javascript,
+                  python_editado_manual: formEntidad.python_editado_manual,
+                  javascript_editado_manual: formEntidad.javascript_editado_manual,
+                }}
+                onCampoCambiado={(c, v) => setFormEntidad({ ...formEntidad, [c]: v })}
+                mostrarSystemPrompt={false}
+                mostrarJavaScript={false}
+                mostrarPromptInsert={false}
+                mostrarPythonInsert={false}
+              />
+              {errorEntidad && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorEntidad}</p></div>}
+              <PieBotonesModal
+                editando={!!entidadEditando}
+                onGuardar={() => guardarEntidad(false)}
+                onGuardarYSalir={() => guardarEntidad(true)}
+                onCerrar={() => setModalEntidad(false)}
+                cargando={guardandoEntidad}
+                botonesIzquierda={(
+                  <PieBotonesPrompts
+                    tabla="entidades"
+                    pkColumna="codigo_entidad"
+                    pkValor={entidadEditando.codigo_entidad}
+                    promptInsert={formEntidad.prompt_insert ?? undefined}
+                    promptUpdate={formEntidad.prompt_update ?? undefined}
+                    mostrarSincronizar={false}
+                  />
+                )}
+              />
+            </>
+          )}
+
+          {tabModalEntidad === 'md' && entidadEditando && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Markdown generado (solo lectura)</label>
+                <textarea
+                  value={formEntidad.md || ''}
+                  readOnly
+                  rows={13}
+                  placeholder="Sin contenido. Presiona Generar para crear el documento Markdown."
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto font-mono focus:outline-none resize-none cursor-default"
+                />
+              </div>
+              {mensajeMdEntidad && (
+                <p className={`text-xs px-1 ${mensajeMdEntidad.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+                  {mensajeMdEntidad.texto}
+                </p>
+              )}
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex gap-2">
+                  <Boton
+                    className="bg-primario-hover hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setGenerandoMdEntidad(true); setMensajeMdEntidad(null)
+                      try {
+                        const r = await entidadesApi.generarMd(entidadEditando.codigo_entidad)
+                        setFormEntidad((prev) => ({ ...prev, md: r.md }))
+                        setMensajeMdEntidad({ tipo: 'ok', texto: 'Markdown generado correctamente.' })
+                      } catch (e) {
+                        setMensajeMdEntidad({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al generar' })
+                      } finally { setGenerandoMdEntidad(false) }
+                    }}
+                    cargando={generandoMdEntidad}
+                    disabled={generandoMdEntidad || sincronizandoMdEntidad}
+                  >
+                    Generar
+                  </Boton>
+                  <Boton
+                    className="bg-primario-light hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setSincronizandoMdEntidad(true); setMensajeMdEntidad(null)
+                      try {
+                        const r = await promptsApi.sincronizarFila('entidades', 'codigo_entidad', entidadEditando.codigo_entidad)
+                        setMensajeMdEntidad({ tipo: 'ok', texto: `Documento ${r.accion} (código ${r.codigo_documento}). Listo para CHUNKEAR + VECTORIZAR.` })
+                      } catch (e) {
+                        setMensajeMdEntidad({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
+                      } finally { setSincronizandoMdEntidad(false) }
+                    }}
+                    cargando={sincronizandoMdEntidad}
+                    disabled={generandoMdEntidad || sincronizandoMdEntidad || !formEntidad.md}
+                  >
+                    Sincronizar
+                  </Boton>
+                </div>
+                <Boton variante="contorno" onClick={() => setModalEntidad(false)}>Salir</Boton>
+              </div>
+            </div>
           )}
 
           {tabModalEntidad === 'usuarios' && entidadEditando && (
