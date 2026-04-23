@@ -861,6 +861,7 @@ function PaginaProcesarDocumentosInterna() {
         tope ? parseInt(tope) : null,
         ubicacionSel || null,
         filtroEfectivo || null,
+        procesoSel || null,
       )
     } catch {
       setEjecutando(false)
