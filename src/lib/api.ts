@@ -1420,6 +1420,8 @@ export const cargosAdminApi = {
     api.delete(`/cargos-admin/${codigo_cargo}/roles/${id_rol}`).then((r) => r.data),
   reordenarRoles: (codigo_cargo: string, orden: { id_rol: number; orden: number }[]) =>
     api.put(`/cargos-admin/${codigo_cargo}/roles/reordenar`, orden).then((r) => r.data),
+  generarMd: (codigo_cargo: string) =>
+    api.post<{ md: string }>(`/cargos-admin/${codigo_cargo}/generar-md`).then((r) => r.data),
 }
 
 // ─── Traducciones ─────────────────────────────────────────────────────────────

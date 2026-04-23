@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Search } from 'lucide-react'
+import { Search, Plus, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TabPrompts } from '@/components/ui/tab-prompts'
@@ -18,10 +18,8 @@ import {
   columnaNombre,
   columnaDescripcion,
 } from '@/components/ui/tabla-crud'
-import { Tabla, TablaCabecera, TablaCuerpo, TablaTh, TablaTd } from '@/components/ui/tabla'
-import { Insignia } from '@/components/ui/insignia'
-import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
-import { cargosAdminApi, rolesApi } from '@/lib/api'
+import { SortableDndContext, SortableListItem } from '@/components/ui/sortable'
+import { cargosAdminApi, rolesApi, promptsApi } from '@/lib/api'
 import type { Cargo, RolCargo, Rol } from '@/lib/tipos'
 import { useCrudPage } from '@/hooks/useCrudPage'
 import { BotonChat } from '@/components/ui/boton-chat'
@@ -39,20 +37,21 @@ type FormCargo = {
   javascript: string
   python_editado_manual: boolean
   javascript_editado_manual: boolean
+  md: string
 }
+
+type TabModal = 'datos' | 'roles' | 'system_prompt' | 'programacion_insert' | 'programacion_update' | 'md'
 
 export default function PaginaCargosAdmin() {
   const t = useTranslations('cargos')
   const tc = useTranslations('common')
 
-  // ── Catálogos ───────────────────────────────────────────────────────────────
   const [roles, setRoles] = useState<Rol[]>([])
 
   useEffect(() => {
     rolesApi.listar().then(setRoles).catch(() => {})
   }, [])
 
-  // ── CRUD base ───────────────────────────────────────────────────────────────
   const crud = useCrudPage<Cargo, FormCargo>({
     cargarFn: () => cargosAdminApi.listar(),
     crearFn: (f) =>
@@ -87,7 +86,7 @@ export default function PaginaCargosAdmin() {
     eliminarFn: async (id: string) => { await cargosAdminApi.eliminar(id) },
     getId: (c) => c.codigo_cargo,
     camposBusqueda: (c) => [c.codigo_cargo, c.nombre_cargo, c.alias],
-    formInicial: { codigo_cargo: '', nombre_cargo: '', alias: '', descripcion: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false },
+    formInicial: { codigo_cargo: '', nombre_cargo: '', alias: '', descripcion: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false, md: '' },
     itemToForm: (c) => {
       const c2 = c as unknown as Record<string, unknown>
       return {
@@ -103,17 +102,18 @@ export default function PaginaCargosAdmin() {
         javascript: c2.javascript as string || '',
         python_editado_manual: c2.python_editado_manual as boolean || false,
         javascript_editado_manual: c2.javascript_editado_manual as boolean || false,
+        md: (c2.md as string) || '',
       }
     },
   })
 
-  // ── Tab activa en el modal ──────────────────────────────────────────────────
-  const [tabActiva, setTabActiva] = useState<'datos' | 'roles' | 'system_prompt' | 'programacion_insert' | 'programacion_update'>('datos')
+  const [tabActiva, setTabActiva] = useState<TabModal>('datos')
 
   const abrirNuevo = () => { setTabActiva('datos'); crud.abrirNuevo() }
   const abrirEditar = (c: Cargo) => {
     setTabActiva('datos')
     setRolesCargo([])
+    setMensajeMd(null)
     crud.abrirEditar(c)
     cargarRolesCargo(c.codigo_cargo)
   }
@@ -122,10 +122,14 @@ export default function PaginaCargosAdmin() {
   const [rolesCargo, setRolesCargo] = useState<RolCargo[]>([])
   const [cargandoRoles, setCargandoRoles] = useState(false)
   const [busquedaRol, setBusquedaRol] = useState('')
-  const [dropdownRolAbierto, setDropdownRolAbierto] = useState(false)
-  const dropdownRolRef = useRef<HTMLDivElement>(null)
+  const [rolNuevo, setRolNuevo] = useState<number | null>(null)
   const [asignandoRol, setAsignandoRol] = useState(false)
   const [errorRol, setErrorRol] = useState('')
+
+  // ── .md ─────────────────────────────────────────────────────────────────────
+  const [generandoMd, setGenerandoMd] = useState(false)
+  const [sincronizandoMd, setSincronizandoMd] = useState(false)
+  const [mensajeMd, setMensajeMd] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
 
   const cargarRolesCargo = useCallback(async (codigo_cargo: string) => {
     setCargandoRoles(true)
@@ -134,16 +138,6 @@ export default function PaginaCargosAdmin() {
     finally { setCargandoRoles(false) }
   }, [])
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRolRef.current && !dropdownRolRef.current.contains(e.target as Node))
-        setDropdownRolAbierto(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  // En /cargos-admin los roles asignables son los globales (codigo_grupo null)
   const rolesDisponibles = roles
     .filter(
       (r) =>
@@ -158,19 +152,19 @@ export default function PaginaCargosAdmin() {
 
   const rolesFiltrados = rolesDisponibles.filter(
     (r) =>
-      !busquedaRol ||
+      busquedaRol.length === 0 ||
       r.nombre.toLowerCase().includes(busquedaRol.toLowerCase()) ||
       r.codigo_rol.toLowerCase().includes(busquedaRol.toLowerCase()),
   )
 
-  const asignarRol = async (id_rol: number) => {
-    if (!crud.editando) return
+  const asignarRol = async () => {
+    if (!rolNuevo || !crud.editando) return
     setAsignandoRol(true)
     setErrorRol('')
     try {
-      await cargosAdminApi.asignarRol(crud.editando.codigo_cargo, id_rol)
+      await cargosAdminApi.asignarRol(crud.editando.codigo_cargo, rolNuevo)
+      setRolNuevo(null)
       setBusquedaRol('')
-      setDropdownRolAbierto(false)
       await cargarRolesCargo(crud.editando.codigo_cargo)
     } catch (e) { setErrorRol(e instanceof Error ? e.message : t('errorAlAsignarRol')) }
     finally { setAsignandoRol(false) }
@@ -191,10 +185,20 @@ export default function PaginaCargosAdmin() {
     catch { if (crud.editando) cargarRolesCargo(crud.editando.codigo_cargo) }
   }
 
-  // ── Lista ordenada ──────────────────────────────────────────────────────────
   const filtradosOrdenados = [...crud.filtrados].sort((a, b) =>
     a.nombre_cargo.localeCompare(b.nombre_cargo),
   )
+
+  const TABS_MODAL: { key: TabModal; label: string }[] = [
+    { key: 'datos', label: t('tabDatos') },
+    ...(crud.editando ? [
+      { key: 'roles' as TabModal, label: `${t('tabRoles')} (${rolesCargo.length})` },
+      { key: 'system_prompt' as TabModal, label: t('tabSystemPrompt') },
+      { key: 'programacion_insert' as TabModal, label: 'Prog. Insert' },
+      { key: 'programacion_update' as TabModal, label: 'Prog. Update' },
+      { key: 'md' as TabModal, label: '.md' },
+    ] : []),
+  ]
 
   return (
     <div className="relative flex flex-col gap-6 max-w-5xl">
@@ -235,45 +239,33 @@ export default function PaginaCargosAdmin() {
         textoVacio={t('sinCargos')}
       />
 
-      {/* ── Modal crear/editar ─────────────────────────────────────────────── */}
       <Modal
         abierto={crud.modal}
         alCerrar={crud.cerrarModal}
         titulo={crud.editando ? t('editarTitulo', { nombre: crud.editando.nombre_cargo }) : t('nuevoTitulo')}
         className="max-w-3xl"
       >
-        <div className="flex flex-col gap-0 min-w-[520px] min-h-[500px]">
+        <div className="flex flex-col gap-0 min-w-[520px] min-h-[420px]">
           {/* Tabs */}
-          <div className="flex border-b border-borde mb-4">
-            {(crud.editando
-              ? (['datos', 'roles', 'system_prompt', 'programacion_insert', 'programacion_update'] as const)
-              : (['datos', 'system_prompt', 'programacion_insert', 'programacion_update'] as const)
-            ).map((tab) => (
+          <div className="flex border-b border-borde mb-4 -mx-1 overflow-x-auto">
+            {TABS_MODAL.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setTabActiva(tab)}
-                className={`flex-1 text-center px-4 py-2 text-sm font-medium capitalize transition-colors ${
-                  tabActiva === tab
+                key={tab.key}
+                onClick={() => setTabActiva(tab.key)}
+                className={`flex-1 text-center px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  tabActiva === tab.key
                     ? 'border-b-2 border-primario text-primario'
                     : 'text-texto-muted hover:text-texto'
                 }`}
               >
-                {tab === 'datos'
-                  ? t('tabDatos')
-                  : tab === 'roles'
-                  ? t('tabRoles')
-                  : tab === 'system_prompt'
-                  ? t('tabSystemPrompt')
-                  : tab === 'programacion_insert'
-                  ? 'Prog. Insert'
-                  : 'Prog. Update'}
+                {tab.label}
               </button>
             ))}
           </div>
 
           {/* ── Tab Datos ─────────────────────────────────────────────────── */}
           {tabActiva === 'datos' && (
-            <div className="flex flex-col gap-4 min-h-[500px]">
+            <div className="flex flex-col gap-4 min-h-[420px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {crud.editando && (
                   <div className="sm:col-span-2">
@@ -313,7 +305,7 @@ export default function PaginaCargosAdmin() {
                 </div>
               )}
 
-              <div className="mt-auto">
+              <div className="mt-auto mb-20">
                 <PieBotonesModal
                   editando={!!crud.editando}
                   onGuardar={() => {
@@ -339,7 +331,7 @@ export default function PaginaCargosAdmin() {
 
           {/* ── Tab System Prompt ─────────────────────────────────────────── */}
           {tabActiva === 'system_prompt' && (
-            <div className="flex flex-col gap-4 min-h-[500px]">
+            <div className="flex flex-col gap-4 min-h-[420px]">
               <TabPrompts
                 tabla="cargos"
                 pkColumna="codigo_cargo"
@@ -353,22 +345,13 @@ export default function PaginaCargosAdmin() {
                 mostrarPythonUpdate={false}
                 mostrarJavaScript={false}
               />
-              <div className="mt-auto">
+              <div className="mt-auto mb-20">
                 <PieBotonesModal
                   editando={!!crud.editando}
                   onGuardar={() => crud.guardar(undefined, undefined, { cerrar: false })}
                   onGuardarYSalir={() => crud.guardar(undefined, undefined, { cerrar: true })}
                   onCerrar={crud.cerrarModal}
                   cargando={crud.guardando}
-                  botonesIzquierda={crud.editando ? (
-                    <PieBotonesPrompts
-                      tabla="cargos"
-                      pkColumna="codigo_cargo"
-                      pkValor={crud.editando.codigo_cargo}
-                      promptInsert={crud.form.prompt_insert || undefined}
-                      promptUpdate={crud.form.prompt_update || undefined}
-                    />
-                  ) : undefined}
                 />
               </div>
             </div>
@@ -376,7 +359,7 @@ export default function PaginaCargosAdmin() {
 
           {/* ── Tab Programación Insert ──────────────────────────────────────────── */}
           {tabActiva === 'programacion_insert' && (
-            <div className="flex flex-col gap-4 min-h-[500px]">
+            <div className="flex flex-col gap-4 min-h-[420px]">
               <TabPrompts
                 tabla="cargos"
                 pkColumna="codigo_cargo"
@@ -388,7 +371,7 @@ export default function PaginaCargosAdmin() {
                 mostrarPromptUpdate={false}
                 mostrarPythonUpdate={false}
               />
-              <div className="mt-auto">
+              <div className="mt-auto mb-20">
                 <PieBotonesModal
                   editando={!!crud.editando}
                   onGuardar={() => crud.guardar(undefined, undefined, { cerrar: false })}
@@ -402,15 +385,17 @@ export default function PaginaCargosAdmin() {
                       pkValor={crud.editando.codigo_cargo}
                       promptInsert={crud.form.prompt_insert || undefined}
                       promptUpdate={crud.form.prompt_update || undefined}
+                      mostrarSincronizar={false}
                     />
                   ) : undefined}
                 />
               </div>
             </div>
           )}
+
           {/* ── Tab Programación Update ──────────────────────────────────────────── */}
           {tabActiva === 'programacion_update' && (
-            <div className="flex flex-col gap-4 min-h-[500px]">
+            <div className="flex flex-col gap-4 min-h-[420px]">
               <TabPrompts
                 tabla="cargos"
                 pkColumna="codigo_cargo"
@@ -422,7 +407,7 @@ export default function PaginaCargosAdmin() {
                 mostrarPromptInsert={false}
                 mostrarPythonInsert={false}
               />
-              <div className="mt-auto">
+              <div className="mt-auto mb-20">
                 <PieBotonesModal
                   editando={!!crud.editando}
                   onGuardar={() => crud.guardar(undefined, undefined, { cerrar: false })}
@@ -436,6 +421,7 @@ export default function PaginaCargosAdmin() {
                       pkValor={crud.editando.codigo_cargo}
                       promptInsert={crud.form.prompt_insert || undefined}
                       promptUpdate={crud.form.prompt_update || undefined}
+                      mostrarSincronizar={false}
                     />
                   ) : undefined}
                 />
@@ -443,91 +429,168 @@ export default function PaginaCargosAdmin() {
             </div>
           )}
 
-          {/* ── Tab Roles ─────────────────────────────────────────────────── */}
+          {/* ── Tab Roles (idéntico a /roles-generales) ─────────────────────────── */}
           {tabActiva === 'roles' && crud.editando && (
-            <div className="flex flex-col gap-4 min-h-[500px]">
-              <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-3 min-h-[420px]">
+              {/* Asignar nuevo rol */}
+              <div>
                 <label className="text-sm font-medium text-texto">{t('agregarRol')}</label>
-                <div className="relative" ref={dropdownRolRef}>
-                  <div className="flex items-center border border-borde rounded-lg bg-surface px-3 py-2 gap-2">
-                    <Search className="w-4 h-4 text-texto-muted shrink-0" />
-                    <input
-                      className="flex-1 bg-transparent text-sm text-texto outline-none placeholder:text-texto-muted"
+                <div className="flex gap-2 mt-1">
+                  <div className="flex-1 relative">
+                    <Input
                       placeholder={t('buscarRolPlaceholder')}
                       value={busquedaRol}
-                      onChange={(e) => { setBusquedaRol(e.target.value); setDropdownRolAbierto(true) }}
-                      onFocus={() => setDropdownRolAbierto(true)}
+                      onChange={(e) => { setBusquedaRol(e.target.value); setRolNuevo(null) }}
+                      icono={<Search size={14} />}
                     />
+                    {busquedaRol.length > 0 && !rolNuevo && (
+                      <div className="absolute z-10 mt-1 w-full max-h-52 overflow-y-auto rounded-lg border border-borde bg-surface shadow-lg">
+                        {rolesFiltrados.length === 0 ? (
+                          <div className="p-2 text-xs text-texto-muted">Sin resultados</div>
+                        ) : (
+                          rolesFiltrados.slice(0, 20).map((r) => (
+                            <button
+                              key={r.id_rol}
+                              type="button"
+                              onClick={() => {
+                                setRolNuevo(r.id_rol)
+                                setBusquedaRol(r.nombre)
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro border-b border-borde/50 last:border-0"
+                            >
+                              <div className="font-medium">{r.nombre}</div>
+                              <div className="text-xs text-texto-muted font-mono">{r.codigo_rol}</div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {dropdownRolAbierto && rolesFiltrados.length > 0 && (
-                    <div className="absolute z-50 mt-1 w-full bg-surface border border-borde rounded-lg shadow-lg max-h-52 overflow-y-auto">
-                      {rolesFiltrados.map((r) => (
-                        <button
-                          key={r.id_rol}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-primario/10 transition-colors flex items-center justify-between gap-2"
-                          onClick={() => asignarRol(r.id_rol)}
-                          disabled={asignandoRol}
-                        >
-                          <span>{r.nombre}</span>
-                          <Insignia variante="secundario">{t('global')}</Insignia>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <Boton
+                    variante="primario"
+                    tamano="sm"
+                    onClick={asignarRol}
+                    disabled={!rolNuevo || asignandoRol}
+                  >
+                    <Plus size={14} />
+                    Asignar
+                  </Boton>
                 </div>
               </div>
 
-              {cargandoRoles ? (
-                <p className="text-sm text-texto-muted">{t('cargandoRoles')}</p>
-              ) : rolesCargo.length === 0 ? (
-                <p className="text-sm text-texto-muted italic">{t('sinRoles')}</p>
-              ) : (
-                <SortableDndContext
-                  items={[...rolesCargo].sort((a, b) => a.orden - b.orden) as unknown as Record<string, unknown>[]}
-                  getId={(r) => String((r as { id_rol: number }).id_rol)}
-                  onReorder={(n) => reordenarRolesCargo(n as typeof rolesCargo)}
-                >
-                  <Tabla>
-                    <TablaCabecera>
-                      <tr>
-                        <TablaTh className="w-8" />
-                        <TablaTh>{t('colRol')}</TablaTh>
-                        <TablaTh></TablaTh>
-                        <TablaTh alineacion="derecha">{t('colAccion')}</TablaTh>
-                      </tr>
-                    </TablaCabecera>
-                    <TablaCuerpo>
+              {/* Listado actual */}
+              <div className="border border-borde rounded-lg overflow-hidden">
+                {cargandoRoles ? (
+                  <div className="p-4 text-sm text-texto-muted text-center">{t('cargandoRoles')}</div>
+                ) : rolesCargo.length === 0 ? (
+                  <div className="p-4 text-sm text-texto-muted text-center">{t('sinRoles')}</div>
+                ) : (
+                  <SortableDndContext
+                    items={[...rolesCargo].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)) as unknown as Record<string, unknown>[]}
+                    getId={(r) => String((r as { id_rol: number }).id_rol)}
+                    onReorder={(n) => reordenarRolesCargo(n as unknown as typeof rolesCargo)}
+                  >
+                    <ul className="divide-y divide-borde">
                       {[...rolesCargo]
-                        .sort((a, b) => a.orden - b.orden)
+                        .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
                         .map((rc) => (
-                          <SortableRow key={rc.id_rol} id={String(rc.id_rol)}>
-                            <TablaTd>
-                              <span className="font-medium text-sm">
+                          <SortableListItem
+                            key={rc.id_rol}
+                            id={String(rc.id_rol)}
+                            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-fondo"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">
                                 {rc.roles?.nombre_rol ?? `Rol ${rc.id_rol}`}
-                              </span>
-                            </TablaTd>
-                            <TablaTd>
-                              {rc.roles?.codigo_grupo == null && (
-                                <Insignia variante="secundario">{t('global')}</Insignia>
-                              )}
-                            </TablaTd>
-                            <TablaTd alineacion="derecha">
-                              <Boton variante="peligro" tamano="sm" onClick={() => quitarRol(rc.id_rol)}>
-                                {t('quitar')}
-                              </Boton>
-                            </TablaTd>
-                          </SortableRow>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => quitarRol(rc.id_rol)}
+                              className="p-1 rounded text-texto-muted hover:text-error hover:bg-red-50"
+                              title={t('quitar')}
+                            >
+                              <X size={16} />
+                            </button>
+                          </SortableListItem>
                         ))}
-                    </TablaCuerpo>
-                  </Tabla>
-                </SortableDndContext>
-              )}
+                    </ul>
+                  </SortableDndContext>
+                )}
+              </div>
 
               {errorRol && (
                 <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
                   <p className="text-sm text-error">{errorRol}</p>
                 </div>
               )}
+
+              <div className="mt-auto mb-20 flex justify-end">
+                <Boton variante="contorno" onClick={crud.cerrarModal}>
+                  {tc('cerrar')}
+                </Boton>
+              </div>
+            </div>
+          )}
+
+          {/* ── Tab .md ────────────────────────────────────────────────────── */}
+          {tabActiva === 'md' && crud.editando && (
+            <div className="flex flex-col gap-3 min-h-[420px]">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Markdown generado (solo lectura)</label>
+                <textarea
+                  value={crud.form.md || ''}
+                  readOnly
+                  rows={13}
+                  placeholder="Sin contenido. Presiona Generar para crear el documento Markdown."
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto font-mono focus:outline-none resize-none cursor-default"
+                />
+              </div>
+              {mensajeMd && (
+                <p className={`text-xs px-1 ${mensajeMd.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+                  {mensajeMd.texto}
+                </p>
+              )}
+              <div className="mt-auto mb-20 flex justify-between items-center pt-2">
+                <div className="flex gap-2">
+                  <Boton
+                    className="bg-primario-hover hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      if (!crud.editando) return
+                      setGenerandoMd(true); setMensajeMd(null)
+                      try {
+                        const r = await cargosAdminApi.generarMd(crud.editando.codigo_cargo)
+                        crud.updateForm('md', r.md)
+                        setMensajeMd({ tipo: 'ok', texto: 'Markdown generado correctamente.' })
+                      } catch (e) {
+                        setMensajeMd({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al generar' })
+                      } finally { setGenerandoMd(false) }
+                    }}
+                    cargando={generandoMd}
+                    disabled={generandoMd || sincronizandoMd}
+                  >
+                    Generar
+                  </Boton>
+                  <Boton
+                    className="bg-primario-light hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      if (!crud.editando) return
+                      setSincronizandoMd(true); setMensajeMd(null)
+                      try {
+                        const r = await promptsApi.sincronizarFila('cargos', 'codigo_cargo', crud.editando.codigo_cargo)
+                        setMensajeMd({ tipo: 'ok', texto: `Documento ${r.accion} (código ${r.codigo_documento}). Listo para CHUNKEAR + VECTORIZAR.` })
+                      } catch (e) {
+                        setMensajeMd({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
+                      } finally { setSincronizandoMd(false) }
+                    }}
+                    cargando={sincronizandoMd}
+                    disabled={generandoMd || sincronizandoMd || !crud.form.md}
+                  >
+                    Sincronizar
+                  </Boton>
+                </div>
+                <Boton variante="contorno" onClick={crud.cerrarModal}>{tc('cerrar')}</Boton>
+              </div>
             </div>
           )}
         </div>
