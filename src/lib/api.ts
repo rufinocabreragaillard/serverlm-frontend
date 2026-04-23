@@ -253,8 +253,8 @@ export const usuariosApi = {
     api.post(`/usuarios/${id}/roles`, { id_rol: idRol, codigo_grupo: codigoGrupo }),
   reordenarRoles: (id: string, orden: { codigo_grupo: string; id_rol: number; orden: number }[]) =>
     api.put(`/usuarios/${id}/roles/orden`, orden),
-  quitarRol: (id: string, idRol: number) =>
-    api.delete(`/usuarios/${id}/roles/${idRol}`),
+  quitarRol: (id: string, idRol: number, codigoGrupo?: string) =>
+    api.delete(`/usuarios/${id}/roles/${idRol}${codigoGrupo ? `?codigo_grupo=${encodeURIComponent(codigoGrupo)}` : ''}`),
   listarEntidades: (id: string) =>
     api.get<{ codigo_entidad: string; codigo_grupo: string; codigo_area?: string; entidades: { nombre: string; activo: boolean } }[]>(
       `/usuarios/${id}/entidades`

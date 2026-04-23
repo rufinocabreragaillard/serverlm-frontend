@@ -71,6 +71,7 @@ export default function PaginaUsuariosSemilla() {
     alias: '',
     telefono: '',
     descripcion: '',
+    tipo: 'ADMINISTRADOR',
     grupo_por_defecto: '',
     entidad_por_defecto: '',
     codigo_area: '',
@@ -208,6 +209,7 @@ export default function PaginaUsuariosSemilla() {
     setUsuarioEditando(null)
     setFormNuevo({ correo: '', nombre: '', empresa: '', tipo: 'ADMINISTRADOR' })
     setForm({ codigo_usuario: '', nombre: '', alias: '', telefono: '', descripcion: '',
+      tipo: 'ADMINISTRADOR',
       grupo_por_defecto: '', entidad_por_defecto: '', codigo_area: '',
       id_rol_principal: '', aplicacion_por_defecto: '', invitar: true, sidebar_colapsado: false,
       fecha_inicial: '', fecha_final: '' })
@@ -294,6 +296,7 @@ export default function PaginaUsuariosSemilla() {
       alias: u.alias || '',
       telefono: u.telefono || '',
       descripcion: u.descripcion || '',
+      tipo: u.tipo || 'ADMINISTRADOR',
       grupo_por_defecto: u.grupo_por_defecto || '',
       entidad_por_defecto: u.entidad_por_defecto || '',
       codigo_area: u.codigo_area || '',
@@ -395,10 +398,10 @@ export default function PaginaUsuariosSemilla() {
     finally { setAsignandoRol(false) }
   }
 
-  const quitarRol = async (idRol: number) => {
+  const quitarRol = async (idRol: number, codigoGrupo: string) => {
     if (!usuarioEditando) return
     try {
-      await usuariosApi.quitarRol(usuarioEditando.codigo_usuario, idRol)
+      await usuariosApi.quitarRol(usuarioEditando.codigo_usuario, idRol, codigoGrupo)
       await cargarRolesUsuario(usuarioEditando.codigo_usuario)
     } catch (e) { setError(e instanceof Error ? e.message : 'Error al quitar rol') }
   }
@@ -1015,7 +1018,7 @@ export default function PaginaUsuariosSemilla() {
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => quitarRol(ra.id_rol)}
+                                  onClick={() => quitarRol(ra.id_rol, ra.codigo_grupo)}
                                   className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
                                   title="Quitar rol"
                                 >

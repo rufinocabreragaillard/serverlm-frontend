@@ -350,10 +350,10 @@ export default function PaginaUsuarios() {
     finally { setAsignandoRol(false) }
   }
 
-  const quitarRol = async (idRol: number) => {
+  const quitarRol = async (idRol: number, codigoGrupo: string) => {
     if (!usuarioEditando) return
     try {
-      await usuariosApi.quitarRol(usuarioEditando.codigo_usuario, idRol)
+      await usuariosApi.quitarRol(usuarioEditando.codigo_usuario, idRol, codigoGrupo)
       await cargarRolesUsuario(usuarioEditando.codigo_usuario)
     } catch (e) { setError(e instanceof Error ? e.message : 'Error al quitar rol') }
   }
@@ -1127,7 +1127,7 @@ export default function PaginaUsuarios() {
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => quitarRol(ra.id_rol)}
+                                  onClick={() => quitarRol(ra.id_rol, ra.codigo_grupo)}
                                   className="p-1 rounded hover:bg-red-50 text-texto-muted hover:text-error transition-colors"
                                   title="Quitar rol"
                                 >
