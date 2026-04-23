@@ -1153,6 +1153,7 @@ export default function PaginaProcesosDatosBasicos() {
                   cargando={sincronizandoMdCat}
                   disabled={generandoMdCat || sincronizandoMdCat || !formCat.md}
                 >Sincronizar</Boton>
+                <Boton variante="contorno" onClick={() => setModalCat(false)}>Salir</Boton>
               </div>
             </div>
           )}
@@ -1347,6 +1348,7 @@ export default function PaginaProcesosDatosBasicos() {
                   cargando={sincronizandoMdTipo}
                   disabled={generandoMdTipo || sincronizandoMdTipo || !formTipo.md}
                 >Sincronizar</Boton>
+                <Boton variante="contorno" onClick={() => setModalTipo(false)}>Salir</Boton>
               </div>
             </div>
           )}
@@ -1578,6 +1580,7 @@ export default function PaginaProcesosDatosBasicos() {
                   cargando={sincronizandoMdEst}
                   disabled={generandoMdEst || sincronizandoMdEst || !formEst.md}
                 >Sincronizar</Boton>
+                <Boton variante="contorno" onClick={() => setModalEst(false)}>Salir</Boton>
               </div>
             </div>
           )}
