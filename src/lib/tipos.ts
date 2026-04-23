@@ -16,6 +16,10 @@ export interface Grupo {
   python_insert?: string | null
   python_update?: string | null
   system_prompt?: string | null
+  javascript?: string | null
+  python_editado_manual?: boolean
+  javascript_editado_manual?: boolean
+  md?: string | null
 }
 
 // ─── Autenticación ───────────────────────────────────────────────────────────
@@ -106,6 +110,10 @@ export interface Entidad {
   python_insert?: string | null
   python_update?: string | null
   system_prompt?: string | null
+  javascript?: string | null
+  python_editado_manual?: boolean
+  javascript_editado_manual?: boolean
+  md?: string | null
 }
 
 export interface Area {

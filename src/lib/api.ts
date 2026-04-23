@@ -398,6 +398,8 @@ export const entidadesApi = {
     ).then((r) => r.data),
   reordenar: (items: { codigo_grupo: string; codigo_entidad: string; orden: number }[]) =>
     api.put('/entidades/reordenar', items).then((r) => r.data),
+  generarMd: (codigo: string) =>
+    api.post<{ md: string }>(`/entidades/${codigo}/generar-md`).then((r) => r.data),
 }
 
 // ─── Grupos de Entidades ──────────────────────────────────────────────────────
@@ -421,6 +423,8 @@ export const gruposApi = {
     api.delete(`/grupos/${id}/usuarios/${codigoUsuario}`),
   reordenar: (items: { codigo_grupo: string; orden: number }[]) =>
     api.put('/grupos/reordenar', items).then((r) => r.data),
+  generarMd: (codigo: string) =>
+    api.post<{ md: string }>(`/grupos/${codigo}/generar-md`).then((r) => r.data),
 }
 
 // ─── Parámetros ───────────────────────────────────────────────────────────────
