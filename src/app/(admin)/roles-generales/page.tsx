@@ -12,7 +12,7 @@ import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { TabPrompts } from '@/components/ui/tab-prompts'
 import { PieBotonesPrompts } from '@/components/ui/pie-botones-prompts'
-import { rolesApi, funcionesApi, aplicacionesApi } from '@/lib/api'
+import { rolesApi, funcionesApi, aplicacionesApi, promptsApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Rol, Funcion, Aplicacion } from '@/lib/tipos'
 import { etiquetaTipo, varianteTipo, normalizarTipo } from '@/lib/tipo-elemento'
@@ -87,6 +87,9 @@ function TabRolesGlobales() {
   const [busquedaFuncion, setBusquedaFuncion] = useState('')
   const [funcionNueva, setFuncionNueva] = useState('')
   const [asignandoFuncion, setAsignandoFuncion] = useState(false)
+  const [generandoMd, setGenerandoMd] = useState(false)
+  const [sincronizandoMd, setSincronizandoMd] = useState(false)
+  const [mensajeMd, setMensajeMd] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
 
   const cargarFuncionesRol = useCallback(async (idRol: number) => {
     setCargandoFunciones(true)
@@ -755,21 +758,51 @@ function TabRolesGlobales() {
                   value={form.md || ''}
                   readOnly
                   rows={13}
-                  placeholder="La generación de .md para roles se configurará en el backend. Esta pestaña queda preparada para cuando esté disponible."
+                  placeholder="Sin contenido. Presiona Generar para crear el documento Markdown."
                   className="w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto font-mono focus:outline-none resize-none cursor-default"
                 />
               </div>
+              {mensajeMd && (
+                <p className={`text-xs px-1 ${mensajeMd.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+                  {mensajeMd.texto}
+                </p>
+              )}
               <div className="flex justify-between items-center pt-2">
-                <PieBotonesPrompts
-                  tabla="roles"
-                  pkColumna="id_rol"
-                  pkValor={String(editando.id_rol)}
-                  promptInsert={form.prompt_insert || undefined}
-                  promptUpdate={form.prompt_update || undefined}
-                  mostrarGenerar={true}
-                  mostrarSincronizar={true}
-                  sincronizarHabilitado={!!(form.md)}
-                />
+                <div className="flex gap-2">
+                  <Boton
+                    className="bg-primario-hover hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setGenerandoMd(true); setMensajeMd(null)
+                      try {
+                        const r = await rolesApi.generarMd(editando.id_rol)
+                        setForm((prev) => ({ ...prev, md: r.md }))
+                        setMensajeMd({ tipo: 'ok', texto: 'Markdown generado correctamente.' })
+                      } catch (e) {
+                        setMensajeMd({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al generar' })
+                      } finally { setGenerandoMd(false) }
+                    }}
+                    cargando={generandoMd}
+                    disabled={generandoMd || sincronizandoMd}
+                  >
+                    Generar
+                  </Boton>
+                  <Boton
+                    className="bg-primario-light hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setSincronizandoMd(true); setMensajeMd(null)
+                      try {
+                        const r = await promptsApi.sincronizarFila('roles', 'id_rol', String(editando.id_rol))
+                        setMensajeMd({ tipo: 'ok', texto: `Documento ${r.accion} (código ${r.codigo_documento}). Listo para CHUNKEAR + VECTORIZAR.` })
+                      } catch (e) {
+                        setMensajeMd({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
+                      } finally { setSincronizandoMd(false) }
+                    }}
+                    cargando={sincronizandoMd}
+                    disabled={generandoMd || sincronizandoMd || !form.md}
+                  >
+                    Sincronizar
+                  </Boton>
+                </div>
                 <Boton variante="contorno" onClick={() => setModalAbierto(false)}>{tc('cerrar')}</Boton>
               </div>
             </div>

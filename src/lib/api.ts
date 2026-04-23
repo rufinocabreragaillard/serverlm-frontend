@@ -310,6 +310,8 @@ export const rolesApi = {
     api.post<{ generadas: number; idiomas: string[]; campos_traducidos?: string[]; mensaje?: string }>(
       '/traducciones/registro', { tabla: 'roles', pk: String(idRol) }
     ).then((r) => r.data),
+  generarMd: (idRol: number) =>
+    api.post<{ md: string }>(`/roles/${idRol}/generar-md`).then((r) => r.data),
 }
 
 // ─── Funciones ────────────────────────────────────────────────────────────────
