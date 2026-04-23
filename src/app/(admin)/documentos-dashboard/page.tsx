@@ -208,8 +208,8 @@ export default function PaginaDocumentosDashboard() {
                           </span>
                           <div className="flex-1 h-6 bg-fondo rounded-md overflow-hidden relative">
                             <div
-                              className="h-full bg-error/60 transition-all"
-                              style={{ width: `${pct}%` }}
+                              className="h-full transition-all"
+                              style={{ width: `${pct}%`, backgroundColor: 'rgba(220, 38, 38, 0.5)' }}
                             />
                             <span className="absolute inset-0 flex items-center px-2 text-xs font-medium text-texto">
                               {conteo}
