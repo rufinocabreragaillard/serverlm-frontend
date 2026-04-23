@@ -267,18 +267,29 @@ export default function PaginaFunciones() {
     ? funciones.filter((f) => f.nombre.toLowerCase().includes(busqueda.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busqueda.toLowerCase()) || (f.alias_de_funcion || '').toLowerCase().includes(busqueda.toLowerCase()))
     : funciones
 
+  const esAdmin = grupoActivo === 'ADMIN'
   const TABS_MODAL = [
     { key: 'datos', label: 'Datos' },
     { key: 'otros', label: 'Otros Datos' },
     ...(funcionEditando ? [
       { key: 'aplicaciones', label: `Aplicaciones (${appsDeFuncion.length})` },
-      { key: 'system_prompt', label: 'System Prompt' },
-      { key: 'programacion_insert', label: 'Prog. Insert' },
-      { key: 'programacion_update', label: 'Prog. Update' },
-      { key: 'md', label: '.md' },
-      { key: 'llm', label: 'LLM' },
+      ...(esAdmin ? [
+        { key: 'system_prompt', label: 'System Prompt' },
+        { key: 'programacion_insert', label: 'Prog. Insert' },
+        { key: 'programacion_update', label: 'Prog. Update' },
+        { key: 'md', label: '.md' },
+        { key: 'llm', label: 'LLM' },
+      ] : []),
     ] : []),
   ] as { key: typeof tabModalFuncion; label: string }[]
+
+  // Si cambia el grupo y el tab activo ya no esta disponible, volver a 'datos'
+  useEffect(() => {
+    if (modalFuncion && !TABS_MODAL.some((t) => t.key === tabModalFuncion)) {
+      setTabModalFuncion('datos')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grupoActivo, modalFuncion])
 
   return (
     <div className="relative flex flex-col gap-6 max-w-6xl">
@@ -321,7 +332,9 @@ export default function PaginaFunciones() {
                     >
                       {traduciendo === f.codigo_funcion ? <RefreshCw size={14} className="animate-spin" /> : <Languages size={14} />}
                     </button>
-                    <button onClick={() => abrirEditarFuncion(f, 'programacion_insert')} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editor de contexto"><Brain size={14} /></button>
+                    {grupoActivo === 'ADMIN' && (
+                      <button onClick={() => abrirEditarFuncion(f, 'programacion_insert')} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editor de contexto"><Brain size={14} /></button>
+                    )}
                     <button onClick={() => abrirEditarFuncion(f)} className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors" title="Editar"><Pencil size={14} /></button>
                     <button onClick={() => setConfirmacion(f)} className="p-1.5 rounded-lg hover:bg-red-50 text-texto-muted hover:text-error transition-colors" title="Eliminar"><Trash2 size={14} /></button>
                   </div>
