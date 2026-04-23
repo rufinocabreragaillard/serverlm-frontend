@@ -1059,7 +1059,7 @@ export default function PaginaUsuariosSemilla() {
                         />
                       </div>
                       {dropdownRolAbierto && (
-                        <div className="absolute z-50 w-full bottom-full mb-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           {rolesDisponiblesFiltrados.length === 0 ? (
                             <div className="px-3 py-2 text-sm text-texto-muted">{tc('sinResultados')}</div>
                           ) : rolesDisponiblesFiltrados.slice(0, 20).map((r) => (
