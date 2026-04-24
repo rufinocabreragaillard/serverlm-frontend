@@ -18,6 +18,15 @@ import type { ParametroGeneral } from '@/lib/tipos'
 
 const inputCls = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-1 focus:ring-primario'
 
+// Fetcher estable fuera del componente para evitar re-renders infinitos en usePaginacion
+const fetcherParametros = (params: { page: number; limit: number; q: string; categoria: string }) =>
+  parametrosApi.listarGeneralesPaginado({
+    page: params.page,
+    limit: params.limit,
+    q: params.q || undefined,
+    categoria: params.categoria || undefined,
+  })
+
 const BoolCheck = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
   <input
     type="checkbox"
@@ -76,8 +85,7 @@ export default function PaginaValoresParametrosGenerales() {
     ParametroGeneral,
     { q: string; categoria: string }
   >({
-    fetcher: ({ page, limit, q, categoria }) =>
-      parametrosApi.listarGeneralesPaginado({ page, limit, q: q || undefined, categoria: categoria || undefined }),
+    fetcher: fetcherParametros,
     filtros: { q: busqueda, categoria: filtroCategoria },
     limitInicial: 50,
   })
