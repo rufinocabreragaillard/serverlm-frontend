@@ -445,7 +445,7 @@ export default function PaginaUsuarios() {
   // - Roles del grupo activo + roles globales (codigo_grupo NULL)
   // - Excluyendo los que ya tiene asignados en el grupo activo
   // - Grupo SISTEMA → solo roles SISTEMA; Grupo NORMAL → solo roles NORMAL
-  const ROLES_PROTEGIDOS = new Set(['SEG_ADMIN_GRUPO', 'ADMIN'])
+  const ROLES_PROTEGIDOS = new Set(['SEG_ADMIN_GRUPO', 'SISTEMA'])
   const esSuperAdmin = (usuarioActual?.grupos || []).some((g) => g.codigo_grupo === 'ADMIN')
   const mapaAppNombre = Object.fromEntries(catalogoApps.map((a) => [a.codigo_aplicacion, a.nombre]))
   const tipoUsuarioEditando = normalizarTipo(form.tipo)
