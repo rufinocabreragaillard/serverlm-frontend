@@ -11,7 +11,7 @@
  *  - Solo accesible para super-admin (grupo ADMIN).
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Pencil, Search, Trash2, X, Star } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
@@ -21,6 +21,8 @@ import { Insignia } from '@/components/ui/insignia'
 import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
+import { Paginador } from '@/components/ui/paginador'
+import { usePaginacion } from '@/hooks/usePaginacion'
 import { usuariosApi, gruposApi, entidadesApi, rolesApi, aplicacionesApi } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Usuario, Grupo, Entidad, Rol, Aplicacion, Area } from '@/lib/tipos'
@@ -41,9 +43,28 @@ export default function PaginaUsuariosSemilla() {
   const tc = useTranslations('common')
   const { usuario: usuarioActual, esSuperAdmin, aplicacionActiva } = useAuth()
 
-  const [usuarios, setUsuarios] = useState<Usuario[]>([])
-  const [cargando, setCargando] = useState(true)
   const [busqueda, setBusqueda] = useState('')
+
+  // Paginación server-side del listado global (super-admin, sin filtro de grupo)
+  const filtrosUsuarios = useMemo(() => ({ q: busqueda.trim() || undefined }), [busqueda])
+  const fetcherUsuarios = useCallback(
+    (params: { page: number; limit: number; q?: string }) => usuariosApi.listarTodosPaginado(params),
+    [],
+  )
+  const {
+    items: usuarios,
+    total,
+    page,
+    limit,
+    cargando,
+    setPage,
+    setLimit,
+    refetch: refetchUsuarios,
+  } = usePaginacion<Usuario, { q?: string }>({
+    fetcher: fetcherUsuarios,
+    filtros: filtrosUsuarios,
+    limitInicial: 10,
+  })
 
   // Catálogos
   const [grupos, setGrupos] = useState<Grupo[]>([])
@@ -125,20 +146,8 @@ export default function PaginaUsuariosSemilla() {
   const dropdownAppFormRef = useRef<HTMLDivElement>(null)
 
   // ── Carga inicial ─────────────────────────────────────────────────────────
-  const cargarUsuarios = useCallback(async () => {
-    setCargando(true)
-    try {
-      const u = await usuariosApi.listarTodos({ activo: undefined })
-      setUsuarios(u)
-    } catch {
-      setUsuarios([])
-    } finally {
-      setCargando(false)
-    }
-  }, [])
-
+  // Los usuarios se cargan paginados arriba via usePaginacion.
   useEffect(() => {
-    cargarUsuarios()
     Promise.all([
       gruposApi.listar(),
       rolesApi.listar(),
@@ -148,7 +157,10 @@ export default function PaginaUsuariosSemilla() {
       setRoles(r)
       setAplicaciones(a)
     }).catch(() => {})
-  }, [cargarUsuarios])
+  }, [])
+
+  // Alias para mantener el nombre usado en handlers post-CRUD
+  const cargarUsuarios = refetchUsuarios
 
   // ── Cascada: grupo → entidades, roles, apps ───────────────────────────────
   useEffect(() => {
@@ -526,13 +538,8 @@ export default function PaginaUsuariosSemilla() {
     r.codigo_rol.toLowerCase().includes(busquedaRol.toLowerCase())
   )
 
-  // ── Filtros ────────────────────────────────────────────────────────────────
-  const usuariosFiltrados = usuarios.filter((u) =>
-    busqueda.length === 0 ||
-    u.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    u.codigo_usuario.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (u.grupo_por_defecto || '').toLowerCase().includes(busqueda.toLowerCase())
-  ).sort((a, b) => {
+  // Orden por fecha_inicial más nueva primero (la búsqueda ya se aplica server-side).
+  const usuariosFiltrados = [...usuarios].sort((a, b) => {
     const fa = a.fecha_inicial || ''
     const fb = b.fecha_inicial || ''
     return fb.localeCompare(fa)
@@ -639,6 +646,16 @@ export default function PaginaUsuariosSemilla() {
           })}
         </TablaCuerpo>
       </Tabla>
+
+      <Paginador
+        page={page}
+        limit={limit}
+        total={total}
+        onChangePage={setPage}
+        onChangeLimit={setLimit}
+        cargando={cargando}
+        opcionesLimit={[10, 25, 50, 100]}
+      />
 
       {/* Modal usuario semilla */}
       <Modal

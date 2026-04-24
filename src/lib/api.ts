@@ -240,6 +240,8 @@ export const usuariosApi = {
     api.get<Usuario[]>('/usuarios/todos', { params }).then((r) => r.data),
   listarPaginado: (params: { page: number; limit: number; activo?: boolean; q?: string }) =>
     api.get<RespuestaPaginadaApi<Usuario>>('/usuarios/paginado', { params }).then((r) => r.data),
+  listarTodosPaginado: (params: { page: number; limit: number; activo?: boolean; q?: string }) =>
+    api.get<RespuestaPaginadaApi<Usuario>>('/usuarios/todos/paginado', { params }).then((r) => r.data),
   obtener: (id: string) => api.get<Usuario>(`/usuarios/${id}`).then((r) => r.data),
   crear: (datos: CrearUsuarioRequest) => api.post<Usuario>('/usuarios', datos).then((r) => r.data),
   actualizar: (id: string, datos: Partial<Usuario>) =>

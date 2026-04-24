@@ -66,7 +66,7 @@ export default function PaginaUsuarios() {
   } = usePaginacion<Usuario, { q?: string; activo?: boolean }>({
     fetcher: fetcherUsuarios,
     filtros: filtrosUsuarios,
-    limitInicial: 50,
+    limitInicial: 10,
   })
   const [modalAbierto, setModalAbierto] = useState(false)
   const [usuarioEditando, setUsuarioEditando] = useState<Usuario | null>(null)
@@ -659,6 +659,7 @@ export default function PaginaUsuarios() {
         onChangePage={setPage}
         onChangeLimit={setLimit}
         cargando={cargando}
+        opcionesLimit={[10, 25, 50, 100]}
       />
 
       {/* Modal crear/editar */}
