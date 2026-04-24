@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, Building2, Layers, Check, Bell, LogOut, User, Save, AppWindow } from 'lucide-react'
+import { ChevronDown, Building2, Layers, Check, Bell, LogOut, User, AppWindow } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import * as Avatar from '@radix-ui/react-avatar'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Boton } from '@/components/ui/boton'
+import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 import { usuariosApi, traduccionesApi } from '@/lib/api'
 import { useTranslations } from 'next-intl'
 import { locales as localesFallback, type Locale } from '@/i18n/config'
@@ -179,11 +180,18 @@ export function Header({ titulo }: { titulo?: string }) {
       await usuariosApi.actualizar(usuario.codigo_usuario, cambios)
       setExitoCuenta(t('datosActualizados'))
       setDatosOriginales({ ...formCuenta })
+      return true
     } catch (e) {
       setErrorCuenta(e instanceof Error ? e.message : 'Error al guardar')
+      return false
     } finally {
       setGuardandoCuenta(false)
     }
+  }
+
+  const guardarMiCuentaYSalir = async () => {
+    const ok = await guardarMiCuenta()
+    if (ok) setModalCuenta(false)
   }
 
   const entidadActual = usuario?.entidades?.find(
@@ -462,12 +470,13 @@ export function Header({ titulo }: { titulo?: string }) {
           {errorCuenta && <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3"><p className="text-sm text-error">{errorCuenta}</p></div>}
           {exitoCuenta && <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3"><p className="text-sm text-exito">{exitoCuenta}</p></div>}
 
-          <div className="flex gap-3 justify-end pt-2">
-            <Boton variante="contorno" onClick={() => setModalCuenta(false)}>{tc('cerrar')}</Boton>
-            <Boton variante="primario" onClick={guardarMiCuenta} cargando={guardandoCuenta}>
-              <Save size={14} /> {tc('guardar')}
-            </Boton>
-          </div>
+          <PieBotonesModal
+            editando
+            onGuardar={guardarMiCuenta}
+            onGuardarYSalir={guardarMiCuentaYSalir}
+            onCerrar={() => setModalCuenta(false)}
+            cargando={guardandoCuenta}
+          />
         </div>
       </Modal>
 
