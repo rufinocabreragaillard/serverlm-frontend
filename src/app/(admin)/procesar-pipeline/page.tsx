@@ -620,7 +620,7 @@ export default function PaginaCargaDocsUsuario() {
           TAB: Ubicaciones
       ══════════════════════════════════════════════════════════════════════ */}
       {tabActiva === 'ubicaciones' && (
-        <div className="flex flex-col gap-4 max-w-[66%]">
+        <div className="flex flex-col gap-4">
           {/* Toolbar — misma presentación que /ubicaciones-docs */}
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex gap-2 flex-wrap items-start">
