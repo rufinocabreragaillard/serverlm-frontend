@@ -23,6 +23,37 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'apis',         label: 'APIs',         icon: <Globe className="w-4 h-4" /> },
 ]
 
+// Componente reutilizable para la barra filtro + acciones
+function BarraHerramientas({
+  filtro,
+  onFiltro,
+  placeholder,
+  acciones,
+}: {
+  filtro: string
+  onFiltro: (v: string) => void
+  placeholder: string
+  acciones: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="relative flex-1 max-w-xs">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-texto-muted pointer-events-none" />
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={filtro}
+          onChange={(e) => onFiltro(e.target.value)}
+          className="w-full pl-8 pr-3 py-1.5 text-sm border border-borde rounded-lg bg-gris-fondo focus:outline-none focus:ring-2 focus:ring-primario/30"
+        />
+      </div>
+      <div className="flex items-center gap-2 ml-auto">
+        {acciones}
+      </div>
+    </div>
+  )
+}
+
 export default function PaginaPrompts() {
   const [tab, setTab] = useState<Tab>('prompts')
   const [estado, setEstado] = useState<EstadoPrompts | null>(null)
@@ -45,6 +76,13 @@ export default function PaginaPrompts() {
 
   const [generandoMensajes, setGenerandoMensajes] = useState(false)
   const [mensajesUiResultado, setMensajesUiResultado] = useState<Record<string, Record<string, unknown>> | null>(null)
+
+  // Filtros por pestaña
+  const [filtroTabla, setFiltroTabla] = useState('')
+  const [filtroCodigo, setFiltroCodigo] = useState('')
+  const [filtroMensajes, setFiltroMensajes] = useState('')
+  const [filtroTraducciones, setFiltroTraducciones] = useState('')
+  const [filtroApis, setFiltroApis] = useState('')
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -81,20 +119,16 @@ export default function PaginaPrompts() {
   const elegiblasUpdate = funciones.filter((f) => f.prompt_update && !f.python_editado_manual)
   const elegiablesMd = funciones
 
-  async function sincronizarTabla(tabla: string, soloCambios: boolean) {
-    setSincronizando(tabla)
-    setMensaje(null)
-    try {
-      const res = await promptsApi.sincronizarTabla(tabla, soloCambios)
-      setMensaje({ tipo: 'ok', texto: `${tabla}: ${res.sincronizadas} de ${res.total} filas sincronizadas.` })
-      await cargar()
-    } catch (e: unknown) {
-      const err = e as { message?: string; response?: { data?: { detail?: string } } }
-      setMensaje({ tipo: 'error', texto: err?.response?.data?.detail || err?.message || 'Error' })
-    } finally {
-      setSincronizando(null)
-    }
-  }
+  // Listas filtradas para Código y MD
+  const insertFiltradas = elegiblasInsert.filter((f) =>
+    filtroCodigo === '' || f.codigo_funcion.toLowerCase().includes(filtroCodigo.toLowerCase())
+  )
+  const updateFiltradas = elegiblasUpdate.filter((f) =>
+    filtroCodigo === '' || f.codigo_funcion.toLowerCase().includes(filtroCodigo.toLowerCase())
+  )
+  const mdFiltradas = elegiablesMd.filter((f) =>
+    filtroCodigo === '' || f.codigo_funcion.toLowerCase().includes(filtroCodigo.toLowerCase())
+  )
 
   async function sincronizarTodo() {
     setSincronizando('__todas__')
@@ -125,7 +159,7 @@ export default function PaginaPrompts() {
   }
 
   async function generarMasivo(modo: 'insert' | 'update' | 'md') {
-    const lista = modo === 'insert' ? elegiblasInsert : modo === 'update' ? elegiblasUpdate : elegiablesMd
+    const lista = modo === 'insert' ? insertFiltradas : modo === 'update' ? updateFiltradas : mdFiltradas
     abortGenRef.current = false
     setGenProgress({ modo, actual: 0, total: lista.length, errores: [], terminado: false })
     setMensaje(null)
@@ -172,7 +206,7 @@ export default function PaginaPrompts() {
       const resultado = await traduccionesApi.generarMensajesUi(ES_MESSAGES)
       setMensajesUiResultado(resultado)
       const idiomas = Object.keys(resultado)
-      setMensaje({ tipo: 'ok', texto: `Mensajes generados para: ${idiomas.join(', ')}. Descarga los JSON y reemplaza los archivos en frontend/messages/.` })
+      setMensaje({ tipo: 'ok', texto: `Mensajes generados para: ${idiomas.join(', ')}.` })
     } catch (e: unknown) {
       const err = e as { message?: string; response?: { data?: { detail?: string } } }
       setMensaje({ tipo: 'error', texto: err?.response?.data?.detail || err?.message || 'Error al generar mensajes' })
@@ -191,12 +225,18 @@ export default function PaginaPrompts() {
     URL.revokeObjectURL(url)
   }
 
-  const [filtroTabla, setFiltroTabla] = useState('')
-
   const tablasConPendientes = (estado?.tablas || []).filter((t) => (t.pendientes_sync || 0) > 0)
   const tablasFiltradas = (estado?.tablas || []).filter((t) =>
     filtroTabla === '' || t.tabla.toLowerCase().includes(filtroTabla.toLowerCase())
   )
+
+  // Filtro mensajes UI sobre locales generados
+  const localesFiltrados = mensajesUiResultado
+    ? Object.entries(mensajesUiResultado).filter(([locale]) =>
+        filtroMensajes === '' || locale.toLowerCase().includes(filtroMensajes.toLowerCase())
+      )
+    : []
+
   const generandoMasivo = genProgress.modo !== null && !genProgress.terminado
 
   return (
@@ -220,7 +260,6 @@ export default function PaginaPrompts() {
             >
               {t.icon}
               {t.label}
-              {/* Badge de pendientes en pestaña Prompts */}
               {t.id === 'prompts' && tablasConPendientes.length > 0 && (
                 <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold leading-none">
                   {tablasConPendientes.length}
@@ -233,13 +272,11 @@ export default function PaginaPrompts() {
 
       {/* Mensaje de resultado */}
       {mensaje && (
-        <div
-          className={
-            mensaje.tipo === 'ok'
-              ? 'p-3 rounded-lg bg-green-50 text-green-800 border border-green-200 flex items-center gap-2'
-              : 'p-3 rounded-lg bg-red-50 text-red-800 border border-red-200 flex items-center gap-2'
-          }
-        >
+        <div className={
+          mensaje.tipo === 'ok'
+            ? 'p-3 rounded-lg bg-green-50 text-green-800 border border-green-200 flex items-center gap-2'
+            : 'p-3 rounded-lg bg-red-50 text-red-800 border border-red-200 flex items-center gap-2'
+        }>
           {mensaje.tipo === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {mensaje.texto}
         </div>
@@ -248,30 +285,26 @@ export default function PaginaPrompts() {
       {/* ── Tab: Prompts ── */}
       {tab === 'prompts' && (
         <div>
-          {/* Barra de herramientas: filtro + acciones */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-texto-muted pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Filtrar tabla…"
-                value={filtroTabla}
-                onChange={(e) => setFiltroTabla(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-borde rounded-lg bg-gris-fondo focus:outline-none focus:ring-2 focus:ring-primario/30"
-              />
-            </div>
-            <Boton variante="contorno" tamano="sm" onClick={cargar} disabled={cargando}>
-              <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} /> Refrescar
-            </Boton>
-            <Boton
-              variante="primario"
-              tamano="sm"
-              onClick={sincronizarTodo}
-              disabled={sincronizando !== null || tablasConPendientes.length === 0}
-            >
-              <Upload className="w-4 h-4" /> Sincronizar pendientes ({tablasConPendientes.length})
-            </Boton>
-          </div>
+          <BarraHerramientas
+            filtro={filtroTabla}
+            onFiltro={setFiltroTabla}
+            placeholder="Filtrar tabla…"
+            acciones={
+              <>
+                <Boton variante="contorno" tamano="sm" onClick={cargar} disabled={cargando}>
+                  <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} /> Refrescar
+                </Boton>
+                <Boton
+                  variante="primario"
+                  tamano="sm"
+                  onClick={sincronizarTodo}
+                  disabled={sincronizando !== null || tablasConPendientes.length === 0}
+                >
+                  <Upload className="w-4 h-4" /> Sincronizar pendientes ({tablasConPendientes.length})
+                </Boton>
+              </>
+            }
+          />
 
           {cargando && <p className="text-sm text-texto-muted">Cargando estado…</p>}
 
@@ -324,10 +357,44 @@ export default function PaginaPrompts() {
       {/* ── Tab: Código y MD ── */}
       {tab === 'codigo' && (
         <div>
-          <p className="text-sm text-texto-muted mb-4">
-            Genera Python Insert, Python Update y documentación MD para todas las funciones elegibles en un solo proceso.
-            {cargandoFunciones && ' Cargando funciones…'}
-          </p>
+          <BarraHerramientas
+            filtro={filtroCodigo}
+            onFiltro={setFiltroCodigo}
+            placeholder="Filtrar función…"
+            acciones={
+              <>
+                <Boton
+                  variante="contorno"
+                  tamano="sm"
+                  onClick={() => generarMasivo('insert')}
+                  disabled={generandoMasivo || cargandoFunciones || insertFiltradas.length === 0}
+                >
+                  <Play className="w-4 h-4 text-green-600" /> Python Insert ({insertFiltradas.length})
+                </Boton>
+                <Boton
+                  variante="contorno"
+                  tamano="sm"
+                  onClick={() => generarMasivo('update')}
+                  disabled={generandoMasivo || cargandoFunciones || updateFiltradas.length === 0}
+                >
+                  <Play className="w-4 h-4 text-blue-600" /> Python Update ({updateFiltradas.length})
+                </Boton>
+                <Boton
+                  variante="primario"
+                  tamano="sm"
+                  onClick={() => generarMasivo('md')}
+                  disabled={generandoMasivo || cargandoFunciones || mdFiltradas.length === 0}
+                >
+                  <FileText className="w-4 h-4" /> Generar MD ({mdFiltradas.length})
+                </Boton>
+                {generandoMasivo && (
+                  <Boton variante="contorno" tamano="sm" onClick={detenerGeneracion}>
+                    Detener
+                  </Boton>
+                )}
+              </>
+            }
+          />
 
           {generandoMasivo && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -337,9 +404,6 @@ export default function PaginaPrompts() {
                    genProgress.modo === 'update' ? 'Generando Python Update' : 'Generando MD'}{' '}
                   — {genProgress.actual} / {genProgress.total}
                 </span>
-                <Boton variante="contorno" tamano="sm" onClick={detenerGeneracion}>
-                  Detener
-                </Boton>
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2">
                 <div
@@ -354,86 +418,38 @@ export default function PaginaPrompts() {
             <ErroresGeneracion errores={genProgress.errores} />
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="border border-borde rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Play className="w-4 h-4 text-green-600" />
-                <span className="font-medium text-sm">Python Insert</span>
-              </div>
-              <p className="text-xs text-texto-muted mb-3">
-                Funciones con <code>prompt_insert</code> y sin edición manual:{' '}
-                <strong>{elegiblasInsert.length}</strong>
-              </p>
-              <Boton
-                variante="primario"
-                tamano="sm"
-                onClick={() => generarMasivo('insert')}
-                disabled={generandoMasivo || cargandoFunciones || elegiblasInsert.length === 0}
-              >
-                <Code2 className="w-4 h-4" /> Generar Python Insert
-              </Boton>
-            </div>
-
-            <div className="border border-borde rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Play className="w-4 h-4 text-blue-600" />
-                <span className="font-medium text-sm">Python Update</span>
-              </div>
-              <p className="text-xs text-texto-muted mb-3">
-                Funciones con <code>prompt_update</code> y sin edición manual:{' '}
-                <strong>{elegiblasUpdate.length}</strong>
-              </p>
-              <Boton
-                variante="primario"
-                tamano="sm"
-                onClick={() => generarMasivo('update')}
-                disabled={generandoMasivo || cargandoFunciones || elegiblasUpdate.length === 0}
-              >
-                <Code2 className="w-4 h-4" /> Generar Python Update
-              </Boton>
-            </div>
-
-            <div className="border border-borde rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <FileText className="w-4 h-4 text-purple-600" />
-                <span className="font-medium text-sm">Documentación MD</span>
-              </div>
-              <p className="text-xs text-texto-muted mb-3">
-                Genera/regenera el MD de todas las funciones:{' '}
-                <strong>{elegiablesMd.length}</strong>
-              </p>
-              <Boton
-                variante="primario"
-                tamano="sm"
-                onClick={() => generarMasivo('md')}
-                disabled={generandoMasivo || cargandoFunciones || elegiablesMd.length === 0}
-              >
-                <FileText className="w-4 h-4" /> Generar MD masivo
-              </Boton>
-            </div>
-          </div>
+          <p className="text-sm text-texto-muted">
+            {cargandoFunciones ? 'Cargando funciones…' : `${funciones.length} funciones totales.`}
+            {filtroCodigo && ` · Filtro activo: mostrando ${mdFiltradas.length} funciones.`}
+          </p>
         </div>
       )}
 
       {/* ── Tab: Mensajes UI ── */}
       {tab === 'mensajes' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-texto-muted">
-              Traduce los archivos <code>messages/*.json</code> del frontend. Genera EN, PT, FR, DE desde el español.
-              Una vez generados, descarga cada archivo y reemplázalo en <code>frontend/messages/</code> antes del próximo deploy.
-            </p>
-            <Boton variante="primario" tamano="sm" onClick={generarMensajesUi} disabled={generandoMensajes}>
-              <Languages className="w-4 h-4" />
-              {generandoMensajes ? 'Generando…' : 'Generar mensajes UI'}
-            </Boton>
-          </div>
+          <BarraHerramientas
+            filtro={filtroMensajes}
+            onFiltro={setFiltroMensajes}
+            placeholder="Filtrar idioma…"
+            acciones={
+              <Boton variante="primario" tamano="sm" onClick={generarMensajesUi} disabled={generandoMensajes}>
+                <Languages className="w-4 h-4" />
+                {generandoMensajes ? 'Generando…' : 'Generar mensajes UI'}
+              </Boton>
+            }
+          />
+
+          <p className="text-sm text-texto-muted mb-4">
+            Traduce los archivos <code>messages/*.json</code> del frontend. Genera EN, PT, FR, DE desde el español.
+            Una vez generados, descarga cada archivo y reemplázalo en <code>frontend/messages/</code> antes del próximo deploy.
+          </p>
 
           {mensajesUiResultado && (
-            <div className="mt-3">
+            <div>
               <p className="text-sm font-medium mb-2">Descargar archivos generados:</p>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(mensajesUiResultado).map(([locale, data]) => (
+                {localesFiltrados.map(([locale, data]) => (
                   <Boton
                     key={locale}
                     variante="contorno"
@@ -443,6 +459,9 @@ export default function PaginaPrompts() {
                     ⬇ {locale}.json
                   </Boton>
                 ))}
+                {localesFiltrados.length === 0 && filtroMensajes && (
+                  <p className="text-sm text-texto-muted">Sin resultados para &ldquo;{filtroMensajes}&rdquo;</p>
+                )}
               </div>
               <p className="text-xs text-texto-muted mt-2">
                 Reemplaza los archivos descargados en <code>frontend/messages/</code> y haz commit+push para que Vercel despliegue con los nuevos textos.
@@ -454,7 +473,18 @@ export default function PaginaPrompts() {
 
       {/* ── Tab: Traducciones ── */}
       {tab === 'traducciones' && (
-        <div className="flex items-center justify-between">
+        <div>
+          <BarraHerramientas
+            filtro={filtroTraducciones}
+            onFiltro={setFiltroTraducciones}
+            placeholder="Filtrar catálogo…"
+            acciones={
+              <a href="/traducciones" className="text-primario text-sm underline whitespace-nowrap">
+                Ir al panel completo →
+              </a>
+            }
+          />
+
           <p className="text-sm text-texto-muted">
             {estadoTrad ? (
               <>
@@ -465,19 +495,26 @@ export default function PaginaPrompts() {
               'Cargando estado…'
             )}
           </p>
-          <a href="/traducciones" className="text-primario text-sm underline">Ir al panel completo →</a>
         </div>
       )}
 
       {/* ── Tab: APIs ── */}
       {tab === 'apis' && (
-        <div className="flex items-center justify-between">
+        <div>
+          <BarraHerramientas
+            filtro={filtroApis}
+            onFiltro={setFiltroApis}
+            placeholder="Filtrar endpoint…"
+            acciones={
+              <Boton variante="primario" tamano="sm" onClick={regenerarApis} disabled={regenerandoApis}>
+                <Zap className="w-4 h-4" /> {regenerandoApis ? 'Regenerando…' : 'Regenerar APIs'}
+              </Boton>
+            }
+          />
+
           <p className="text-sm text-texto-muted">
             Regenera la tabla <code>api_endpoints</code> desde la vista <code>v_funcion_api</code>. Los LLMs solo acceden vía esta tabla.
           </p>
-          <Boton variante="primario" onClick={regenerarApis} disabled={regenerandoApis}>
-            <Zap className="w-4 h-4" /> {regenerandoApis ? 'Regenerando…' : 'Regenerar APIs'}
-          </Boton>
         </div>
       )}
     </div>
