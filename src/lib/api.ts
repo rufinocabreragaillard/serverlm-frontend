@@ -344,6 +344,10 @@ export const funcionesApi = {
     api.post<{ md: string }>(`/funciones/${codigo}/generar-md`).then((r) => r.data),
   listarApis: (codigo: string) =>
     api.get<import('./tipos').ApiEndpoint[]>(`/funciones/${codigo}/apis`).then((r) => r.data),
+  generarVista: (codigo: string) =>
+    api.post<{ sql_view: string }>(`/funciones/${codigo}/generar-vista`).then((r) => r.data),
+  sincronizarVista: (codigo: string) =>
+    api.post<{ mensaje: string; codigo_funcion: string }>(`/funciones/${codigo}/sincronizar-vista`).then((r) => r.data),
 }
 
 // ─── Aplicaciones ─────────────────────────────────────────────────────────────

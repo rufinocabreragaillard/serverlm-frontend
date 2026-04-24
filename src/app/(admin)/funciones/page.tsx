@@ -53,6 +53,8 @@ export default function PaginaFunciones() {
     tipo: TipoFuncion
     id_modelo: string
     system_prompt: string
+    prompt_view: string
+    sql_view: string
     md: string
     prompt_insert: string
     prompt_update: string
@@ -69,15 +71,18 @@ export default function PaginaFunciones() {
   }>({
     codigo_funcion: '', nombre: '', descripcion: '', ayuda_de_funcion: '', url_funcion: '',
     alias_de_funcion: '', icono_de_funcion: '', codigo_aplicacion_origen: '',
-    tipo: 'USUARIO', id_modelo: '', system_prompt: '', md: '', prompt_insert: '', prompt_update: '',
+    tipo: 'USUARIO', id_modelo: '', system_prompt: '', prompt_view: '', sql_view: '', md: '', prompt_insert: '', prompt_update: '',
     python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false,
     perm_select: true, perm_insert: true, perm_update: true, perm_delete: true,
     traducir: true,
   })
-  const [tabModalFuncion, setTabModalFuncion] = useState<'datos' | 'otros' | 'aplicaciones' | 'apis' | 'system_prompt' | 'md' | 'programacion_insert' | 'programacion_update' | 'llm'>('datos')
+  const [tabModalFuncion, setTabModalFuncion] = useState<'datos' | 'otros' | 'aplicaciones' | 'apis' | 'system_prompt' | 'vista' | 'md' | 'programacion_insert' | 'programacion_update' | 'llm'>('datos')
   const [generandoMd, setGenerandoMd] = useState(false)
   const [sincronizandoMd, setSincronizandoMd] = useState(false)
   const [mensajeMd, setMensajeMd] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
+  const [generandoVista, setGenerandoVista] = useState(false)
+  const [sincronizandoVista, setSincronizandoVista] = useState(false)
+  const [mensajeVista, setMensajeVista] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
   const [guardandoFuncion, setGuardandoFuncion] = useState(false)
   const [errorFuncion, setErrorFuncion] = useState('')
 
@@ -125,14 +130,14 @@ export default function PaginaFunciones() {
       codigo_funcion: '', nombre: '', descripcion: '', ayuda_de_funcion: '', url_funcion: '',
       alias_de_funcion: '', icono_de_funcion: '',
       codigo_aplicacion_origen: aplicacionActiva || '',
-      tipo: 'USUARIO', id_modelo: '', system_prompt: '', md: '', prompt_insert: '', prompt_update: '',
+      tipo: 'USUARIO', id_modelo: '', system_prompt: '', prompt_view: '', sql_view: '', md: '', prompt_insert: '', prompt_update: '',
       python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false,
       perm_select: true, perm_insert: true, perm_update: true, perm_delete: true,
       traducir: true,
     })
     setErrorFuncion(''); setTabModalFuncion('datos'); setModalFuncion(true)
   }
-  const abrirEditarFuncion = (f: Funcion, tabInicial: 'datos' | 'otros' | 'aplicaciones' | 'apis' | 'system_prompt' | 'md' | 'programacion_insert' | 'programacion_update' | 'llm' = 'datos') => {
+  const abrirEditarFuncion = (f: Funcion, tabInicial: 'datos' | 'otros' | 'aplicaciones' | 'apis' | 'system_prompt' | 'vista' | 'md' | 'programacion_insert' | 'programacion_update' | 'llm' = 'datos') => {
     setFuncionEditando(f)
     setFormFuncion({
       codigo_funcion: f.codigo_funcion,
@@ -146,6 +151,8 @@ export default function PaginaFunciones() {
       tipo: normalizarTipo(f.tipo),
       id_modelo: f.id_modelo ? String(f.id_modelo) : '',
       system_prompt: (f as Funcion & { system_prompt?: string }).system_prompt || '',
+      prompt_view: (f as Funcion & { prompt_view?: string }).prompt_view || '',
+      sql_view: (f as Funcion & { sql_view?: string }).sql_view || '',
       md: (f as Funcion & { md?: string }).md || '',
       prompt_insert: (f as Funcion & { prompt_insert?: string }).prompt_insert || '',
       prompt_update: (f as Funcion & { prompt_update?: string }).prompt_update || '',
@@ -181,6 +188,8 @@ export default function PaginaFunciones() {
         codigo_aplicacion_origen: formFuncion.codigo_aplicacion_origen || null,
         id_modelo: formFuncion.id_modelo ? parseInt(formFuncion.id_modelo) : null,
         system_prompt: formFuncion.system_prompt || null,
+        prompt_view: formFuncion.prompt_view || null,
+        sql_view: formFuncion.sql_view || null,
         prompt_insert: formFuncion.prompt_insert || null,
         prompt_update: formFuncion.prompt_update || null,
         python_insert: formFuncion.python_insert || null,
@@ -288,6 +297,7 @@ export default function PaginaFunciones() {
       { key: 'apis', label: `APIs (${apisDeFuncion.length})` },
       ...(esAdmin ? [
         { key: 'system_prompt', label: 'System Prompt' },
+        { key: 'vista', label: 'Vista' },
         { key: 'programacion_insert', label: 'Prog. Insert' },
         { key: 'programacion_update', label: 'Prog. Update' },
         { key: 'md', label: '.md' },
@@ -662,6 +672,80 @@ export default function PaginaFunciones() {
                   />
                 ) : undefined}
               />
+            </div>
+          )}
+
+          {/* Tab Vista */}
+          {tabModalFuncion === 'vista' && funcionEditando && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">Prompt Vista (instrucción al LLM)</label>
+                <textarea
+                  value={formFuncion.prompt_view || ''}
+                  onChange={(e) => setFormFuncion({ ...formFuncion, prompt_view: e.target.value })}
+                  rows={8}
+                  placeholder="Instrucción al LLM para generar la vista SQL del chat. Usa {codigo_funcion}, {codigo_funcion_snake}, {nombre_funcion} como placeholders."
+                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto font-mono focus:outline-none focus:ring-2 focus:ring-primario"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-texto">SQL Vista (generado por el LLM)</label>
+                <textarea
+                  value={formFuncion.sql_view || ''}
+                  onChange={(e) => setFormFuncion({ ...formFuncion, sql_view: e.target.value })}
+                  rows={12}
+                  placeholder="Aquí aparecerá el CREATE OR REPLACE VIEW generado. También se puede editar manualmente antes de Sincronizar."
+                  className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto font-mono focus:outline-none focus:ring-2 focus:ring-primario"
+                />
+              </div>
+              {mensajeVista && (
+                <p className={`text-xs px-1 ${mensajeVista.tipo === 'ok' ? 'text-green-700' : 'text-red-600'}`}>
+                  {mensajeVista.texto}
+                </p>
+              )}
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex gap-2">
+                  <Boton
+                    className="bg-primario-hover hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setGenerandoVista(true); setMensajeVista(null)
+                      try {
+                        const r = await funcionesApi.generarVista(funcionEditando.codigo_funcion)
+                        setFormFuncion((prev) => ({ ...prev, sql_view: r.sql_view }))
+                        setMensajeVista({ tipo: 'ok', texto: 'SQL de vista generado correctamente. Revisa antes de Sincronizar.' })
+                      } catch (e) {
+                        setMensajeVista({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al generar' })
+                      } finally { setGenerandoVista(false) }
+                    }}
+                    cargando={generandoVista}
+                    disabled={generandoVista || sincronizandoVista || !formFuncion.prompt_view}
+                  >
+                    Generar
+                  </Boton>
+                  <Boton
+                    className="bg-primario-light hover:bg-primario text-white focus:ring-primario"
+                    onClick={async () => {
+                      setSincronizandoVista(true); setMensajeVista(null)
+                      try {
+                        // Primero guardar la función para persistir cambios manuales en sql_view
+                        await funcionesApi.actualizar(funcionEditando.codigo_funcion, {
+                          sql_view: formFuncion.sql_view,
+                          prompt_view: formFuncion.prompt_view,
+                        } as Partial<Funcion>)
+                        const r = await funcionesApi.sincronizarVista(funcionEditando.codigo_funcion)
+                        setMensajeVista({ tipo: 'ok', texto: r.mensaje || 'Vista sincronizada correctamente en la BD.' })
+                      } catch (e) {
+                        setMensajeVista({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
+                      } finally { setSincronizandoVista(false) }
+                    }}
+                    cargando={sincronizandoVista}
+                    disabled={generandoVista || sincronizandoVista || !formFuncion.sql_view}
+                  >
+                    Sincronizar
+                  </Boton>
+                </div>
+                <Boton variante="contorno" onClick={() => setModalFuncion(false)}>{tc('salir')}</Boton>
+              </div>
             </div>
           )}
 

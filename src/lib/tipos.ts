@@ -221,6 +221,8 @@ export interface Funcion {
   python_insert?: string | null
   python_update?: string | null
   system_prompt?: string | null  // instrucciones extra al LLM
+  prompt_view?: string | null    // instrucción al LLM para generar vista SQL del chat
+  sql_view?: string | null       // SQL de la vista generada (CREATE OR REPLACE VIEW ...)
   md?: string | null
   orden?: number
   python_editado_manual?: boolean
