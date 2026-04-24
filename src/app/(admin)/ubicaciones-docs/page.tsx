@@ -543,12 +543,12 @@ export default function PaginaUbicacionesDocs() {
             <Folder size={14} className={`${folderColor} shrink-0`} />
           )}
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 truncate" title={`${u.nombre_ubicacion} (${u.codigo_ubicacion})`}>
             <span className="font-medium text-xs">{u.nombre_ubicacion}</span>
             <span className="text-xs text-texto-muted ml-2">({u.codigo_ubicacion})</span>
           </div>
 
-          <span className="text-xs text-texto-muted truncate max-w-[300px] hidden lg:block">
+          <span className="text-xs text-texto-muted truncate max-w-[300px] shrink-0 hidden lg:block" title={u.ruta_completa || ''}>
             {u.ruta_completa || ''}
           </span>
 
@@ -564,7 +564,7 @@ export default function PaginaUbicacionesDocs() {
             {u.activo ? tc('activo') : tc('inactivo')}
           </Insignia>
 
-          <div className="flex items-center gap-0.5 transition-opacity">
+          <div className="flex items-center gap-0.5 shrink-0 transition-opacity">
             <button
               onClick={() => toggleHabilitada(u)}
               className={`p-1.5 rounded-lg transition-colors ${

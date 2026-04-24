@@ -265,17 +265,17 @@ export default function PaginaCargaDocsUsuario() {
           ) : (
             <Folder size={14} className={`${folderColor} shrink-0`} />
           )}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 truncate" title={`${u.nombre_ubicacion} (${u.codigo_ubicacion})`}>
             <span className="font-medium text-xs">{u.nombre_ubicacion}</span>
             <span className="text-xs text-texto-muted ml-2">({u.codigo_ubicacion})</span>
           </div>
-          <span className="text-xs text-texto-muted truncate max-w-[300px] hidden lg:block">
+          <span className="text-xs text-texto-muted truncate max-w-[300px] shrink-0 hidden lg:block" title={u.ruta_completa || ''}>
             {u.ruta_completa || ''}
           </span>
           <Insignia variante={u.tipo_ubicacion === 'AREA' ? 'primario' : 'advertencia'}>{u.tipo_ubicacion}</Insignia>
           <Insignia variante={u.ubicacion_habilitada ? 'exito' : 'advertencia'}>{u.ubicacion_habilitada ? 'Habilitada' : 'Inhabilitada'}</Insignia>
           <Insignia variante={u.activo ? 'exito' : 'error'}>{u.activo ? 'Activo' : 'Inactivo'}</Insignia>
-          <div className="flex items-center gap-0.5 transition-opacity">
+          <div className="flex items-center gap-0.5 shrink-0 transition-opacity">
             <button onClick={() => toggleHabilitada(u)} className={`p-1.5 rounded-lg transition-colors ${u.ubicacion_habilitada ? 'hover:bg-amber-50 text-texto-muted hover:text-amber-600' : 'hover:bg-green-50 text-texto-muted hover:text-green-600'}`} title={u.ubicacion_habilitada ? 'Inhabilitar (incluye hijos)' : 'Habilitar (incluye hijos)'}>
               {u.ubicacion_habilitada ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
             </button>
