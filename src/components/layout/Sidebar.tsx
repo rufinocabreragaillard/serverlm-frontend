@@ -3,20 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  Layers,
-  SlidersHorizontal,
-  ClipboardList,
-  Database,
-  AppWindow,
-  MessageSquare,
-  ListChecks,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
@@ -25,56 +12,9 @@ import { obtenerIcono } from '@/lib/icon-map'
 import { tr } from '@/lib/traducir'
 import { tema as temaDefault } from '@/config/tema.config'
 
-interface NavItem {
-  nombre: string
-  href: string
-  icono: typeof LayoutDashboard
-  requiereSuperAdmin?: boolean
-}
-
-interface NavGrupo {
-  titulo: string
-  items: NavItem[]
-}
-
-const navegacion: NavGrupo[] = [
-  {
-    titulo: 'Operación',
-    items: [
-      { nombre: 'Dashboard', href: '/dashboard', icono: LayoutDashboard },
-      { nombre: 'Usuarios', href: '/usuarios', icono: Users },
-      { nombre: 'Auditoría', href: '/auditoria', icono: ClipboardList },
-    ],
-  },
-  {
-    titulo: 'Organización',
-    items: [
-      { nombre: 'Parámetros por Nivel', href: '/parametros', icono: SlidersHorizontal },
-      { nombre: 'Entidades, Áreas y Roles', href: '/entidades', icono: Building2 },
-      { nombre: 'Grupos', href: '/grupos', icono: Layers },
-    ],
-  },
-  {
-    titulo: 'Compromisos',
-    items: [
-      { nombre: 'Conversaciones', href: '/compromisos/conversaciones', icono: MessageSquare },
-      { nombre: 'Compromisos', href: '/compromisos/compromisos', icono: ListChecks },
-      { nombre: 'Datos Básicos', href: '/compromisos/datos-basicos', icono: Database },
-    ],
-  },
-  {
-    titulo: 'Básicos',
-    items: [
-      { nombre: 'Aplicaciones y Funciones', href: '/aplicaciones', icono: AppWindow },
-      { nombre: 'Datos Básicos', href: '/datos-basicos', icono: Database },
-      { nombre: 'Parámetros Generales', href: '/parametros-generales', icono: SlidersHorizontal },
-    ],
-  },
-]
-
 export function Sidebar() {
   const pathname = usePathname()
-  const { esSuperAdmin, usuario } = useAuth()
+  const { usuario } = useAuth()
   const { logo, appNombreCorto } = useTema()
   // sidebar_ancho viene de aplicaciones.sidebar_ancho — true=expandido, false=colapsado
   const sidebarAnchoPorDefecto = usuario?.sidebar_ancho !== false
@@ -93,10 +33,6 @@ export function Sidebar() {
       }))
       .filter(rol => rol.funciones.length > 0)
   }, [usuario?.menu, usuario?.aplicacion_activa])
-
-  // Usar menú dinámico si el usuario ya cargó su contexto (aunque quede vacío).
-  // El fallback estático solo aplica cuando no hay usuario autenticado aún.
-  const menuDinamico = !!usuario?.menu
 
   // Clases comunes para items del menú
   const itemBase = cn(
@@ -151,16 +87,17 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Navegación */}
+      {/* Navegación — 100% dinámica desde BD (usuario.menu).
+          Si el usuario no tiene funciones en el grupo/app activo, el sidebar queda vacío. */}
       <nav className="flex-1 py-4 px-2 flex flex-col gap-4 overflow-y-auto">
-        {menuDinamico ? (
-          menuFiltrado.length === 0 ? (
-            !colapsado && (
-              <div className="px-3 py-2 text-xs text-sidebar-texto-muted">
-                Sin funciones disponibles en este grupo/aplicación.
-              </div>
-            )
-          ) : menuFiltrado.map((rol) => (
+        {menuFiltrado.length === 0 ? (
+          !colapsado && usuario?.menu && (
+            <div className="px-3 py-2 text-xs text-sidebar-texto-muted">
+              Sin funciones disponibles en este grupo/aplicación.
+            </div>
+          )
+        ) : (
+          menuFiltrado.map((rol) => (
             <div key={rol.id_rol}>
               {!colapsado && (
                 <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-texto-muted">
@@ -191,40 +128,6 @@ export function Sidebar() {
               </div>
             </div>
           ))
-        ) : (
-          navegacion.map((grupo) => {
-            const itemsVisibles = grupo.items.filter((item) => !item.requiereSuperAdmin || esSuperAdmin())
-            if (itemsVisibles.length === 0) return null
-            return (
-              <div key={grupo.titulo}>
-                {!colapsado && (
-                  <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-texto-muted">
-                    {grupo.titulo}
-                  </span>
-                )}
-                {colapsado && (
-                  <div className="w-6 mx-auto border-t border-sidebar-texto/40 mb-1" />
-                )}
-                <div className="flex flex-col gap-1 mt-1">
-                  {itemsVisibles.map((item) => {
-                    const activo = pathname === item.href || pathname.startsWith(item.href + '/')
-                    const Icono = item.icono
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(itemBase, activo ? itemActivo : itemInactivo)}
-                        title={item.nombre}
-                      >
-                        <Icono size={18} className="shrink-0" />
-                        {!colapsado && <span>{item.nombre}</span>}
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })
         )}
       </nav>
 
