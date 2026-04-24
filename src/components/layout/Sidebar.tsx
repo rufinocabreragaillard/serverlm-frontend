@@ -94,7 +94,9 @@ export function Sidebar() {
       .filter(rol => rol.funciones.length > 0)
   }, [usuario?.menu, usuario?.aplicacion_activa])
 
-  const menuDinamico = menuFiltrado.length > 0
+  // Usar menú dinámico si el usuario ya cargó su contexto (aunque quede vacío).
+  // El fallback estático solo aplica cuando no hay usuario autenticado aún.
+  const menuDinamico = !!usuario?.menu
 
   // Clases comunes para items del menú
   const itemBase = cn(
@@ -152,7 +154,13 @@ export function Sidebar() {
       {/* Navegación */}
       <nav className="flex-1 py-4 px-2 flex flex-col gap-4 overflow-y-auto">
         {menuDinamico ? (
-          menuFiltrado.map((rol) => (
+          menuFiltrado.length === 0 ? (
+            !colapsado && (
+              <div className="px-3 py-2 text-xs text-sidebar-texto-muted">
+                Sin funciones disponibles en este grupo/aplicación.
+              </div>
+            )
+          ) : menuFiltrado.map((rol) => (
             <div key={rol.id_rol}>
               {!colapsado && (
                 <span className="px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-texto-muted">
