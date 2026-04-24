@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   Brain, RefreshCw, Upload, Zap, Languages, Globe,
-  AlertCircle, CheckCircle2, Code2, FileText, Play, ChevronDown, ChevronUp,
+  AlertCircle, CheckCircle2, Code2, FileText, Play, ChevronDown, ChevronUp, Search,
 } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import {
@@ -191,7 +191,12 @@ export default function PaginaPrompts() {
     URL.revokeObjectURL(url)
   }
 
+  const [filtroTabla, setFiltroTabla] = useState('')
+
   const tablasConPendientes = (estado?.tablas || []).filter((t) => (t.pendientes_sync || 0) > 0)
+  const tablasFiltradas = (estado?.tablas || []).filter((t) =>
+    filtroTabla === '' || t.tabla.toLowerCase().includes(filtroTabla.toLowerCase())
+  )
   const generandoMasivo = genProgress.modo !== null && !genProgress.terminado
 
   return (
@@ -243,23 +248,29 @@ export default function PaginaPrompts() {
       {/* ── Tab: Prompts ── */}
       {tab === 'prompts' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-texto-muted">
-              Cada fila configurable se convierte en un documento virtual que entra al pipeline RAG.
-            </p>
-            <div className="flex gap-2">
-              <Boton variante="contorno" tamano="sm" onClick={cargar} disabled={cargando}>
-                <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} /> Refrescar
-              </Boton>
-              <Boton
-                variante="primario"
-                tamano="sm"
-                onClick={sincronizarTodo}
-                disabled={sincronizando !== null || tablasConPendientes.length === 0}
-              >
-                <Upload className="w-4 h-4" /> Sincronizar todas ({tablasConPendientes.length})
-              </Boton>
+          {/* Barra de herramientas: filtro + acciones */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-texto-muted pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Filtrar tabla…"
+                value={filtroTabla}
+                onChange={(e) => setFiltroTabla(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-borde rounded-lg bg-gris-fondo focus:outline-none focus:ring-2 focus:ring-primario/30"
+              />
             </div>
+            <Boton variante="contorno" tamano="sm" onClick={cargar} disabled={cargando}>
+              <RefreshCw className={`w-4 h-4 ${cargando ? 'animate-spin' : ''}`} /> Refrescar
+            </Boton>
+            <Boton
+              variante="primario"
+              tamano="sm"
+              onClick={sincronizarTodo}
+              disabled={sincronizando !== null || tablasConPendientes.length === 0}
+            >
+              <Upload className="w-4 h-4" /> Sincronizar pendientes ({tablasConPendientes.length})
+            </Boton>
           </div>
 
           {cargando && <p className="text-sm text-texto-muted">Cargando estado…</p>}
@@ -273,11 +284,10 @@ export default function PaginaPrompts() {
                     <th className="text-right py-2 px-2">Total filas</th>
                     <th className="text-right py-2 px-2">Con prompt</th>
                     <th className="text-right py-2 px-2">Pendientes sync</th>
-                    <th className="text-right py-2 px-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {estado.tablas.map((t: TablaConteoPrompts) => (
+                  {tablasFiltradas.map((t: TablaConteoPrompts) => (
                     <tr key={t.tabla} className="border-b border-borde/50 hover:bg-gris-fondo/50">
                       <td className="py-2 px-2 font-mono text-xs">{t.tabla}</td>
                       <td className="py-2 px-2 text-right">{t.total_filas ?? '—'}</td>
@@ -291,32 +301,20 @@ export default function PaginaPrompts() {
                           <span className="text-texto-muted">0</span>
                         )}
                       </td>
-                      <td className="py-2 px-2 text-right">
-                        <div className="flex gap-1 justify-end">
-                          <Boton
-                            variante="contorno"
-                            tamano="sm"
-                            onClick={() => sincronizarTabla(t.tabla, true)}
-                            disabled={sincronizando !== null || (t.pendientes_sync ?? 0) === 0}
-                          >
-                            Sync cambios
-                          </Boton>
-                          <Boton
-                            variante="fantasma"
-                            tamano="sm"
-                            onClick={() => sincronizarTabla(t.tabla, false)}
-                            disabled={sincronizando !== null}
-                          >
-                            Sync todas
-                          </Boton>
-                        </div>
-                      </td>
                     </tr>
                   ))}
+                  {tablasFiltradas.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-sm text-texto-muted">
+                        Sin resultados para &ldquo;{filtroTabla}&rdquo;
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
               <p className="text-xs text-texto-muted mt-2">
                 Total pendientes: <strong>{estado.total_pendientes_sync}</strong>
+                {filtroTabla && ` · Mostrando ${tablasFiltradas.length} de ${estado.tablas.length} tablas`}
               </p>
             </div>
           )}
