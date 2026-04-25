@@ -187,13 +187,23 @@ export default function PaginaParametrosGrupo() {
       {/* ── Tab: Valores ── */}
       {tabActiva === 'valores' && (
         <>
-          <div className="flex items-center gap-3">
-            <p className="text-sm text-texto-muted">Filtrar por categoría:</p>
-            <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className={selectCls}>
-              <option value="">Todas</option>
-              {categorias.map((c) => <option key={c.categoria_parametro} value={c.categoria_parametro}>{c.nombre}</option>)}
-            </select>
-          </div>
+          {filtroCategoria ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-texto-muted">Categoría:</span>
+              <span className="text-sm font-medium text-texto">
+                {categorias.find((c) => c.categoria_parametro === filtroCategoria)?.nombre ?? filtroCategoria}
+              </span>
+              <button onClick={() => setFiltroCategoria('')} className="text-xs text-primario hover:underline">Ver todas</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-texto-muted">Filtrar por categoría:</p>
+              <select value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)} className={selectCls}>
+                <option value="">Todas</option>
+                {categorias.map((c) => <option key={c.categoria_parametro} value={c.categoria_parametro}>{c.nombre}</option>)}
+              </select>
+            </div>
+          )}
 
           {cargandoVal ? (
             <div className="flex flex-col gap-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 bg-surface rounded-lg border border-borde animate-pulse" />)}</div>
