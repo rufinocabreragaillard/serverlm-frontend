@@ -4,16 +4,17 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   Brain, RefreshCw, Upload, Zap, Languages, Globe,
   AlertCircle, CheckCircle2, Code2, FileText, Play, ChevronDown, ChevronUp, Search,
+  Network,
 } from 'lucide-react'
 import { Boton } from '@/components/ui/boton'
 import {
-  promptsApi, traduccionesApi, funcionesApi,
-  type EstadoPrompts, type TablaConteoPrompts,
+  promptsApi, traduccionesApi, funcionesApi, jerarquiasApi,
+  type EstadoPrompts, type TablaConteoPrompts, type GrafoJerarquia,
 } from '@/lib/api'
 import type { EstadoTraducciones, Funcion } from '@/lib/tipos'
 import ES_MESSAGES from '../../../../messages/es.json'
 
-type Tab = 'prompts' | 'codigo' | 'mensajes' | 'traducciones' | 'apis'
+type Tab = 'prompts' | 'codigo' | 'mensajes' | 'traducciones' | 'apis' | 'jerarquias'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'prompts',      label: 'Prompts',      icon: <Brain className="w-4 h-4" /> },
@@ -21,6 +22,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'mensajes',     label: 'Mensajes UI',  icon: <Languages className="w-4 h-4" /> },
   { id: 'traducciones', label: 'Traducciones', icon: <Languages className="w-4 h-4" /> },
   { id: 'apis',         label: 'APIs',         icon: <Globe className="w-4 h-4" /> },
+  { id: 'jerarquias',   label: 'Jerarquías',   icon: <Network className="w-4 h-4" /> },
 ]
 
 // Componente reutilizable para la barra filtro + acciones
@@ -83,6 +85,60 @@ export default function PaginaPrompts() {
   const [filtroMensajes, setFiltroMensajes] = useState('')
   const [filtroTraducciones, setFiltroTraducciones] = useState('')
   const [filtroApis, setFiltroApis] = useState('')
+  const [filtroJerarquias, setFiltroJerarquias] = useState('')
+
+  // Jerarquías (closure tables)
+  const [grafos, setGrafos] = useState<GrafoJerarquia[]>([])
+  const [cargandoGrafos, setCargandoGrafos] = useState(false)
+  const [refrescandoGrafo, setRefrescandoGrafo] = useState<string | null>(null)
+
+  const cargarGrafos = useCallback(async () => {
+    setCargandoGrafos(true)
+    try { setGrafos(await jerarquiasApi.listarGrafos()) }
+    catch { setGrafos([]) }
+    finally { setCargandoGrafos(false) }
+  }, [])
+
+  async function refrescarGrafo(tabla: string) {
+    setRefrescandoGrafo(tabla)
+    setMensaje(null)
+    try {
+      const r = await jerarquiasApi.refrescar(tabla)
+      setMensaje({ tipo: 'ok', texto: `${tabla}: ${r.filas} pares insertados.` })
+      cargarGrafos()
+    } catch (e: unknown) {
+      const err = e as { message?: string; response?: { data?: { detail?: string } } }
+      setMensaje({ tipo: 'error', texto: err?.response?.data?.detail || err?.message || 'Error' })
+    } finally { setRefrescandoGrafo(null) }
+  }
+
+  async function refrescarTodosGrafos() {
+    setRefrescandoGrafo('__todos__')
+    setMensaje(null)
+    try {
+      const r = await jerarquiasApi.refrescarTodos()
+      const ok = r.resultados.filter((x) => x.ok).length
+      const ko = r.resultados.length - ok
+      setMensaje({
+        tipo: ko === 0 ? 'ok' : 'error',
+        texto: `Refrescadas ${ok}/${r.resultados.length} jerarquías.${ko ? ` Errores: ${r.resultados.filter((x) => !x.ok).map((x) => x.tabla).join(', ')}` : ''}`,
+      })
+      cargarGrafos()
+    } catch (e: unknown) {
+      const err = e as { message?: string; response?: { data?: { detail?: string } } }
+      setMensaje({ tipo: 'error', texto: err?.response?.data?.detail || err?.message || 'Error' })
+    } finally { setRefrescandoGrafo(null) }
+  }
+
+  useEffect(() => {
+    if (tab === 'jerarquias' && grafos.length === 0) cargarGrafos()
+  }, [tab, grafos.length, cargarGrafos])
+
+  const grafosFiltrados = grafos.filter((g) =>
+    filtroJerarquias === '' ||
+    g.tabla.toLowerCase().includes(filtroJerarquias.toLowerCase()) ||
+    g.nombre.toLowerCase().includes(filtroJerarquias.toLowerCase())
+  )
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -495,6 +551,80 @@ export default function PaginaPrompts() {
               'Cargando estado…'
             )}
           </p>
+        </div>
+      )}
+
+      {/* ── Tab: Jerarquías ── */}
+      {tab === 'jerarquias' && (
+        <div>
+          <BarraHerramientas
+            filtro={filtroJerarquias}
+            onFiltro={setFiltroJerarquias}
+            placeholder="Filtrar jerarquía…"
+            acciones={
+              <Boton
+                variante="primario"
+                tamano="sm"
+                onClick={refrescarTodosGrafos}
+                disabled={refrescandoGrafo !== null || grafos.length === 0}
+              >
+                <RefreshCw className={`w-4 h-4 ${refrescandoGrafo === '__todos__' ? 'animate-spin' : ''}`} />
+                {refrescandoGrafo === '__todos__' ? 'Refrescando…' : `Refrescar todos (${grafos.length})`}
+              </Boton>
+            }
+          />
+
+          <p className="text-sm text-texto-muted mb-4">
+            Refresca la closure table (grafo desnormalizado) de cada jerarquía recomputándola desde la tabla origen.
+            En operación normal el refresco se hace automáticamente al editar un nodo; este panel sirve para rebuild masivo si quedó desincronizada.
+          </p>
+
+          {cargandoGrafos ? (
+            <p className="text-sm text-texto-muted">Cargando grafos…</p>
+          ) : grafosFiltrados.length === 0 ? (
+            <p className="text-sm text-texto-muted">
+              {filtroJerarquias ? `Sin resultados para "${filtroJerarquias}".` : 'No hay jerarquías registradas.'}
+            </p>
+          ) : (
+            <div className="border border-borde rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gris-fondo border-b border-borde">
+                  <tr className="text-left">
+                    <th className="px-3 py-2 font-medium">Jerarquía</th>
+                    <th className="px-3 py-2 font-medium">Tabla origen</th>
+                    <th className="px-3 py-2 font-medium text-right">Nodos</th>
+                    <th className="px-3 py-2 font-medium text-right">Pares</th>
+                    <th className="px-3 py-2 font-medium text-right">Máx. profundidad</th>
+                    <th className="px-3 py-2 font-medium text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grafosFiltrados.map((g) => (
+                    <tr key={g.tabla} className="border-b border-borde last:border-b-0 hover:bg-gris-fondo">
+                      <td className="px-3 py-2 font-medium">{g.nombre}</td>
+                      <td className="px-3 py-2 text-xs text-texto-muted">
+                        <code>{g.tabla}</code> → <code>{g.grafo}</code>
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">{g.nodos}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{g.pares}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{g.max_profundidad}</td>
+                      <td className="px-3 py-2 text-right">
+                        <Boton
+                          variante="contorno"
+                          tamano="sm"
+                          onClick={() => refrescarGrafo(g.tabla)}
+                          disabled={refrescandoGrafo !== null}
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${refrescandoGrafo === g.tabla ? 'animate-spin' : ''}`} />
+                          {refrescandoGrafo === g.tabla ? 'Refrescando…' : 'Refrescar'}
+                        </Boton>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

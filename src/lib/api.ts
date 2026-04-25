@@ -1589,6 +1589,27 @@ export interface Plan {
   javascript_editado_manual: boolean
 }
 
+// ─── Jerarquías (closure tables) ──────────────────────────────────────────────
+
+export interface GrafoJerarquia {
+  tabla: string
+  nombre: string
+  grafo: string
+  fn_refrescar: string
+  pares: number
+  nodos: number
+  max_profundidad: number
+}
+
+export const jerarquiasApi = {
+  listarGrafos: () =>
+    api.get<GrafoJerarquia[]>('/jerarquias/grafos').then((r) => r.data),
+  refrescar: (tabla: string) =>
+    api.post<{ tabla: string; filas: number }>(`/jerarquias/grafos/${tabla}/refrescar`).then((r) => r.data),
+  refrescarTodos: () =>
+    api.post<{ resultados: { tabla: string; filas: number; ok: boolean; error?: string }[] }>('/jerarquias/grafos/refrescar-todos').then((r) => r.data),
+}
+
 export const planesApi = {
   listar: () => api.get<Plan[]>('/planes').then((r) => r.data),
   crear: (datos: Partial<Plan>) => api.post<Plan>('/planes', datos).then((r) => r.data),
