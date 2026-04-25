@@ -32,8 +32,8 @@ export function TabRevertir() {
 
   // Filtros
   const [procesoSel, setProcesoSel] = useState('')
-  const [filtroLibre, setFiltroLibre] = useState('')
   const [filtroLibreInput, setFiltroLibreInput] = useState('')
+  const [filtroLibre, setFiltroLibre] = useState('')
   const [ubicacionSel, setUbicacionSel] = useState('')
   const [ubicBusqueda, setUbicBusqueda] = useState('')
   const [ubicDropdownOpen, setUbicDropdownOpen] = useState(false)
@@ -70,13 +70,10 @@ export function TabRevertir() {
     setErrorCargaInicial(false)
     try {
       const [procsRaw, u] = await Promise.all([
-        procesosApi.listar('REVERTIR_PROCESAR_DOCS'),
+        procesosApi.listar('REVERTIR'),
         ubicacionesDocsApi.listar().catch(() => []),
       ])
-      const procs = (procsRaw || [])
-        .filter((p: ProcesoCatalogo) => !!p.estado_destino && p.codigo_funcion === 'REVERT_PROC_DOCS')
-        .sort((a: ProcesoCatalogo, b: ProcesoCatalogo) => (a.orden ?? 0) - (b.orden ?? 0))
-      setProcesos(procs)
+      setProcesos((procsRaw || []).sort((a: ProcesoCatalogo, b: ProcesoCatalogo) => (a.orden ?? 0) - (b.orden ?? 0)))
       setUbicaciones(
         (u as UbicacionOption[])
           .filter((x) => (x as UbicacionOption & { activo?: boolean }).activo !== false)
@@ -91,7 +88,6 @@ export function TabRevertir() {
 
   useEffect(() => { cargarDatosIniciales() }, [cargarDatosIniciales])
 
-  // Click-outside para cerrar dropdown de ubicación
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (ubicDropdownRef.current && !ubicDropdownRef.current.contains(e.target as Node)) {
@@ -102,7 +98,6 @@ export function TabRevertir() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // Resetear al cambiar filtros
   useEffect(() => {
     setDocumentos([])
     setConteo(null)
@@ -142,7 +137,6 @@ export function TabRevertir() {
     setError(null)
     setDocumentos([])
     try {
-      // Siempre cargar la lista de documentos (con o sin proceso)
       const docsRes = await documentosApi.listarPaginado({
         page: 1,
         limit: DOCS_POR_PAGINA,
@@ -156,7 +150,6 @@ export function TabRevertir() {
       setTotalPaginas(Math.max(1, Math.ceil(docsRes.total / DOCS_POR_PAGINA)))
       setYaBuscado(true)
 
-      // El conteo para revertir solo aplica cuando hay un proceso seleccionado
       if (pasoActual?.estado_origen) {
         const conteoRes = await documentosApi.revertir({
           estados_origen: [pasoActual.estado_origen],
@@ -202,15 +195,25 @@ export function TabRevertir() {
 
   const selectClass = 'w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario'
 
+  // Agrupar procesos por categoría de transición para el select
+  const categorias = useMemo(() => {
+    const map = new Map<string, ProcesoCatalogo[]>()
+    for (const p of procesos) {
+      const cat = p.categoria_transicion || 'REVERTIR'
+      if (!map.has(cat)) map.set(cat, [])
+      map.get(cat)!.push(p)
+    }
+    return map
+  }, [procesos])
+
+  const labelCategoria: Record<string, string> = {
+    REVERTIR: 'Revertir',
+    CORREGIR: 'Corregir inválidos',
+    PROCESAR: 'Procesar',
+  }
+
   return (
     <div className="flex flex-col gap-6 w-full overflow-x-hidden">
-      <p className="text-sm text-texto-muted">
-        Revierte documentos a estados anteriores del pipeline. Selecciona el proceso de reversa,
-        aplica filtros y presiona <strong>Buscar</strong> para previsualizar los documentos
-        afectados, luego <strong>Ejecutar</strong> para aplicar el cambio.
-      </p>
-
-      {/* Error carga inicial */}
       {errorCargaInicial && (
         <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-error">
           <AlertTriangle size={16} className="shrink-0" />
@@ -222,7 +225,6 @@ export function TabRevertir() {
         </div>
       )}
 
-      {/* Configuración */}
       <Tarjeta>
         <TarjetaContenido>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -236,14 +238,22 @@ export function TabRevertir() {
                 disabled={ejecutando || cargandoInicial}
               >
                 <option value="">— Sin valor —</option>
-                {procesos.map((p) => {
-                  const flecha = p.estado_destino ? `${p.estado_origen || '—'} → ${p.estado_destino}` : ''
-                  return (
-                    <option key={p.codigo_proceso} value={p.codigo_proceso}>
-                      {p.nombre_proceso} ({flecha})
-                    </option>
-                  )
-                })}
+                {categorias.size > 1
+                  ? Array.from(categorias.entries()).map(([cat, procs]) => (
+                      <optgroup key={cat} label={labelCategoria[cat] || cat}>
+                        {procs.map((p) => (
+                          <option key={p.codigo_proceso} value={p.codigo_proceso}>
+                            {p.nombre_proceso} ({p.estado_origen || '—'} → {p.estado_destino})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  : procesos.map((p) => (
+                      <option key={p.codigo_proceso} value={p.codigo_proceso}>
+                        {p.nombre_proceso} ({p.estado_origen || '—'} → {p.estado_destino})
+                      </option>
+                    ))
+                }
               </select>
             </div>
 
@@ -262,7 +272,7 @@ export function TabRevertir() {
               </div>
             </div>
 
-            {/* Ubicación — árbol idéntico al de /procesar-documentos */}
+            {/* Ubicación */}
             <div className="flex flex-col gap-1.5 min-w-0" ref={ubicDropdownRef}>
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium text-texto">Ubicación</label>
@@ -384,7 +394,7 @@ export function TabRevertir() {
             </div>
           </div>
 
-          {/* Filtro libre + Tope — misma línea */}
+          {/* Filtro libre + Tope */}
           <div className="flex items-end gap-3 mt-3 flex-wrap">
             <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
               <label className="text-sm font-medium text-texto">Filtro libre</label>
@@ -430,21 +440,19 @@ export function TabRevertir() {
             </div>
           </div>
 
-          {/* Buscar + count + Ejecutar/Detener — misma línea */}
+          {/* Buscar + count + Ejecutar/Detener */}
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-borde flex-wrap">
             <Boton variante="contorno" tamano="sm" onClick={buscar} disabled={ejecutando || cargando || (!procesoSel && !filtroLibre)}>
               {cargando ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
               Buscar
             </Boton>
             <span className="text-sm text-texto-muted">
-              {conteo !== null
-                ? `${conteo} documento${conteo !== 1 ? 's' : ''} a revertir`
-                : ''}
+              {conteo !== null ? `${conteo} documento${conteo !== 1 ? 's' : ''} a revertir` : ''}
             </span>
             <div className="ml-auto flex items-center gap-3">
               <Boton
                 variante="primario"
-                onClick={ejecutar}
+                onClick={() => setConfirmEjecutar(true)}
                 disabled={ejecutando || !procesoSel || conteo === null || conteo === 0}
               >
                 {ejecutando ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
@@ -479,7 +487,7 @@ export function TabRevertir() {
         </div>
       )}
 
-      {/* Lista de documentos candidatos (visible tras Buscar) */}
+      {/* Lista de documentos candidatos */}
       {(yaBuscado || cargando) && (
         <>
           {documentos.length > 0 && (
@@ -533,11 +541,10 @@ export function TabRevertir() {
               )}
             </TablaCuerpo>
           </Tabla>
-          {/* Paginación */}
-          {conteo !== null && conteo > DOCS_POR_PAGINA && (
+          {totalPaginas > 1 && (
             <div className="flex items-center justify-between text-xs text-texto-muted mt-1">
               <span>
-                {(paginaActual - 1) * DOCS_POR_PAGINA + 1}–{Math.min(paginaActual * DOCS_POR_PAGINA, conteo)} de {conteo}
+                {(paginaActual - 1) * DOCS_POR_PAGINA + 1}–{Math.min(paginaActual * DOCS_POR_PAGINA, (conteo ?? documentos.length))} de {conteo ?? documentos.length}
               </span>
               <div className="flex gap-1">
                 <button disabled={paginaActual <= 1} onClick={() => cargarDocumentos(1)}
