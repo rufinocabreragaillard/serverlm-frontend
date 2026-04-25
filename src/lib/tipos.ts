@@ -921,3 +921,22 @@ export interface TipoAcceso {
   nombre_tipo_acceso: string
   tipo_acceso_superior?: string | null
 }
+
+// ─── Limpieza de logs ─────────────────────────────────────────────────────────
+export interface PoliticaLimpieza {
+  codigo_tabla: string
+  descripcion: string
+  modo: 'TIEMPO' | 'CANTIDAD'
+  valor: number
+  preserva_agregado: boolean
+  activa: boolean
+  ultima_ejecucion?: string | null
+  ultimas_filas_eliminadas?: number | null
+}
+
+export interface ResultadoLimpieza {
+  codigo_tabla: string
+  modo: 'TIEMPO' | 'CANTIDAD'
+  valor: number
+  filas_eliminadas: number
+}

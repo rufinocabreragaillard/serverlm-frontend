@@ -1667,4 +1667,17 @@ export const tiposAccesoApi = {
   eliminar: (codigo: string) => api.delete(`/tipos-acceso/${codigo}`),
 }
 
+// ─── Limpieza de logs ────────────────────────────────────────────────────────
+import type { PoliticaLimpieza, ResultadoLimpieza } from './tipos'
+
+export const limpiezaApi = {
+  listar: () => api.get<PoliticaLimpieza[]>('/limpieza').then((r) => r.data),
+  actualizar: (codigoTabla: string, datos: Partial<Pick<PoliticaLimpieza, 'modo' | 'valor' | 'activa'>>) =>
+    api.put<PoliticaLimpieza>(`/limpieza/${codigoTabla}`, datos).then((r) => r.data),
+  ejecutar: (codigoTabla: string, modo: 'TIEMPO' | 'CANTIDAD', valor: number) =>
+    api.post<ResultadoLimpieza>('/limpieza/ejecutar', { codigo_tabla: codigoTabla, modo, valor }).then((r) => r.data),
+  ejecutarTodas: () =>
+    api.post<ResultadoLimpieza[]>('/limpieza/ejecutar-todas').then((r) => r.data),
+}
+
 export default api
