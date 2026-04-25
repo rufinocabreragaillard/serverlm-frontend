@@ -420,9 +420,11 @@ export function Header({ titulo }: { titulo?: string }) {
                   className="w-full h-10 px-3 rounded-lg border border-borde bg-surface text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario/30 focus:border-primario"
                 >
                   <option value="">{t('sinRolPrincipal')}</option>
-                  {rolesUsuario.map((r) => (
+                  {rolesUsuario
+                    .filter((r) => r.codigo_grupo === usuario?.grupo_activo || !r.codigo_grupo)
+                    .map((r) => (
                     <option key={`${r.codigo_grupo}-${r.id_rol}`} value={r.id_rol}>
-                      {r.nombre}{r.codigo_grupo ? ` — ${r.codigo_grupo}` : ''}
+                      {r.nombre}
                     </option>
                   ))}
                 </select>
