@@ -674,7 +674,7 @@ export default function PaginaGrupos() {
       {/* ═══════════════════ TAB 3: CAMBIAR GRUPO ═══════════════════ */}
       {tabPrincipal === 'cambiar' && (
         <div className="max-w-md p-6 bg-surface rounded-xl border border-borde shadow-sm">
-          <h3 className="text-base font-semibold text-texto mb-1">Cambiar de Grupo</h3>
+          <h3 className="section-heading mb-1">Cambiar de Grupo</h3>
           <p className="text-sm text-texto-muted mb-6">
             Grupo actual:{' '}
             <span className="font-medium text-texto">{grupoActualNombre}</span>

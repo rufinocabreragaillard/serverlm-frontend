@@ -282,7 +282,7 @@ export default function PaginaChatSegGrupo() {
                 </>
               ) : (
                 <>
-                  <h2 className="flex-1 text-base font-semibold text-texto truncate" title={tituloActivo}>
+                  <h2 className="flex-1 section-heading truncate" title={tituloActivo}>
                     {tituloActivo || t('titulo')}
                   </h2>
                   <button

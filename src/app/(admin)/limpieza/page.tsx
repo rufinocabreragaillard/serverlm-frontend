@@ -9,14 +9,10 @@ import { Modal } from '@/components/ui/modal'
 import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/context/ToastContext'
 import { limpiezaApi } from '@/lib/api'
+import { formatFecha, formatNumero } from '@/lib/formatters'
 import type { PoliticaLimpieza, ResultadoLimpieza } from '@/lib/tipos'
-
-function formatoFecha(s?: string | null) {
-  if (!s) return '—'
-  const d = new Date(s)
-  return d.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
-}
 
 function unidad(modo: 'TIEMPO' | 'CANTIDAD') {
   return modo === 'TIEMPO' ? 'días' : 'filas'
@@ -24,11 +20,11 @@ function unidad(modo: 'TIEMPO' | 'CANTIDAD') {
 
 export default function PaginaLimpieza() {
   const { grupoActivo } = useAuth()
+  const toast = useToast()
   const esSuperAdmin = grupoActivo === 'ADMIN'
 
   const [politicas, setPoliticas] = useState<PoliticaLimpieza[]>([])
   const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState('')
 
   // Modal ejecutar
   const [modalEjecutar, setModalEjecutar] = useState<PoliticaLimpieza | null>(null)
@@ -48,13 +44,13 @@ export default function PaginaLimpieza() {
 
   const cargar = useCallback(async () => {
     if (!esSuperAdmin) { setCargando(false); return }
-    setCargando(true); setError('')
+    setCargando(true)
     try {
       setPoliticas(await limpiezaApi.listar())
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al cargar políticas')
+      toast.error('Error al cargar políticas', e instanceof Error ? e.message : undefined)
     } finally { setCargando(false) }
-  }, [esSuperAdmin])
+  }, [esSuperAdmin, toast])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -77,11 +73,11 @@ export default function PaginaLimpieza() {
       const r = await limpiezaApi.ejecutar(confirmacion.codigo, confirmacion.modo, confirmacion.valor)
       setUltimoResultado(r)
       setConfirmacion(null)
-      // Persistir politica actualizada (modo/valor)
       await limpiezaApi.actualizar(confirmacion.codigo, { modo: confirmacion.modo, valor: confirmacion.valor })
+      toast.success('Limpieza ejecutada', `${formatNumero(r.filas_eliminadas)} fila(s) eliminada(s) en ${r.codigo_tabla}`)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al ejecutar limpieza')
+      toast.error('Error al ejecutar limpieza', e instanceof Error ? e.message : undefined)
       setConfirmacion(null)
     } finally { setEjecutando(false) }
   }
@@ -91,18 +87,21 @@ export default function PaginaLimpieza() {
     try {
       const res = await limpiezaApi.ejecutarTodas()
       setResultadosTodas(res)
+      const total = res.reduce((acc, r) => acc + Math.max(0, r.filas_eliminadas), 0)
+      toast.success('Limpieza completa ejecutada', `${formatNumero(total)} fila(s) eliminada(s) en total`)
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al ejecutar todas')
+      toast.error('Error al ejecutar todas', e instanceof Error ? e.message : undefined)
     } finally { setEjecutandoTodas(false) }
   }
 
   const togglePoliticaActiva = async (p: PoliticaLimpieza) => {
     try {
       await limpiezaApi.actualizar(p.codigo_tabla, { activa: !p.activa })
+      toast.success(p.activa ? 'Política desactivada' : 'Política activada')
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al actualizar política')
+      toast.error('Error al actualizar política', e instanceof Error ? e.message : undefined)
     }
   }
 
@@ -132,12 +131,6 @@ export default function PaginaLimpieza() {
           La limpieza por <strong>cantidad</strong> conserva las últimas N filas y elimina el resto.
         </p>
       </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-          <p className="text-sm text-error">{error}</p>
-        </div>
-      )}
 
       <div className="flex justify-end gap-2">
         <Boton variante="contorno" onClick={cargar} disabled={cargando}>
@@ -182,7 +175,7 @@ export default function PaginaLimpieza() {
                   {p.modo === 'TIEMPO' ? 'Por tiempo' : 'Por cantidad'}
                 </Insignia>
               </TablaTd>
-              <TablaTd className="text-sm">{p.valor.toLocaleString('es-CL')} {unidad(p.modo)}</TablaTd>
+              <TablaTd className="text-sm">{formatNumero(p.valor)} {unidad(p.modo)}</TablaTd>
               <TablaTd>
                 <button onClick={() => togglePoliticaActiva(p)} className="cursor-pointer">
                   <Insignia variante={p.activa ? 'exito' : 'neutro'}>
@@ -190,10 +183,10 @@ export default function PaginaLimpieza() {
                   </Insignia>
                 </button>
               </TablaTd>
-              <TablaTd className="text-xs">{formatoFecha(p.ultima_ejecucion)}</TablaTd>
+              <TablaTd className="text-xs">{formatFecha(p.ultima_ejecucion)}</TablaTd>
               <TablaTd className="text-sm">
                 {p.ultimas_filas_eliminadas != null
-                  ? p.ultimas_filas_eliminadas.toLocaleString('es-CL')
+                  ? formatNumero(p.ultimas_filas_eliminadas)
                   : '—'}
               </TablaTd>
               <TablaTd className="text-right">
@@ -249,7 +242,7 @@ export default function PaginaLimpieza() {
 
             {ultimoResultado && (
               <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm">
-                Limpieza ejecutada: <strong>{ultimoResultado.filas_eliminadas.toLocaleString('es-CL')}</strong> fila(s) eliminada(s).
+                Limpieza ejecutada: <strong>{formatNumero(ultimoResultado.filas_eliminadas)}</strong> fila(s) eliminada(s).
               </div>
             )}
 
@@ -273,7 +266,7 @@ export default function PaginaLimpieza() {
         mensaje={confirmacion ? (
           confirmacion.modo === 'TIEMPO'
             ? `Se eliminarán todas las filas de "${confirmacion.codigo}" anteriores a ${confirmacion.valor} días. Esta acción no se puede deshacer.`
-            : `Se conservarán las últimas ${confirmacion.valor.toLocaleString('es-CL')} filas de "${confirmacion.codigo}" y se eliminará el resto. Esta acción no se puede deshacer.`
+            : `Se conservarán las últimas ${formatNumero(confirmacion.valor)} filas de "${confirmacion.codigo}" y se eliminará el resto. Esta acción no se puede deshacer.`
         ) : ''}
         textoConfirmar="Sí, limpiar"
         cargando={ejecutando}
@@ -312,11 +305,11 @@ export default function PaginaLimpieza() {
                   <TablaFila key={r.codigo_tabla}>
                     <TablaTd className="font-mono text-xs">{r.codigo_tabla}</TablaTd>
                     <TablaTd className="text-sm">{r.modo}</TablaTd>
-                    <TablaTd className="text-sm">{r.valor.toLocaleString('es-CL')}</TablaTd>
+                    <TablaTd className="text-sm">{formatNumero(r.valor)}</TablaTd>
                     <TablaTd className="text-right text-sm">
                       {r.filas_eliminadas < 0
                         ? <span className="text-error">Error</span>
-                        : r.filas_eliminadas.toLocaleString('es-CL')}
+                        : formatNumero(r.filas_eliminadas)}
                     </TablaTd>
                   </TablaFila>
                 ))}

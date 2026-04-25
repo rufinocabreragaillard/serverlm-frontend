@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { ToastProvider } from '@/context/ToastContext'
 import { tema } from '@/config/tema.config'
 import { I18nProvider } from '@/components/i18n-provider'
 import { getLocale, getMessages } from 'next-intl/server'
@@ -24,9 +25,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="h-full font-sans">
         <I18nProvider messages={messages} locale={locale}>
-          <AuthProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </AuthProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </AuthProvider>
+          </ToastProvider>
         </I18nProvider>
       </body>
     </html>
