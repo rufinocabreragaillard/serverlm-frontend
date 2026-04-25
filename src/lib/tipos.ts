@@ -834,6 +834,7 @@ export interface Cargo {
   codigo_grupo: string
   codigo_entidad: string          // '' = cargo de grupo
   codigo_cargo: string
+  codigo_cargo_superior?: string | null  // null = raíz del árbol
   nombre_cargo: string
   alias: string
   descripcion?: string | null

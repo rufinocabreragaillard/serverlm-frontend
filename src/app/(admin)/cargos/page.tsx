@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Search } from 'lucide-react'
+import { Search, ChevronDown, ChevronRight, Folder, FolderOpen, Pencil, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { TabPrompts } from '@/components/ui/tab-prompts'
@@ -12,12 +12,6 @@ import { ModalConfirmar } from '@/components/ui/modal-confirmar'
 import { Boton } from '@/components/ui/boton'
 import { PieBotonesModal } from '@/components/ui/pie-botones-modal'
 import { BarraHerramientas } from '@/components/ui/barra-herramientas'
-import {
-  TablaCrud,
-  columnaCodigo,
-  columnaNombre,
-  columnaDescripcion,
-} from '@/components/ui/tabla-crud'
 import { Tabla, TablaCabecera, TablaCuerpo, TablaFila, TablaTh, TablaTd } from '@/components/ui/tabla'
 import { Insignia } from '@/components/ui/insignia'
 import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
@@ -33,6 +27,7 @@ type FormCargo = {
   alias: string
   descripcion: string
   codigo_entidad: string
+  codigo_cargo_superior: string
   prompt_insert: string
   prompt_update: string
   system_prompt: string
@@ -72,6 +67,7 @@ export default function PaginaCargos() {
         alias: f.alias.trim() || undefined,
         descripcion: f.descripcion.trim() || undefined,
         codigo_entidad: f.codigo_entidad || undefined,
+        codigo_cargo_superior: f.codigo_cargo_superior || undefined,
         prompt_insert: f.prompt_insert.trim() || undefined,
         prompt_update: f.prompt_update.trim() || undefined,
         system_prompt: f.system_prompt.trim() || undefined,
@@ -87,6 +83,7 @@ export default function PaginaCargos() {
         alias: (f.alias ?? '').trim() || undefined,
         descripcion: (f.descripcion ?? '').trim() || undefined,
         codigo_entidad: f.codigo_entidad,
+        codigo_cargo_superior: f.codigo_cargo_superior ?? '',
         prompt_insert: (f.prompt_insert ?? '').trim() || undefined,
         prompt_update: (f.prompt_update ?? '').trim() || undefined,
         system_prompt: (f.system_prompt ?? '').trim() || undefined,
@@ -99,7 +96,7 @@ export default function PaginaCargos() {
     eliminarFn: async (id: string) => { await cargosApi.eliminar(id) },
     getId: (c) => c.codigo_cargo,
     camposBusqueda: (c) => [c.codigo_cargo, c.nombre_cargo, c.alias],
-    formInicial: { codigo_cargo: '', nombre_cargo: '', alias: '', descripcion: '', codigo_entidad: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false },
+    formInicial: { codigo_cargo: '', nombre_cargo: '', alias: '', descripcion: '', codigo_entidad: '', codigo_cargo_superior: '', prompt_insert: '', prompt_update: '', system_prompt: '', python_insert: '', python_update: '', javascript: '', python_editado_manual: false, javascript_editado_manual: false },
     itemToForm: (c) => {
       const c2 = c as unknown as Record<string, unknown>
       return {
@@ -108,6 +105,7 @@ export default function PaginaCargos() {
         alias: c.alias ?? '',
         descripcion: c.descripcion ?? '',
         codigo_entidad: c.codigo_entidad ?? '',
+        codigo_cargo_superior: c.codigo_cargo_superior ?? '',
         prompt_insert: c2.prompt_insert as string ?? '',
         prompt_update: c2.prompt_update as string ?? '',
         system_prompt: c.system_prompt ?? '',
@@ -209,6 +207,43 @@ export default function PaginaCargos() {
     catch { if (crud.editando) cargarRolesCargo(crud.editando.codigo_cargo) }
   }
 
+  // ── Árbol jerárquico ───────────────────────────────────────────────────────
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
+
+  const toggleExpandir = (codigo: string) => {
+    setExpandidos((prev) => {
+      const next = new Set(prev)
+      if (next.has(codigo)) next.delete(codigo)
+      else next.add(codigo)
+      return next
+    })
+  }
+
+  const expandirTodos = () => {
+    setExpandidos(new Set(crud.items.map((c) => c.codigo_cargo)))
+  }
+
+  const colapsarTodos = () => setExpandidos(new Set())
+
+  const tieneHijos = (codigo: string) =>
+    crud.items.some((c) => c.codigo_cargo_superior === codigo)
+
+  // Cargos elegibles como superior (excluye descendientes del cargo en edición)
+  const opcionesPadre = (excluirCodigo?: string): Cargo[] => {
+    if (!excluirCodigo) return crud.items
+    const descendientes = new Set<string>([excluirCodigo])
+    const buscar = (cod: string) => {
+      for (const c of crud.items) {
+        if (c.codigo_cargo_superior === cod && !descendientes.has(c.codigo_cargo)) {
+          descendientes.add(c.codigo_cargo)
+          buscar(c.codigo_cargo)
+        }
+      }
+    }
+    buscar(excluirCodigo)
+    return crud.items.filter((c) => !descendientes.has(c.codigo_cargo))
+  }
+
   // ── Lista ordenada ──────────────────────────────────────────────────────────
   const filtradosOrdenados = [...crud.filtrados].sort((a, b) =>
     a.nombre_cargo.localeCompare(b.nombre_cargo),
@@ -219,6 +254,82 @@ export default function PaginaCargos() {
     return entidades.find((e) => e.codigo_entidad === codigo)?.nombre ?? codigo
   }
 
+  // ── Render de un nodo del árbol (estilo /ubicaciones-docs) ─────────────────
+  const renderNodo = (c: Cargo, nivel: number) => {
+    const hijos = tieneHijos(c.codigo_cargo)
+    const expandido = expandidos.has(c.codigo_cargo)
+    const indent = nivel * 24
+    const nombreEnt = nombreEntidad(c.codigo_entidad)
+
+    return (
+      <div key={c.codigo_cargo}>
+        <div
+          className="flex items-center gap-2 px-3 py-1 bg-amber-50 hover:bg-amber-100 rounded group transition-colors"
+          style={{ paddingLeft: `${indent + 12}px` }}
+        >
+          <button
+            onClick={() => toggleExpandir(c.codigo_cargo)}
+            className={`p-0.5 rounded transition-colors ${hijos ? 'hover:bg-primario-muy-claro text-texto-muted hover:text-primario' : 'invisible'}`}
+          >
+            {expandido ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+
+          {expandido && hijos ? (
+            <FolderOpen size={14} className="text-amber-500 shrink-0" />
+          ) : (
+            <Folder size={14} className="text-amber-500 shrink-0" />
+          )}
+
+          <div className="flex-1 min-w-0 truncate" title={`${c.nombre_cargo} (${c.codigo_cargo})`}>
+            <span className="font-medium text-xs">{c.nombre_cargo}</span>
+            {c.alias && <span className="text-xs text-texto-muted ml-2">{c.alias}</span>}
+            <span className="text-xs text-texto-muted ml-2">({c.codigo_cargo})</span>
+          </div>
+
+          {nombreEnt ? (
+            <span className="text-xs text-texto-muted truncate max-w-[200px] shrink-0 hidden lg:block" title={nombreEnt}>
+              {nombreEnt}
+            </span>
+          ) : (
+            <Insignia variante="neutro">{t('todoElGrupo')}</Insignia>
+          )}
+
+          <div className="flex items-center gap-0.5 shrink-0 transition-opacity">
+            <button
+              onClick={() => abrirEditar(c)}
+              className="p-1.5 rounded-lg hover:bg-primario-muy-claro text-texto-muted hover:text-primario transition-colors"
+              title={tc('editar')}
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => crud.setConfirmacion(c)}
+              className="p-1.5 rounded-lg hover:bg-orange-50 text-texto-muted hover:text-orange-500 transition-colors"
+              title={tc('eliminar')}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </div>
+
+        {expandido &&
+          crud.items
+            .filter((h) => h.codigo_cargo_superior === c.codigo_cargo)
+            .sort((a, b) => a.nombre_cargo.localeCompare(b.nombre_cargo))
+            .map((h) => renderNodo(h, nivel + 1))}
+      </div>
+    )
+  }
+
+  // Raíces respetando filtro de búsqueda. Si hay búsqueda, aplanar todo.
+  const codigosFiltrados = new Set(filtradosOrdenados.map((c) => c.codigo_cargo))
+  const hayBusqueda = crud.busqueda.trim().length > 0
+  const raices = hayBusqueda
+    ? filtradosOrdenados
+    : crud.items
+        .filter((c) => !c.codigo_cargo_superior && codigosFiltrados.has(c.codigo_cargo))
+        .sort((a, b) => a.nombre_cargo.localeCompare(b.nombre_cargo))
+
   return (
     <div className="relative flex flex-col gap-6 max-w-5xl">
       <BotonChat className="top-0 right-0" />
@@ -227,48 +338,46 @@ export default function PaginaCargos() {
         <p className="text-sm text-texto-muted mt-1">{t('subtitulo')}</p>
       </div>
 
-      <BarraHerramientas
-        busqueda={crud.busqueda}
-        onBusqueda={crud.setBusqueda}
-        placeholderBusqueda={t('buscarPlaceholder')}
-        onNuevo={abrirNuevo}
-        textoNuevo={t('nuevoCargo')}
-        excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
-        excelColumnas={[
-          { titulo: t('colCodigo'), campo: 'codigo_cargo' },
-          { titulo: t('colNombre'), campo: 'nombre_cargo' },
-          { titulo: t('colAlias'), campo: 'alias' },
-          { titulo: t('colEntidad'), campo: 'codigo_entidad' },
-          { titulo: t('colDescripcion'), campo: 'descripcion' },
-        ]}
-        excelNombreArchivo="cargos"
-      />
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
+          <BarraHerramientas
+            busqueda={crud.busqueda}
+            onBusqueda={crud.setBusqueda}
+            placeholderBusqueda={t('buscarPlaceholder')}
+            onNuevo={abrirNuevo}
+            textoNuevo={t('nuevoCargo')}
+            excelDatos={filtradosOrdenados as unknown as Record<string, unknown>[]}
+            excelColumnas={[
+              { titulo: t('colCodigo'), campo: 'codigo_cargo' },
+              { titulo: t('colNombre'), campo: 'nombre_cargo' },
+              { titulo: t('colAlias'), campo: 'alias' },
+              { titulo: t('colEntidad'), campo: 'codigo_entidad' },
+              { titulo: t('colDescripcion'), campo: 'descripcion' },
+            ]}
+            excelNombreArchivo="cargos"
+          />
+        </div>
+        <Boton variante="contorno" className="h-[38px]" onClick={expandirTodos} disabled={crud.items.length === 0}>
+          Expandir todo
+        </Boton>
+        <Boton variante="contorno" className="h-[38px]" onClick={colapsarTodos} disabled={expandidos.size === 0}>
+          Colapsar todo
+        </Boton>
+      </div>
 
-      <TablaCrud
-        columnas={[
-          columnaNombre<Cargo>(t('colNombre'), (c) => c.nombre_cargo),
-          { titulo: t('colAlias'), render: (c: Cargo) => c.alias || '—' },
-          {
-            titulo: t('colEntidad'),
-            render: (c: Cargo) => {
-              const nombre = nombreEntidad(c.codigo_entidad)
-              return nombre ? (
-                <span className="text-sm">{nombre}</span>
-              ) : (
-                <Insignia variante="neutro">{t('todoElGrupo')}</Insignia>
-              )
-            },
-          },
-          columnaDescripcion<Cargo>(t('colDescripcion'), (c) => c.descripcion),
-          columnaCodigo<Cargo>(t('colCodigo'), (c) => c.codigo_cargo),
-        ]}
-        items={filtradosOrdenados}
-        cargando={crud.cargando}
-        getId={(c) => c.codigo_cargo}
-        onEditar={abrirEditar}
-        onEliminar={crud.setConfirmacion}
-        textoVacio={t('sinCargos')}
-      />
+      {/* Árbol jerárquico */}
+      <div className="bg-surface rounded-lg border border-borde p-2 flex flex-col gap-1 min-h-[200px]">
+        {crud.cargando ? (
+          <div className="text-center text-texto-muted py-8 text-sm">{tc('cargando')}…</div>
+        ) : raices.length === 0 ? (
+          <div className="text-center text-texto-muted py-8 text-sm">{t('sinCargos')}</div>
+        ) : hayBusqueda ? (
+          // Vista plana cuando hay búsqueda
+          raices.map((c) => renderNodo(c, 0))
+        ) : (
+          raices.map((c) => renderNodo(c, 0))
+        )}
+      </div>
 
       {/* ── Modal crear/editar ─────────────────────────────────────────────── */}
       <Modal
@@ -349,6 +458,26 @@ export default function PaginaCargos() {
                     ))}
                   </select>
                   <p className="text-xs text-texto-muted">{t('descEntidad')}</p>
+                </div>
+
+                {/* Selector de cargo superior */}
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <label className="text-sm font-medium text-texto">Cargo superior</label>
+                  <select
+                    className={selectClass}
+                    value={crud.form.codigo_cargo_superior}
+                    onChange={(e) => crud.updateForm('codigo_cargo_superior', e.target.value)}
+                  >
+                    <option value="">— Sin superior (raíz) —</option>
+                    {opcionesPadre(crud.editando?.codigo_cargo)
+                      .sort((a, b) => a.nombre_cargo.localeCompare(b.nombre_cargo))
+                      .map((c) => (
+                        <option key={c.codigo_cargo} value={c.codigo_cargo}>
+                          {c.nombre_cargo} ({c.codigo_cargo})
+                        </option>
+                      ))}
+                  </select>
+                  <p className="text-xs text-texto-muted">Cargo padre en la jerarquía. Vacío = nivel raíz.</p>
                 </div>
 
                 <div className="sm:col-span-2">
