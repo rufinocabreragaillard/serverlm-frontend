@@ -316,7 +316,7 @@ export default function PaginaPlanes() {
             {tab === 'system_prompt' && editando && (
               <div className="flex flex-col gap-3">
                 <TabPrompts
-                  tabla="planes_clientes"
+                  tabla="planes"
                   pkColumna="codigo_plan"
                   pkValor={editando.codigo_plan}
                   campos={{
@@ -346,7 +346,7 @@ export default function PaginaPlanes() {
                   cargando={guardando}
                   botonesIzquierda={editando ? (
                     <PieBotonesPrompts
-                      tabla="planes_clientes"
+                      tabla="planes"
                       pkColumna="codigo_plan"
                       pkValor={editando.codigo_plan}
                       promptInsert={form.prompt_insert ?? undefined}
@@ -361,7 +361,7 @@ export default function PaginaPlanes() {
             {tab === 'programacion_insert' && editando && (
               <div className="flex flex-col gap-3">
                 <TabPrompts
-                  tabla="planes_clientes"
+                  tabla="planes"
                   pkColumna="codigo_plan"
                   pkValor={editando.codigo_plan}
                   campos={{
@@ -389,7 +389,7 @@ export default function PaginaPlanes() {
                   cargando={guardando}
                   botonesIzquierda={editando ? (
                     <PieBotonesPrompts
-                      tabla="planes_clientes"
+                      tabla="planes"
                       pkColumna="codigo_plan"
                       pkValor={editando.codigo_plan}
                       promptInsert={form.prompt_insert ?? undefined}
@@ -403,7 +403,7 @@ export default function PaginaPlanes() {
             {tab === 'programacion_update' && editando && (
               <div className="flex flex-col gap-3">
                 <TabPrompts
-                  tabla="planes_clientes"
+                  tabla="planes"
                   pkColumna="codigo_plan"
                   pkValor={editando.codigo_plan}
                   campos={{
@@ -431,7 +431,7 @@ export default function PaginaPlanes() {
                   cargando={guardando}
                   botonesIzquierda={editando ? (
                     <PieBotonesPrompts
-                      tabla="planes_clientes"
+                      tabla="planes"
                       pkColumna="codigo_plan"
                       pkValor={editando.codigo_plan}
                       promptInsert={form.prompt_insert ?? undefined}
@@ -484,7 +484,7 @@ export default function PaginaPlanes() {
                       onClick={async () => {
                         setSincronizandoMd(true); setMensajeMd(null)
                         try {
-                          const r = await promptsApi.sincronizarFila('planes_clientes', 'codigo_plan', editando.codigo_plan)
+                          const r = await promptsApi.sincronizarFila('planes', 'codigo_plan', editando.codigo_plan)
                           setMensajeMd({ tipo: 'ok', texto: `Documento ${r.accion} (código ${r.codigo_documento}). Listo para CHUNKEAR + VECTORIZAR.` })
                         } catch (e) {
                           setMensajeMd({ tipo: 'error', texto: e instanceof Error ? e.message : 'Error al sincronizar' })
