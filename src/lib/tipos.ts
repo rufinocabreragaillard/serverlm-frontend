@@ -478,7 +478,6 @@ export interface TipoProceso {
   orden?: number
   ayuda?: string | null
   traducir?: boolean
-  tipo?: string
   prompt_insert?: string | null
   prompt_update?: string | null
   python_insert?: string | null

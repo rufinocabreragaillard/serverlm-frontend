@@ -68,7 +68,7 @@ export default function PaginaProcesosDatosBasicos() {
     prompt_insert: '', prompt_update: '', system_prompt: '',
     python_insert: '', python_update: '', javascript: '',
     python_editado_manual: false, javascript_editado_manual: false,
-    orden: '', ayuda: '', traducir: true, tipo: 'USUARIO',
+    orden: '', ayuda: '', traducir: true,
     md: '',
     created_at: '', updated_at: '',
   })
@@ -248,7 +248,7 @@ export default function PaginaProcesosDatosBasicos() {
       prompt_insert: '', prompt_update: '', system_prompt: '',
       python_insert: '', python_update: '', javascript: '',
       python_editado_manual: false, javascript_editado_manual: false,
-      orden: '', ayuda: '', traducir: true, tipo: 'USUARIO',
+      orden: '', ayuda: '', traducir: true,
       md: '',
       created_at: '', updated_at: '',
     })
@@ -278,7 +278,6 @@ export default function PaginaProcesosDatosBasicos() {
       orden: t.orden != null ? String(t.orden) : '',
       ayuda: t.ayuda || '',
       traducir: t.traducir ?? true,
-      tipo: t.tipo || 'USUARIO',
       md: (t2.md as string) || '',
       created_at: t.created_at || '',
       updated_at: t.updated_at || '',
@@ -384,7 +383,7 @@ export default function PaginaProcesosDatosBasicos() {
           alias: '', prompt_insert: '', prompt_update: '', system_prompt: '',
           python_insert: '', python_update: '', javascript: '',
           python_editado_manual: false, javascript_editado_manual: false,
-          orden: '', ayuda: '', traducir: true, tipo: 'USUARIO',
+          orden: '', ayuda: '', traducir: true,
           md: '', created_at: '', updated_at: '',
         })
       }
