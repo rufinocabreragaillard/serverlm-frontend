@@ -201,7 +201,7 @@ export default function PaginaChatSegGrupo() {
   return (
     <div className="flex h-[calc(100vh-160px)] gap-4 max-w-full">
       {/* Sidebar de conversaciones */}
-      <aside className="w-64 flex-shrink-0 flex flex-col gap-2 border border-borde rounded-lg bg-fondo-tarjeta overflow-hidden">
+      <aside className="w-64 flex-shrink-0 flex flex-col gap-2 border border-borde rounded-lg bg-surface overflow-hidden">
         <div className="px-3 py-2 border-b border-borde flex items-center justify-between">
           <h3 className="text-sm font-semibold text-texto">{t('conversaciones')}</h3>
           <button
@@ -253,7 +253,7 @@ export default function PaginaChatSegGrupo() {
       </aside>
 
       {/* Área principal de chat */}
-      <main className="flex-1 flex flex-col border border-borde rounded-lg bg-fondo-tarjeta overflow-hidden min-w-0">
+      <main className="flex-1 flex flex-col border border-borde rounded-lg bg-surface overflow-hidden min-w-0">
         {convActivaId == null ? (
           <div className="flex-1 flex items-center justify-center text-texto-muted text-sm flex-col gap-3">
             <ShieldHalf size={48} className="opacity-30" />
@@ -385,7 +385,7 @@ function Mensaje({ mensaje, streaming = false }: { mensaje: ChatMensaje; streami
         className={`${tieneTabla ? 'max-w-[95%] w-full' : 'max-w-[80%]'} px-4 py-2 rounded-lg text-sm ${
           esUser
             ? 'bg-primario text-primario-texto'
-            : 'bg-white border border-borde text-texto'
+            : 'bg-white text-texto'
         }`}
       >
         {esUser ? (

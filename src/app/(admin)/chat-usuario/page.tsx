@@ -257,7 +257,7 @@ export default function PaginaChatUsuario() {
       {tabPagina === 'chat' && (
         <div className="flex flex-1 gap-4 max-w-full overflow-hidden">
           {/* Sidebar de conversaciones */}
-          <aside className="w-64 flex-shrink-0 flex flex-col gap-2 border border-borde rounded-lg bg-fondo-tarjeta overflow-hidden">
+          <aside className="w-64 flex-shrink-0 flex flex-col gap-2 border border-borde rounded-lg bg-surface overflow-hidden">
             <div className="px-3 py-2 border-b border-borde flex items-center justify-between">
               <h3 className="text-sm font-semibold text-texto">{t('conversaciones')}</h3>
               <button
@@ -513,7 +513,7 @@ function Mensaje({ mensaje, streaming = false }: { mensaje: ChatMensaje; streami
     <div className={`flex ${esUser ? 'justify-end' : 'justify-start'}`}>
       <div
         className={`${tieneTabla ? 'max-w-[95%] w-full' : 'max-w-[80%]'} px-4 py-2 rounded-lg text-sm ${
-          esUser ? 'bg-primario text-primario-texto' : 'bg-white border border-borde text-texto'
+          esUser ? 'bg-primario text-primario-texto' : 'bg-white text-texto'
         }`}
       >
         {esUser ? (
