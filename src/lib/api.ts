@@ -377,6 +377,8 @@ export const funcionesApi = {
     api.post(`/funciones/${codigo}/dependencias`, { codigo_funcion_requerida: codigoRequerida, motivo: motivo || '' }).then((r) => r.data),
   eliminarDependencia: (codigo: string, codigoRequerida: string) =>
     api.delete(`/funciones/${codigo}/dependencias/${codigoRequerida}`).then((r) => r.data),
+  listarCandidatasDep: () =>
+    api.get<string[]>('/funciones/candidatas-dep').then((r) => r.data),
 }
 
 // ─── Aplicaciones ─────────────────────────────────────────────────────────────

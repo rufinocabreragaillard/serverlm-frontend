@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Pencil, Trash2, X, Download, Search, RefreshCw, Languages, Brain } from 'lucide-react'
 import { SortableDndContext, SortableRow } from '@/components/ui/sortable'
 import { Boton } from '@/components/ui/boton'
@@ -105,6 +105,12 @@ export default function PaginaFunciones() {
   const [agregandoDep, setAgregandoDep] = useState(false)
   const [errorDep, setErrorDep] = useState('')
 
+  // Combobox buscable para función requerida
+  const [busquedaDep, setBusquedaDep] = useState('')
+  const [dropdownDepAbierto, setDropdownDepAbierto] = useState(false)
+  const dropdownDepRef = useRef<HTMLDivElement>(null)
+  const [candidatasDepCodigos, setCandidatasDepCodigos] = useState<Set<string>>(new Set())
+
   // Tab principal de la página
   const [tabPrincipal, setTabPrincipal] = useState<'funciones' | 'requeridas'>('funciones')
   const [funcionSeleccionada, setFuncionSeleccionada] = useState<Funcion | null>(null)
@@ -135,6 +141,23 @@ export default function PaginaFunciones() {
 
   useEffect(() => { cargar() }, [cargar])
 
+  // Cargar candidatas del grafo una vez al montar
+  useEffect(() => {
+    funcionesApi.listarCandidatasDep().then((codigos) => {
+      setCandidatasDepCodigos(new Set(codigos))
+    }).catch(() => {})
+  }, [])
+
+  // Cerrar dropdown de dependencia al clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownDepRef.current && !dropdownDepRef.current.contains(e.target as Node)) {
+        setDropdownDepAbierto(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // ── Funcion: CRUD ─────────────────────────────────────────────────────────
   const abrirNuevaFuncion = () => {
@@ -183,7 +206,7 @@ export default function PaginaFunciones() {
     setErrorFuncion('')
     setMensajeMd(null)
     setErrorDep('')
-    setNuevaDepRequerida(''); setNuevaDepMotivo('')
+    setNuevaDepRequerida(''); setNuevaDepMotivo(''); setBusquedaDep('')
     setTabModalFuncion(tabInicial)
     cargarAppsDeFuncion(f.codigo_funcion)
     cargarApisDeFuncion(f.codigo_funcion)
@@ -267,7 +290,7 @@ export default function PaginaFunciones() {
     setAgregandoDep(true); setErrorDep('')
     try {
       await funcionesApi.agregarDependencia(funcionEditando.codigo_funcion, nuevaDepRequerida, nuevaDepMotivo)
-      setNuevaDepRequerida(''); setNuevaDepMotivo('')
+      setNuevaDepRequerida(''); setNuevaDepMotivo(''); setBusquedaDep('')
       cargarDependencias(funcionEditando.codigo_funcion)
     } catch (e) { setErrorDep(e instanceof Error ? e.message : 'Error al agregar') }
     finally { setAgregandoDep(false) }
@@ -413,7 +436,7 @@ export default function PaginaFunciones() {
             {cargando ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>Cargando...</TablaTd></TablaFila>
             ) : funcionesFiltradas.length === 0 ? (<TablaFila><TablaTd className="py-8 text-center text-texto-muted" colSpan={7 as never}>No se encontraron funciones</TablaTd></TablaFila>
             ) : funcionesFiltradas.map((f) => (
-              <SortableRow key={f.codigo_funcion} id={f.codigo_funcion} onDoubleClick={() => { setFuncionSeleccionada(f); cargarDependencias(f.codigo_funcion); setNuevaDepRequerida(''); setNuevaDepMotivo(''); setErrorDep(''); setTabPrincipal('requeridas') }}>
+              <SortableRow key={f.codigo_funcion} id={f.codigo_funcion} onDoubleClick={() => { setFuncionSeleccionada(f); cargarDependencias(f.codigo_funcion); setNuevaDepRequerida(''); setNuevaDepMotivo(''); setBusquedaDep(''); setErrorDep(''); setTabPrincipal('requeridas') }}>
                 <TablaTd>{badgeTipo(f.tipo_acceso)}</TablaTd>
                 <TablaTd className="text-sm">{f.alias_de_funcion || '—'}</TablaTd>
                 <TablaTd className="font-medium">{f.nombre}</TablaTd>
@@ -470,7 +493,7 @@ export default function PaginaFunciones() {
               )}
             </div>
             {funcionSeleccionada && (
-              <Boton variante="primario" tamano="sm" onClick={() => { setNuevaDepRequerida(''); setNuevaDepMotivo(''); setErrorDep('') }}>
+              <Boton variante="primario" tamano="sm" onClick={() => { setNuevaDepRequerida(''); setNuevaDepMotivo(''); setBusquedaDep(''); setErrorDep('') }}>
                 <Plus size={14} />Agregar función requerida
               </Boton>
             )}
@@ -485,26 +508,55 @@ export default function PaginaFunciones() {
               {/* Formulario de agregar */}
               <div className="flex flex-col gap-2 p-3 bg-fondo rounded-lg border border-borde">
                 <div className="flex gap-2">
-                  <div className="flex-1">
-                    <select
-                      value={nuevaDepRequerida}
-                      onChange={(e) => setNuevaDepRequerida(e.target.value)}
-                      className="w-full rounded-lg border border-borde bg-surface px-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
-                    >
-                      <option value="">Seleccionar función requerida...</option>
-                      {funciones
-                        .filter((f) => f.codigo_funcion !== funcionSeleccionada.codigo_funcion && !depSalientes.some((d) => d.codigo_funcion_requerida === f.codigo_funcion))
-                        .map((f) => (
-                          <option key={f.codigo_funcion} value={f.codigo_funcion}>{f.nombre} ({f.codigo_funcion})</option>
-                        ))}
-                    </select>
+                  <div className="flex-1 relative" ref={dropdownDepRef}>
+                    <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
+                      <input
+                        type="text"
+                        placeholder="Buscar función requerida..."
+                        value={busquedaDep}
+                        onChange={(e) => { setBusquedaDep(e.target.value); setDropdownDepAbierto(true); setNuevaDepRequerida('') }}
+                        onFocus={() => setDropdownDepAbierto(true)}
+                        className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                      />
+                    </div>
+                    {dropdownDepAbierto && (
+                      <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {funciones
+                          .filter((f) =>
+                            f.codigo_funcion !== funcionSeleccionada.codigo_funcion &&
+                            !depSalientes.some((d) => d.codigo_funcion_requerida === f.codigo_funcion) &&
+                            (candidatasDepCodigos.size === 0 || candidatasDepCodigos.has(f.codigo_funcion)) &&
+                            (busquedaDep === '' || f.nombre.toLowerCase().includes(busquedaDep.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaDep.toLowerCase()))
+                          )
+                          .slice(0, 20)
+                          .map((f) => (
+                            <button
+                              key={f.codigo_funcion}
+                              onClick={() => { setNuevaDepRequerida(f.codigo_funcion); setBusquedaDep(`${f.nombre} (${f.codigo_funcion})`); setDropdownDepAbierto(false) }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors"
+                            >
+                              <span className="font-medium">{f.nombre}</span>
+                              <span className="ml-2 text-texto-muted text-xs">{f.codigo_funcion}</span>
+                            </button>
+                          ))}
+                        {funciones.filter((f) =>
+                          f.codigo_funcion !== funcionSeleccionada.codigo_funcion &&
+                          !depSalientes.some((d) => d.codigo_funcion_requerida === f.codigo_funcion) &&
+                          (candidatasDepCodigos.size === 0 || candidatasDepCodigos.has(f.codigo_funcion)) &&
+                          (busquedaDep === '' || f.nombre.toLowerCase().includes(busquedaDep.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaDep.toLowerCase()))
+                        ).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron funciones</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Boton variante="primario" onClick={async () => {
                     if (!funcionSeleccionada || !nuevaDepRequerida) return
                     setAgregandoDep(true); setErrorDep('')
                     try {
                       await funcionesApi.agregarDependencia(funcionSeleccionada.codigo_funcion, nuevaDepRequerida, nuevaDepMotivo)
-                      setNuevaDepRequerida(''); setNuevaDepMotivo('')
+                      setNuevaDepRequerida(''); setNuevaDepMotivo(''); setBusquedaDep('')
                       cargarDependencias(funcionSeleccionada.codigo_funcion)
                     } catch (e) { setErrorDep(e instanceof Error ? e.message : 'Error al agregar') }
                     finally { setAgregandoDep(false) }
@@ -534,7 +586,7 @@ export default function PaginaFunciones() {
                     <div key={d.codigo_funcion_requerida} className="flex items-center justify-between px-3 py-2 rounded-lg border border-borde bg-surface cursor-pointer hover:bg-fondo transition-colors"
                       onDoubleClick={() => {
                         const f = funciones.find((fn) => fn.codigo_funcion === d.codigo_funcion_requerida)
-                        if (f) { setFuncionSeleccionada(f); cargarDependencias(f.codigo_funcion); setNuevaDepRequerida(''); setNuevaDepMotivo(''); setErrorDep('') }
+                        if (f) { setFuncionSeleccionada(f); cargarDependencias(f.codigo_funcion); setNuevaDepRequerida(''); setNuevaDepMotivo(''); setBusquedaDep(''); setErrorDep('') }
                       }}>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-medium text-texto">{d.funciones?.nombre_funcion || d.codigo_funcion_requerida}</span>
@@ -1045,19 +1097,48 @@ export default function PaginaFunciones() {
             <div className="flex flex-col gap-4">
               <p className="text-sm text-texto-muted">Funciones que <strong>{funcionEditando.nombre}</strong> requiere para poder ejecutarse (arcos salientes del grafo).</p>
               <div className="flex gap-2">
-                <div className="flex-1">
-                  <select
-                    value={nuevaDepRequerida}
-                    onChange={(e) => setNuevaDepRequerida(e.target.value)}
-                    className={selectClass}
-                  >
-                    <option value="">Seleccionar función requerida...</option>
-                    {funciones
-                      .filter((f) => f.codigo_funcion !== funcionEditando.codigo_funcion && !depSalientes.some((d) => d.codigo_funcion_requerida === f.codigo_funcion))
-                      .map((f) => (
-                        <option key={f.codigo_funcion} value={f.codigo_funcion}>{f.nombre} ({f.codigo_funcion})</option>
-                      ))}
-                  </select>
+                <div className="flex-1 relative" ref={dropdownDepRef}>
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-texto-muted" />
+                    <input
+                      type="text"
+                      placeholder="Buscar función requerida..."
+                      value={busquedaDep}
+                      onChange={(e) => { setBusquedaDep(e.target.value); setDropdownDepAbierto(true); setNuevaDepRequerida('') }}
+                      onFocus={() => setDropdownDepAbierto(true)}
+                      className="w-full rounded-lg border border-borde bg-surface pl-9 pr-3 py-2 text-sm text-texto focus:outline-none focus:ring-2 focus:ring-primario"
+                    />
+                  </div>
+                  {dropdownDepAbierto && (
+                    <div className="absolute z-50 w-full mt-1 bg-surface border border-borde rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {funciones
+                        .filter((f) =>
+                          f.codigo_funcion !== funcionEditando.codigo_funcion &&
+                          !depSalientes.some((d) => d.codigo_funcion_requerida === f.codigo_funcion) &&
+                          (candidatasDepCodigos.size === 0 || candidatasDepCodigos.has(f.codigo_funcion)) &&
+                          (busquedaDep === '' || f.nombre.toLowerCase().includes(busquedaDep.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaDep.toLowerCase()))
+                        )
+                        .slice(0, 20)
+                        .map((f) => (
+                          <button
+                            key={f.codigo_funcion}
+                            onClick={() => { setNuevaDepRequerida(f.codigo_funcion); setBusquedaDep(`${f.nombre} (${f.codigo_funcion})`); setDropdownDepAbierto(false) }}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-primario-muy-claro hover:text-primario transition-colors"
+                          >
+                            <span className="font-medium">{f.nombre}</span>
+                            <span className="ml-2 text-texto-muted text-xs">{f.codigo_funcion}</span>
+                          </button>
+                        ))}
+                      {funciones.filter((f) =>
+                        f.codigo_funcion !== funcionEditando.codigo_funcion &&
+                        !depSalientes.some((d) => d.codigo_funcion_requerida === f.codigo_funcion) &&
+                        (candidatasDepCodigos.size === 0 || candidatasDepCodigos.has(f.codigo_funcion)) &&
+                        (busquedaDep === '' || f.nombre.toLowerCase().includes(busquedaDep.toLowerCase()) || f.codigo_funcion.toLowerCase().includes(busquedaDep.toLowerCase()))
+                      ).length === 0 && (
+                        <div className="px-3 py-2 text-sm text-texto-muted">No se encontraron funciones</div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <Boton variante="primario" onClick={agregarDepRequerida} cargando={agregandoDep} disabled={!nuevaDepRequerida}>
                   <Plus size={14} />Agregar
